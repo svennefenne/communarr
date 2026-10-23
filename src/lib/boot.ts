@@ -1,7 +1,8 @@
 import "server-only";
 import { db } from "./db";
-import { getSettings } from "./settings";
+import { defaultTextIn, getSettings } from "./settings";
 import type { Boot, Me, SiteInfo } from "./bootTypes";
+import type { Lang } from "./i18n";
 import type { User } from "./users";
 import { summary } from "./users";
 import { vapidPublicKey } from "./push";
@@ -10,14 +11,15 @@ export function me(u: User): Me {
   return { ...summary(u), isAdmin: u.isAdmin, isMod: u.isMod, presence: u.presence, theme: u.theme };
 }
 
-export function siteInfo(u: User | null): SiteInfo {
+export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
   const s = getSettings();
   const may = (who: "members" | "mods") => !!u && (who === "members" || u.isMod);
   const a = s.announcement;
   return {
+    lang: lang ?? s.language,
     name: s.siteName,
-    tagline: s.tagline,
-    footer: s.footer,
+    tagline: defaultTextIn("tagline", s.tagline, lang ?? s.language),
+    footer: defaultTextIn("footer", s.footer, lang ?? s.language),
     features: s.features,
     can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod },
     allowCustomThemes: s.allowCustomThemes,
@@ -46,11 +48,12 @@ export function unreadNotifications(userId: number): number {
   return (db().prepare("select count(*) n from notifications where user_id = ? and read_at is null").get(userId) as { n: number }).n;
 }
 
-export function boot(u: User | null): Boot {
+/** What the browser starts with; lang is the viewer's language (requestLang()). */
+export function boot(u: User | null, lang?: Lang): Boot {
   const rooms = u ? roomUnread(u.id) : {};
   return {
     me: u ? me(u) : null,
-    site: siteInfo(u),
+    site: siteInfo(u, lang),
     counts: { notifications: u ? unreadNotifications(u.id) : 0, chat: Object.keys(rooms).length, rooms },
   };
 }

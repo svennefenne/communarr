@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Smile } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
 import { Modal } from "@/components/ui/ui";
 import { EmojiPopover } from "@/components/ui/EmojiPicker";
 import { setStatusAction } from "@/app/actions/me";
@@ -20,6 +21,7 @@ const PRESETS: [string, string][] = [
   ["🚗", "On the road"],
 ];
 
+/** (English: translated where they're shown) */
 export const PRESENCE_LABEL: Record<Presence, [string, string]> = {
   auto: ["Online", "Away when you've been gone a while"],
   away: ["Away", "Shown as away"],
@@ -29,6 +31,7 @@ export const PRESENCE_LABEL: Record<Presence, [string, string]> = {
 
 /** Set your status line (emoji and words, cleared after a while) and how you show up. */
 export function StatusDialog({ me, onClose }: { me: Me; onClose: () => void }) {
+  const t = useT();
   const [emoji, setEmoji] = useState(me.statusEmoji);
   const [text, setText] = useState(me.statusText);
   const [clear, setClear] = useState("never");
@@ -37,35 +40,35 @@ export function StatusDialog({ me, onClose }: { me: Me; onClose: () => void }) {
   const btn = useRef<HTMLButtonElement>(null);
   const [pending, start] = useTransition();
   const router = useRouter();
-  const save = (e: string, t: string) =>
+  const save = (e: string, text: string) =>
     start(async () => {
-      await setStatusAction({ emoji: e, text: t, clear, presence });
+      await setStatusAction({ emoji: e, text, clear, presence });
       router.refresh();
       onClose();
     });
   return (
     <Modal
-      title="Your status"
+      title={t("Your status")}
       onClose={onClose}
       footer={
         <>
           {me.statusText || me.statusEmoji ? (
             <button type="button" className="btn btn-ghost" onClick={() => save("", "")} disabled={pending}>
-              Clear status
+              {t("Clear status")}
             </button>
           ) : null}
           <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={() => save(emoji, text)}>
-            Save
+            {t("Save")}
           </button>
         </>
       }
     >
       <div className="stack">
         <div className="input-group">
-          <button type="button" ref={btn} className="icon-btn framed" style={{ width: 46, height: 46, fontSize: 22 }} onClick={() => setPicker((p) => !p)} aria-label="Pick an emoji">
+          <button type="button" ref={btn} className="icon-btn framed" style={{ width: 46, height: 46, fontSize: 22 }} onClick={() => setPicker((p) => !p)} aria-label={t("Pick an emoji")}>
             {emoji || <Smile size={20} />}
           </button>
-          <input className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={100} placeholder="What's up?" onKeyDown={(e) => e.key === "Enter" && save(emoji, text)} />
+          <input className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={100} placeholder={t("What's up?")} onKeyDown={(e) => e.key === "Enter" && save(emoji, text)} />
         </div>
         {picker ? (
           <EmojiPopover
@@ -78,39 +81,39 @@ export function StatusDialog({ me, onClose }: { me: Me; onClose: () => void }) {
           />
         ) : null}
         <div className="chip-row" style={{ flexWrap: "wrap" }}>
-          {PRESETS.map(([e, t]) => (
+          {PRESETS.map(([e, label]) => (
             <button
-              key={t}
+              key={label}
               type="button"
               className="pill soft"
               onClick={() => {
                 setEmoji(e);
-                setText(t);
+                setText(t(label));
               }}
             >
-              {e} {t}
+              {e} {t(label)}
             </button>
           ))}
         </div>
         <div className="field">
-          <label htmlFor="st-clear">Clear after</label>
+          <label htmlFor="st-clear">{t("Clear after")}</label>
           <select id="st-clear" className="select" value={clear} onChange={(e) => setClear(e.target.value)}>
-            <option value="never">Don&apos;t clear</option>
-            <option value="30m">30 minutes</option>
-            <option value="1h">1 hour</option>
-            <option value="4h">4 hours</option>
-            <option value="today">Today</option>
-            <option value="week">This week</option>
+            <option value="never">{t("Don't clear")}</option>
+            <option value="30m">{t("30 minutes")}</option>
+            <option value="1h">{t("1 hour")}</option>
+            <option value="4h">{t("4 hours")}</option>
+            <option value="today">{t("Today")}</option>
+            <option value="week">{t("This week")}</option>
           </select>
         </div>
         <div className="field">
-          <span className="label">Show me as</span>
+          <span className="label">{t("Show me as")}</span>
           <div className="stack tight">
             {(Object.keys(PRESENCE_LABEL) as Presence[]).map((p) => (
               <label key={p} className="check">
                 <input type="radio" name="presence" checked={presence === p} onChange={() => setPresence(p)} />
                 <span>
-                  <b>{PRESENCE_LABEL[p][0]}</b> <span className="muted small">· {PRESENCE_LABEL[p][1]}</span>
+                  <b>{t(PRESENCE_LABEL[p][0])}</b> <span className="muted small">· {t(PRESENCE_LABEL[p][1])}</span>
                 </span>
               </label>
             ))}

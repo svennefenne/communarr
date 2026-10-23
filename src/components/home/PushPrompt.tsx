@@ -5,7 +5,7 @@ import { BellRing, Smartphone, X } from "lucide-react";
 import { enablePush, pushState, type PushState } from "@/components/app/push";
 import { Modal } from "@/components/ui/ui";
 import { InstallHelp } from "@/components/shell/InstallButton";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 
 const KEY = "hd.pushPrompt";
 
@@ -15,6 +15,7 @@ export function PushPrompt() {
   const [hidden, setHidden] = useState(true);
   const [help, setHelp] = useState(false);
   const [busy, setBusy] = useState(false);
+  const t = useT();
   const toast = useToast();
   useEffect(() => {
     try {
@@ -37,12 +38,12 @@ export function PushPrompt() {
     <div className="panel push-prompt">
       <span className="kind-icon event">{state === "needs-install" ? <Smartphone size={20} /> : <BellRing size={20} />}</span>
       <div className="grow" style={{ minWidth: 0 }}>
-        <b>{state === "needs-install" ? "Get notifications on your iPhone" : "Get notified on this device?"}</b>
-        <div className="small muted">{state === "needs-install" ? "Add the site to your home screen first, then open it from there." : "Messages, mentions, invites and reminders, even with the site closed."}</div>
+        <b>{t(state === "needs-install" ? "Get notifications on your iPhone" : "Get notified on this device?")}</b>
+        <div className="small muted">{t(state === "needs-install" ? "Add the site to your home screen first, then open it from there." : "Messages, mentions, invites and reminders, even with the site closed.")}</div>
       </div>
       {state === "needs-install" ? (
         <button type="button" className="btn btn-primary btn-sm" onClick={() => setHelp(true)}>
-          Show me how
+          {t("Show me how")}
         </button>
       ) : (
         <button
@@ -53,18 +54,18 @@ export function PushPrompt() {
             const s = await enablePush().catch(() => "off" as PushState);
             setBusy(false);
             setState(s);
-            if (s === "on") toast("Notifications are on for this device.");
-            else if (s === "denied") toast("The browser said no. You can allow notifications in the site settings.", { kind: "err" });
+            if (s === "on") toast(t("Notifications are on for this device."));
+            else if (s === "denied") toast(t("The browser said no. You can allow notifications in the site settings."), { kind: "err" });
           }}
         >
-          Turn on
+          {t("Turn on")}
         </button>
       )}
-      <button type="button" className="icon-btn sm" onClick={dismiss} aria-label="Not now">
+      <button type="button" className="icon-btn sm" onClick={dismiss} aria-label={t("Not now")}>
         <X size={16} />
       </button>
       {help ? (
-        <Modal title="Add to your home screen" onClose={() => setHelp(false)}>
+        <Modal title={t("Add to your home screen")} onClose={() => setHelp(false)}>
           <InstallHelp />
         </Modal>
       ) : null}

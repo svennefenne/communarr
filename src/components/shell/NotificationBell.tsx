@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AtSign, Bell, CalendarDays, CheckCheck, Heart, Mail, Megaphone, MessageCircle, MessagesSquare, UsersRound, Vote } from "lucide-react";
-import { useApp, useLive } from "@/components/app/AppProvider";
+import { useApp, useLive, useT } from "@/components/app/AppProvider";
 import { useDropdown } from "@/components/ui/ui";
 import { Avatar } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
@@ -27,6 +27,7 @@ export const KIND_ICON: Record<string, React.ComponentType<{ size?: number }>> =
 
 export function NotificationRow({ n, onOpen }: { n: NotificationItem; onOpen?: () => void }) {
   const Icon = KIND_ICON[n.kind] || Bell;
+  const t = useT();
   return (
     <Link href={n.url} className={`list-row notif-row ${n.read ? "" : "unread"}`} onClick={onOpen}>
       <span className="notif-pic">
@@ -42,13 +43,14 @@ export function NotificationRow({ n, onOpen }: { n: NotificationItem; onOpen?: (
           <Time t={n.createdAt} />
         </span>
       </span>
-      {!n.read ? <span className="dot" aria-label="Unread" /> : null}
+      {!n.read ? <span className="dot" aria-label={t("Unread")} /> : null}
     </Link>
   );
 }
 
 export function NotificationBell() {
   const { counts } = useApp();
+  const t = useT();
   const router = useRouter();
   const { open, setOpen, ref } = useDropdown();
   const [items, setItems] = useState<NotificationItem[] | null>(null);
@@ -73,16 +75,16 @@ export function NotificationBell() {
 
   return (
     <div className="menu-wrap" ref={ref}>
-      <button type="button" className="icon-btn" onClick={click} aria-label={`Notifications${counts.notifications ? ` (${counts.notifications} new)` : ""}`} aria-expanded={open}>
+      <button type="button" className="icon-btn" onClick={click} aria-label={counts.notifications ? t("Notifications ({n} new)", { n: counts.notifications }) : t("Notifications")} aria-expanded={open}>
         <Bell size={20} />
         {counts.notifications ? <span className="count-badge">{counts.notifications > 99 ? "99+" : counts.notifications}</span> : null}
       </button>
       {open ? (
-        <div className="panel menu down right notif-menu" role="dialog" aria-label="Notifications">
+        <div className="panel menu down right notif-menu" role="dialog" aria-label={t("Notifications")}>
           <div className="row between" style={{ padding: "8px 10px 6px 12px" }}>
-            <span className="eyebrow">Notifications</span>
+            <span className="eyebrow">{t("Notifications")}</span>
             <button type="button" className="btn btn-ghost btn-xs" onClick={readAll} disabled={!counts.notifications}>
-              <CheckCheck size={14} /> Mark all read
+              <CheckCheck size={14} /> {t("Mark all read")}
             </button>
           </div>
           <div className="notif-scroll">
@@ -94,11 +96,11 @@ export function NotificationBell() {
             ) : items.length ? (
               items.slice(0, 15).map((n) => <NotificationRow key={n.id} n={n} onOpen={() => setOpen(false)} />)
             ) : (
-              <div className="empty small">Nothing yet. Mentions, replies, invites and reminders show up here.</div>
+              <div className="empty small">{t("Nothing yet. Mentions, replies, invites and reminders show up here.")}</div>
             )}
           </div>
           <Link href="/notifications" className="menu-item" style={{ justifyContent: "center", borderTop: "1px solid var(--line)", borderRadius: 0 }} onClick={() => setOpen(false)}>
-            See all
+            {t("See all")}
           </Link>
         </div>
       ) : null}

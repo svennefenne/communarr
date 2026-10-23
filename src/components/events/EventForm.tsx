@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { ImagePlus, Send, X } from "lucide-react";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile } from "@/components/ui/ui";
 import type { EventView } from "@/lib/contentTypes";
@@ -27,6 +27,7 @@ function initialStart(date?: string): Date {
 export function EventForm({ groups, event, date, groupId }: { groups: { id: number; name: string }[]; event?: EventView; date?: string; groupId?: number }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const ed = useRef<EditorHandle>(null);
   const s0 = event ? new Date(event.startAt) : initialStart(date);
   const e0 = event ? new Date(event.endAt) : new Date(s0.getTime() + 2 * 3600_000);
@@ -67,13 +68,13 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
 
   const submit = () => {
     if (ed.current?.busy()) {
-      toast("Wait for the pictures to finish uploading.");
+      toast(t("Wait for the pictures to finish uploading."));
       return;
     }
     const startAt = allDay ? new Date(`${sd}T00:00`).getTime() : new Date(`${sd}T${st}`).getTime();
     const endAt = allDay ? new Date(`${edd}T23:59:59`).getTime() : new Date(`${edd}T${et}`).getTime();
     if (endAt < startAt) {
-      toast("It ends before it starts.", { kind: "err" });
+      toast(t("It ends before it starts."), { kind: "err" });
       return;
     }
     start(async () => {
@@ -105,23 +106,23 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
   return (
     <div className="stack loose">
       <div className="field">
-        <label htmlFor="ef-title">What</label>
-        <input id="ef-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} placeholder="Game night at mine" autoFocus={!event} style={{ fontSize: "1.1rem", fontWeight: 700 }} />
+        <label htmlFor="ef-title">{t("What")}</label>
+        <input id="ef-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} placeholder={t("Game night at mine")} autoFocus={!event} style={{ fontSize: "1.1rem", fontWeight: 700 }} />
       </div>
       <div className="panel-pad-sm inset stack">
         <label className="check">
-          <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} /> All day
+          <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} /> {t("All day")}
         </label>
         <div className="grid-2">
           <div className="field">
-            <label>Starts</label>
+            <label>{t("Starts")}</label>
             <div className="input-group">
               <input type="date" className="input" value={sd} onChange={(e) => setStartDate(e.target.value)} />
               {!allDay ? <input type="time" className="input" value={st} onChange={(e) => setStartTime(e.target.value)} style={{ maxWidth: 140 }} /> : null}
             </div>
           </div>
           <div className="field">
-            <label>Ends</label>
+            <label>{t("Ends")}</label>
             <div className="input-group">
               <input type="date" className="input" value={edd} min={sd} onChange={(e) => setEdd(e.target.value)} />
               {!allDay ? <input type="time" className="input" value={et} onChange={(e) => setEt(e.target.value)} style={{ maxWidth: 140 }} /> : null}
@@ -130,18 +131,18 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         </div>
         <div className="grid-2">
           <div className="field">
-            <label htmlFor="ef-repeat">Repeats</label>
+            <label htmlFor="ef-repeat">{t("Repeats")}</label>
             <select id="ef-repeat" className="select" value={repeat} onChange={(e) => setRepeat(e.target.value as EventView["repeat"])}>
-              <option value="none">Doesn&apos;t repeat</option>
-              <option value="daily">Every day</option>
-              <option value="weekly">Every week</option>
-              <option value="monthly">Every month</option>
-              <option value="yearly">Every year</option>
+              <option value="none">{t("Doesn't repeat")}</option>
+              <option value="daily">{t("Every day")}</option>
+              <option value="weekly">{t("Every week")}</option>
+              <option value="monthly">{t("Every month")}</option>
+              <option value="yearly">{t("Every year")}</option>
             </select>
           </div>
           {repeat !== "none" ? (
             <div className="field">
-              <label htmlFor="ef-until">Until (optional)</label>
+              <label htmlFor="ef-until">{t("Until (optional)")}</label>
               <input id="ef-until" type="date" className="input" value={until} min={sd} onChange={(e) => setUntil(e.target.value)} />
             </div>
           ) : null}
@@ -149,17 +150,17 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
       </div>
       <div className="grid-2">
         <div className="field">
-          <label htmlFor="ef-where">Where</label>
-          <input id="ef-where" className="input" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} placeholder="An address, a place, or a link" />
+          <label htmlFor="ef-where">{t("Where")}</label>
+          <input id="ef-where" className="input" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} placeholder={t("An address, a place, or a link")} />
         </div>
         <div className="field">
-          <label htmlFor="ef-cap">How many can come (optional)</label>
-          <input id="ef-cap" type="number" min={1} className="input" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="No limit" />
+          <label htmlFor="ef-cap">{t("How many can come (optional)")}</label>
+          <input id="ef-cap" type="number" min={1} className="input" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder={t("No limit")} />
         </div>
       </div>
       <div className="grid-2">
         <div className="field">
-          <span className="label">Colour in the calendar</span>
+          <span className="label">{t("Colour in the calendar")}</span>
           <div className="swatches">
             {COLORS.map((c) => (
               <button key={c} type="button" className={`swatch ${color === c ? "on" : ""}`} style={{ background: c, width: 32, height: 32 }} onClick={() => setColor(c)} aria-label={c} />
@@ -167,17 +168,17 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
           </div>
         </div>
         <div className="field">
-          <span className="label">Picture (optional)</span>
+          <span className="label">{t("Picture (optional)")}</span>
           <div className="row wrap">
             {cover ? (
               <span className="cover-preview" style={{ backgroundImage: `url("${cover}")` }}>
-                <button type="button" className="icon-btn xs" onClick={() => setCover(null)} aria-label="Remove the picture">
+                <button type="button" className="icon-btn xs" onClick={() => setCover(null)} aria-label={t("Remove the picture")}>
                   <X size={14} />
                 </button>
               </span>
             ) : null}
             <label className="btn btn-sm">
-              <ImagePlus size={15} /> {cover ? "Change" : "Add a picture"}
+              <ImagePlus size={15} /> {cover ? t("Change") : t("Add a picture")}
               <input
                 type="file"
                 accept="image/*"
@@ -189,7 +190,7 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
                   try {
                     setCover((await uploadFile(f, "cover")).url);
                   } catch (err) {
-                    toast(err instanceof Error ? err.message : "The upload didn't work.", { kind: "err" });
+                    toast(err instanceof Error ? err.message : t("The upload didn't work."), { kind: "err" });
                   }
                 }}
               />
@@ -198,14 +199,14 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         </div>
       </div>
       <div className="field">
-        <span className="label">Details</span>
-        <RichEditor ref={ed} initial={event?.html} placeholder="What to bring, what's the plan… @mention people to invite them." minHeight={150} draftKey={event ? undefined : "event"} />
+        <span className="label">{t("Details")}</span>
+        <RichEditor ref={ed} initial={event?.html} placeholder={t("What to bring, what's the plan… @mention people to invite them.")} minHeight={150} draftKey={event ? undefined : "event"} />
       </div>
       {!event && groups.length ? (
         <div className="field">
-          <label htmlFor="ef-group">For</label>
+          <label htmlFor="ef-group">{t("For")}</label>
           <select id="ef-group" className="select" value={group} onChange={(e) => setGroup(e.target.value ? Number(e.target.value) : "")}>
-            <option value="">Everyone</option>
+            <option value="">{t("Everyone")}</option>
             {groups.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name}
@@ -216,10 +217,10 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
       ) : null}
       <div className="row" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-ghost" onClick={() => router.back()}>
-          Cancel
+          {t("Cancel")}
         </button>
         <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={submit}>
-          <Send size={16} /> {event ? "Save" : "Plan it"}
+          <Send size={16} /> {event ? t("Save") : t("Plan it")}
         </button>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { NodeSelection } from "@tiptap/pm/state";
 import { AlignCenter, AlignLeft, AlignRight, Bold, ExternalLink, Highlighter, Italic, Link2, Pencil, RemoveFormatting, Strikethrough, Trash2, Underline, Unlink } from "lucide-react";
 import { HIGHLIGHTS, TEXT_COLORS } from "./Toolbar";
 import { Modal } from "@/components/ui/ui";
+import { useT } from "@/components/app/AppProvider";
 
 const isImage = (e: Editor) => e.state.selection instanceof NodeSelection && e.state.selection.node.type.name === "image";
 const touch = () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
@@ -26,6 +27,7 @@ export function TextBubble({ editor, onLink }: { editor: Editor; onLink: () => v
     editor,
     selector: ({ editor: e }) => ({ bold: e.isActive("bold"), italic: e.isActive("italic"), underline: e.isActive("underline"), strike: e.isActive("strike"), link: e.isActive("link") }),
   });
+  const t = useT();
   const [colors, setColors] = useState(false);
   const c = () => editor.chain().focus();
   return (
@@ -42,36 +44,36 @@ export function TextBubble({ editor, onLink }: { editor: Editor; onLink: () => v
             <button key={col} type="button" className="swatch" style={{ background: col }} aria-label={col} onMouseDown={(e) => e.preventDefault()} onClick={() => c().setColor(col).run()} />
           ))}
           {HIGHLIGHTS.slice(0, 5).map((col) => (
-            <button key={col} type="button" className="swatch" style={{ background: col, borderRadius: 13 }} aria-label={`Highlight ${col}`} onMouseDown={(e) => e.preventDefault()} onClick={() => c().setHighlight({ color: col }).run()} />
+            <button key={col} type="button" className="swatch" style={{ background: col, borderRadius: 13 }} aria-label={t("Highlight {color}", { color: col })} onMouseDown={(e) => e.preventDefault()} onClick={() => c().setHighlight({ color: col }).run()} />
           ))}
-          <B label="Back" onClick={() => setColors(false)}>
+          <B label={t("Back")} onClick={() => setColors(false)}>
             ←
           </B>
         </div>
       ) : (
         <>
-          <B label="Bold" on={s.bold} onClick={() => c().toggleBold().run()}>
+          <B label={t("Bold")} on={s.bold} onClick={() => c().toggleBold().run()}>
             <Bold size={16} />
           </B>
-          <B label="Italic" on={s.italic} onClick={() => c().toggleItalic().run()}>
+          <B label={t("Italic")} on={s.italic} onClick={() => c().toggleItalic().run()}>
             <Italic size={16} />
           </B>
-          <B label="Underline" on={s.underline} onClick={() => c().toggleUnderline().run()}>
+          <B label={t("Underline")} on={s.underline} onClick={() => c().toggleUnderline().run()}>
             <Underline size={16} />
           </B>
-          <B label="Strikethrough" on={s.strike} onClick={() => c().toggleStrike().run()}>
+          <B label={t("Strikethrough")} on={s.strike} onClick={() => c().toggleStrike().run()}>
             <Strikethrough size={16} />
           </B>
-          <B label="Colour" onClick={() => setColors(true)}>
+          <B label={t("Colour")} onClick={() => setColors(true)}>
             <span className="tb-color">
               <Highlighter size={15} />
               <i style={{ background: "linear-gradient(90deg,#e2533a,#e2a634,#5cc46a,#3fa7d6,#8b5cf6)" }} />
             </span>
           </B>
-          <B label="Link" on={s.link} onClick={onLink}>
+          <B label={t("Link")} on={s.link} onClick={onLink}>
             <Link2 size={16} />
           </B>
-          <B label="Clear formatting" onClick={() => c().unsetAllMarks().run()}>
+          <B label={t("Clear formatting")} onClick={() => c().unsetAllMarks().run()}>
             <RemoveFormatting size={16} />
           </B>
         </>
@@ -82,6 +84,7 @@ export function TextBubble({ editor, onLink }: { editor: Editor; onLink: () => v
 
 /** The link under the cursor: where it goes, edit, open, remove. */
 export function LinkBubble({ editor, onEdit }: { editor: Editor; onEdit: () => void }) {
+  const t = useT();
   const href = useEditorState({ editor, selector: ({ editor: e }) => (e.isActive("link") ? (e.getAttributes("link").href as string) : "") });
   return (
     <BubbleMenu
@@ -94,13 +97,13 @@ export function LinkBubble({ editor, onEdit }: { editor: Editor; onEdit: () => v
       <a href={href} target="_blank" rel="noopener noreferrer" className="ed-link-url" title={href}>
         {href.replace(/^https?:\/\//, "")}
       </a>
-      <B label="Edit link" onClick={onEdit}>
+      <B label={t("Edit link")} onClick={onEdit}>
         <Pencil size={15} />
       </B>
-      <B label="Open" onClick={() => window.open(href, "_blank", "noopener")}>
+      <B label={t("Open link")} onClick={() => window.open(href, "_blank", "noopener")}>
         <ExternalLink size={15} />
       </B>
-      <B label="Remove link" onClick={() => editor.chain().focus().extendMarkRange("link").unsetLink().run()}>
+      <B label={t("Remove link")} onClick={() => editor.chain().focus().extendMarkRange("link").unsetLink().run()}>
         <Unlink size={15} />
       </B>
     </BubbleMenu>
@@ -113,6 +116,7 @@ export function ImageBubble({ editor }: { editor: Editor }) {
     editor,
     selector: ({ editor: e }) => (isImage(e) ? { align: (e.getAttributes("image").align as string) || "", alt: (e.getAttributes("image").alt as string) || "", width: e.getAttributes("image").width as number | null } : null),
   });
+  const t = useT();
   const [alt, setAlt] = useState<string | null>(null);
   const width = (f: number) => {
     const full = (editor.view.dom as HTMLElement).clientWidth - 24;
@@ -124,39 +128,39 @@ export function ImageBubble({ editor }: { editor: Editor }) {
   return (
     <>
       <BubbleMenu editor={editor} pluginKey="imageBubble" options={{ placement: "top", offset: 8 }} shouldShow={({ editor: e }) => isImage(e) && e.isEditable} className="panel ed-bubble">
-        <B label="Small" onClick={() => width(0.33)}>
+        <B label={t("Small")} onClick={() => width(0.33)}>
           <span className="tb-text">S</span>
         </B>
-        <B label="Medium" onClick={() => width(0.55)}>
+        <B label={t("Medium")} onClick={() => width(0.55)}>
           <span className="tb-text">M</span>
         </B>
-        <B label="Large" onClick={() => width(0.8)}>
+        <B label={t("Large")} onClick={() => width(0.8)}>
           <span className="tb-text">L</span>
         </B>
-        <B label="Full width" onClick={() => editor.chain().focus().updateAttributes("image", { width: null, height: null }).run()}>
+        <B label={t("Full width")} onClick={() => editor.chain().focus().updateAttributes("image", { width: null, height: null }).run()}>
           <span className="tb-text">Full</span>
         </B>
         <span className="tb-sep" />
-        <B label="Left, text beside it" on={s?.align === "left"} onClick={() => editor.chain().focus().updateAttributes("image", { align: s?.align === "left" ? null : "left" }).run()}>
+        <B label={t("Left, text beside it")} on={s?.align === "left"} onClick={() => editor.chain().focus().updateAttributes("image", { align: s?.align === "left" ? null : "left" }).run()}>
           <AlignLeft size={16} />
         </B>
-        <B label="Centre" on={s?.align === "center"} onClick={() => editor.chain().focus().updateAttributes("image", { align: s?.align === "center" ? null : "center" }).run()}>
+        <B label={t("Centre")} on={s?.align === "center"} onClick={() => editor.chain().focus().updateAttributes("image", { align: s?.align === "center" ? null : "center" }).run()}>
           <AlignCenter size={16} />
         </B>
-        <B label="Right, text beside it" on={s?.align === "right"} onClick={() => editor.chain().focus().updateAttributes("image", { align: s?.align === "right" ? null : "right" }).run()}>
+        <B label={t("Right, text beside it")} on={s?.align === "right"} onClick={() => editor.chain().focus().updateAttributes("image", { align: s?.align === "right" ? null : "right" }).run()}>
           <AlignRight size={16} />
         </B>
         <span className="tb-sep" />
-        <B label="Description (for screen readers)" onClick={() => setAlt(s?.alt ?? "")}>
+        <B label={t("Description (for screen readers)")} onClick={() => setAlt(s?.alt ?? "")}>
           <span className="tb-text">Alt</span>
         </B>
-        <B label="Remove the picture" onClick={() => editor.chain().focus().deleteSelection().run()}>
+        <B label={t("Remove the picture")} onClick={() => editor.chain().focus().deleteSelection().run()}>
           <Trash2 size={16} />
         </B>
       </BubbleMenu>
       {alt !== null ? (
         <Modal
-          title="Describe the picture"
+          title={t("Describe the picture")}
           onClose={() => setAlt(null)}
           footer={
             <button
@@ -167,12 +171,12 @@ export function ImageBubble({ editor }: { editor: Editor }) {
                 setAlt(null);
               }}
             >
-              Save
+              {t("Save")}
             </button>
           }
         >
-          <input className="input" value={alt} onChange={(e) => setAlt(e.target.value)} maxLength={300} placeholder="A dog on a skateboard" autoFocus />
-          <p className="hint">Read out by screen readers, and shown if the picture can&apos;t load.</p>
+          <input className="input" value={alt} onChange={(e) => setAlt(e.target.value)} maxLength={300} placeholder={t("A dog on a skateboard")} autoFocus />
+          <p className="hint">{t("Read out by screen readers, and shown if the picture can't load.")}</p>
         </Modal>
       ) : null}
     </>
@@ -181,6 +185,7 @@ export function ImageBubble({ editor }: { editor: Editor }) {
 
 /** Add or change a link: the words shown and where it goes. */
 export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () => void }) {
+  const t = useT();
   const existing = editor.isActive("link") ? (editor.getAttributes("link").href as string) : "";
   const { from, to, empty } = editor.state.selection;
   const selected = empty ? "" : editor.state.doc.textBetween(from, to, " ");
@@ -203,7 +208,7 @@ export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () =>
   };
   return (
     <Modal
-      title={existing ? "Edit the link" : "Add a link"}
+      title={existing ? t("Edit the link") : t("Add a link")}
       onClose={onClose}
       footer={
         <>
@@ -216,11 +221,11 @@ export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () =>
                 onClose();
               }}
             >
-              <Unlink size={15} /> Remove link
+              <Unlink size={15} /> {t("Remove link")}
             </button>
           ) : null}
           <button type="button" className="btn btn-primary" onClick={save}>
-            {existing ? "Save" : "Add link"}
+            {existing ? t("Save") : t("Add link")}
           </button>
         </>
       }
@@ -233,17 +238,17 @@ export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () =>
         }}
       >
         <div className="field">
-          <label htmlFor="ld-url">Address</label>
-          <input id="ld-url" className="input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://… or paste a link" inputMode="url" autoComplete="off" autoFocus />
+          <label htmlFor="ld-url">{t("Address")}</label>
+          <input id="ld-url" className="input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder={t("https://… or paste a link")} inputMode="url" autoComplete="off" autoFocus />
         </div>
         {needsText ? (
           <div className="field">
-            <label htmlFor="ld-text">Text to show</label>
-            <input id="ld-text" className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Optional: the address is shown otherwise" />
+            <label htmlFor="ld-text">{t("Text to show")}</label>
+            <input id="ld-text" className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Optional: the address is shown otherwise")} />
           </div>
         ) : null}
         <p className="hint" style={{ margin: 0 }}>
-          Tip: paste a link straight into the text and it becomes a link by itself. Select words first and paste a link over them to link those words.
+          {t("Tip: paste a link straight into the text and it becomes a link by itself. Select words first and paste a link over them to link those words.")}
         </p>
         <button type="submit" hidden />
       </form>
@@ -253,20 +258,21 @@ export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () =>
 
 /** Add a YouTube video by its address. */
 export function VideoDialog({ editor, onClose }: { editor: Editor; onClose: () => void }) {
+  const t = useT();
   const [url, setUrl] = useState("");
   const [err, setErr] = useState("");
   const save = () => {
     const ok = editor.chain().focus().setYoutubeVideo({ src: url.trim() }).run();
     if (ok) onClose();
-    else setErr("That doesn't look like a YouTube address.");
+    else setErr(t("That doesn't look like a YouTube address."));
   };
   return (
     <Modal
-      title="Add a YouTube video"
+      title={t("Add a YouTube video")}
       onClose={onClose}
       footer={
         <button type="button" className="btn btn-primary" onClick={save}>
-          Add video
+          {t("Add video")}
         </button>
       }
     >

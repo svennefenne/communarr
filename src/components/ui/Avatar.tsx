@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { UserSummary } from "@/lib/types";
-import { usePresence } from "@/components/app/AppProvider";
+import { usePresence, useT } from "@/components/app/AppProvider";
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -22,15 +22,17 @@ export function Avatar({ user, size = 32, presence = false, className = "" }: { 
 }
 
 function PresenceDot({ id }: { id: number }) {
+  const t = useT();
   const s = usePresence(id);
   if (s === "offline") return null;
-  return <i className={`presence ${s}`} title={s === "online" ? "Online" : s === "away" ? "Away" : "Busy"} />;
+  return <i className={`presence ${s}`} title={s === "online" ? t("Online") : s === "away" ? t("Away") : t("Busy")} />;
 }
 
 export const ROLE_LABEL = { admin: "Admin", moderator: "Mod", member: "" } as const;
 
 /** Avatar and name, linking to the profile. */
 export function UserChip({ user, size = 28, presence = false, sub, showRole = false, noLink = false }: { user: UserSummary; size?: number; presence?: boolean; sub?: React.ReactNode; showRole?: boolean; noLink?: boolean }) {
+  const t = useT();
   const inner = (
     <>
       <Avatar user={user} size={size} presence={presence} />
@@ -38,7 +40,7 @@ export function UserChip({ user, size = 28, presence = false, sub, showRole = fa
         <span className="row" style={{ gap: 6 }}>
           <span className="user-name ellipsis">{user.name}</span>
           {user.statusEmoji ? <span title={user.statusText || undefined}>{user.statusEmoji}</span> : null}
-          {showRole && ROLE_LABEL[user.role] ? <span className="role-tag">{ROLE_LABEL[user.role]}</span> : null}
+          {showRole && ROLE_LABEL[user.role] ? <span className="role-tag">{t(ROLE_LABEL[user.role])}</span> : null}
         </span>
         {sub ? <span className="tiny muted ellipsis" style={{ fontWeight: 500 }}>{sub}</span> : null}
       </span>

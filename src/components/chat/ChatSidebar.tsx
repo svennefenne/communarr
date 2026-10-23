@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 import { Hash, Headphones, Lock, Mail, Plus, Search, UsersRound } from "lucide-react";
 import type { RoomInfo } from "@/lib/chatTypes";
 import type { ChatMessage } from "@/lib/chatTypes";
-import { useApp, useLive, useToast } from "@/components/app/AppProvider";
+import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { useVoice } from "@/components/voice/VoiceProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { relative } from "@/components/ui/Time";
@@ -22,7 +22,11 @@ export function RoomIcon({ r, size = 38 }: { r: Pick<RoomInfo, "kind" | "emoji" 
   );
 }
 
+/** "5 min ago" without the "ago" (and "för 5 min sedan" without "för … sedan"): the list is tight. */
+const short = (s: string) => s.replace(/ ago$/, "").replace(/^för (.+) sedan$/, "$1");
+
 function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unread: number; talking: number }) {
+  const t = useT();
   return (
     <Link href={`/chat/${r.id}`} className={`chat-row ${active ? "active" : ""} ${unread ? "unread" : ""}`}>
       <RoomIcon r={r} />
@@ -31,14 +35,14 @@ function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unr
           <b className="ellipsis grow">{r.name}</b>
           {r.lastMessageAt ? (
             <span className="tiny faint" suppressHydrationWarning>
-              {relative(r.lastMessageAt).replace(" ago", "")}
+              {short(relative(r.lastMessageAt))}
             </span>
           ) : null}
         </span>
         <span className="row" style={{ gap: 6 }}>
           <span className="tiny muted ellipsis grow">{r.lastMessage ? `${r.lastMessage.author ? `${r.lastMessage.author.split(" ")[0]}: ` : ""}${r.lastMessage.text}` : r.topic || " "}</span>
           {talking ? (
-            <span className="badge teal" title={`${talking} talking`}>
+            <span className="badge teal" title={t("{n} talking", { n: talking })}>
               <Headphones size={11} /> {talking}
             </span>
           ) : null}
@@ -52,6 +56,7 @@ function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unr
 /** The list of chats: invitations, your rooms and messages, and open rooms you could join. */
 export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: RoomInfo[]; invites: RoomInfo[] } }) {
   const { counts, site } = useApp();
+  const t = useT();
   const voice = useVoice();
   const toast = useToast();
   const router = useRouter();
@@ -74,7 +79,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
         void refresh();
         return x;
       }
-      const r = { ...x.mine[i], lastMessageAt: message.createdAt, lastMessage: { author: message.author?.name ?? "", text: message.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "📷 Picture" } };
+      const r = { ...x.mine[i], lastMessageAt: message.createdAt, lastMessage: { author: message.author?.name ?? "", text: message.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || t("📷 Picture") } };
       return { ...x, mine: [r, ...x.mine.filter((_, j) => j !== i)] };
     });
   });
@@ -87,25 +92,25 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   return (
     <aside className="panel chat-side">
       <div className="chat-side-head">
-        <h1 className="h2">Chat</h1>
+        <h1 className="h2">{t("Chat")}</h1>
         <span className="spacer" />
-        <button type="button" className="icon-btn framed sm" onClick={() => setCreating("dm")} title="Message someone" aria-label="Message someone">
+        <button type="button" className="icon-btn framed sm" onClick={() => setCreating("dm")} title={t("Message someone")} aria-label={t("Message someone")}>
           <Mail size={16} />
         </button>
         {site.can.rooms ? (
-          <button type="button" className="icon-btn framed sm" onClick={() => setCreating("room")} title="New room" aria-label="New room">
+          <button type="button" className="icon-btn framed sm" onClick={() => setCreating("room")} title={t("New room")} aria-label={t("New room")}>
             <Plus size={17} />
           </button>
         ) : null}
       </div>
       <div className="chat-search">
         <Search size={15} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a chat" aria-label="Find a chat" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Find a chat")} aria-label={t("Find a chat")} />
       </div>
       <div className="chat-side-scroll">
         {data.invites.length ? (
           <>
-            <div className="menu-label">Invitations</div>
+            <div className="menu-label">{t("Invitations")}</div>
             {data.invites.map((r) => (
               <div key={r.id} className="chat-row invite">
                 <RoomIcon r={r} />
@@ -125,7 +130,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
                         } else toast(res.error, { kind: "err" });
                       }}
                     >
-                      Join
+                      {t("Join")}
                     </button>
                     <button
                       type="button"
@@ -135,7 +140,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
                         await refresh();
                       }}
                     >
-                      No thanks
+                      {t("No thanks")}
                     </button>
                   </span>
                 </span>
@@ -143,23 +148,23 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
             ))}
           </>
         ) : null}
-        <div className="menu-label">Rooms</div>
+        <div className="menu-label">{t("Rooms")}</div>
         {rooms.map((r) => (
           <Row key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
         ))}
-        {!rooms.length ? <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>No rooms{q ? " found" : " yet"}.</div> : null}
-        <div className="menu-label">Direct messages</div>
+        {!rooms.length ? <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>{q ? t("No rooms found.") : t("No rooms yet.")}</div> : null}
+        <div className="menu-label">{t("Direct messages")}</div>
         {dms.map((r) => (
           <Row key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
         ))}
         {!dms.length ? (
           <button type="button" className="btn btn-ghost btn-xs" style={{ margin: "2px 10px 10px" }} onClick={() => setCreating("dm")}>
-            <Mail size={13} /> Message someone
+            <Mail size={13} /> {t("Message someone")}
           </button>
         ) : null}
         {open.length ? (
           <>
-            <div className="menu-label">Open rooms to join</div>
+            <div className="menu-label">{t("Open rooms to join")}</div>
             {open.map((r) => (
               <Row key={r.id} r={r} active={r.id === activeId} unread={0} talking={voice.channels[r.id]?.length ?? 0} />
             ))}

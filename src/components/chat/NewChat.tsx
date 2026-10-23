@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Globe, Lock, Search, Smile } from "lucide-react";
 import type { UserSummary } from "@/lib/types";
-import { useApp, useToast } from "@/components/app/AppProvider";
+import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Modal } from "@/components/ui/ui";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmojiPopover } from "@/components/ui/EmojiPicker";
@@ -14,6 +14,7 @@ import { createRoomAction, dmAction } from "@/app/actions/chat";
 /** Start a chat: a direct message with someone, or a new room (open to all, or private by invitation). */
 export function NewChat({ onClose, initial = "dm" }: { onClose: () => void; initial?: "dm" | "room" }) {
   const { me, site } = useApp();
+  const t = useT();
   const router = useRouter();
   const toast = useToast();
   const [tab, setTab] = useState<"dm" | "room">(site.can.rooms ? initial : "dm");
@@ -49,14 +50,14 @@ export function NewChat({ onClose, initial = "dm" }: { onClose: () => void; init
       } else toast(r.error, { kind: "err" });
     });
   return (
-    <Modal title="New chat" onClose={onClose}>
+    <Modal title={t("New chat")} onClose={onClose}>
       {site.can.rooms ? (
         <div className="pills" style={{ marginBottom: 14 }}>
           <button type="button" className={`pill ${tab === "dm" ? "active" : ""}`} onClick={() => setTab("dm")}>
-            Message someone
+            {t("Message someone")}
           </button>
           <button type="button" className={`pill ${tab === "room" ? "active" : ""}`} onClick={() => setTab("room")}>
-            New room
+            {t("New room")}
           </button>
         </div>
       ) : null}
@@ -64,7 +65,7 @@ export function NewChat({ onClose, initial = "dm" }: { onClose: () => void; init
         <div className="stack">
           <div className="search-bar inset" style={{ borderRadius: 12, padding: "8px 12px" }}>
             <Search size={17} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Who do you want to talk to?" autoFocus style={{ fontSize: "1rem" }} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Who do you want to talk to?")} autoFocus style={{ fontSize: "1rem" }} />
           </div>
           <div className="list inset picker-list">
             {list.map((u) => (
@@ -85,10 +86,10 @@ export function NewChat({ onClose, initial = "dm" }: { onClose: () => void; init
       ) : (
         <div className="stack">
           <div className="input-group">
-            <button ref={emojiBtn} type="button" className="icon-btn framed" style={{ width: 46, height: 46, fontSize: 22 }} onClick={() => setPicker((p) => !p)} aria-label="Room emoji">
+            <button ref={emojiBtn} type="button" className="icon-btn framed" style={{ width: 46, height: 46, fontSize: 22 }} onClick={() => setPicker((p) => !p)} aria-label={t("Room emoji")}>
               {emoji || <Smile size={20} />}
             </button>
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Room name" maxLength={40} autoFocus />
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Room name")} maxLength={40} autoFocus />
           </div>
           {picker ? (
             <EmojiPopover
@@ -100,20 +101,20 @@ export function NewChat({ onClose, initial = "dm" }: { onClose: () => void; init
               onClose={() => setPicker(false)}
             />
           ) : null}
-          <input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="What's it for? (optional)" maxLength={200} />
+          <input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={t("What's it for? (optional)")} maxLength={200} />
           <div className="privacy-pick" style={{ gridTemplateColumns: "1fr 1fr" }}>
             <button type="button" className={`privacy-opt ${visibility === "open" ? "on" : ""}`} onClick={() => setVisibility("open")}>
               <Globe size={20} />
-              <b>Open</b>
-              <span className="tiny muted">Everyone can see it and join.</span>
+              <b>{t("Open")}</b>
+              <span className="tiny muted">{t("Everyone can see it and join.")}</span>
             </button>
             <button type="button" className={`privacy-opt ${visibility === "private" ? "on" : ""}`} onClick={() => setVisibility("private")}>
               <Lock size={20} />
-              <b>Private</b>
-              <span className="tiny muted">Only people you invite.</span>
+              <b>{t("Private")}</b>
+              <span className="tiny muted">{t("Only people you invite.")}</span>
             </button>
           </div>
-          <span className="label">Invite people{invite.length ? ` · ${invite.length}` : ""}</span>
+          <span className="label">{t("Invite people")}{invite.length ? ` · ${invite.length}` : ""}</span>
           <div className="list inset picker-list" style={{ maxHeight: 220 }}>
             {people.map((u) => (
               <label key={u.id} className={`list-row ${invite.includes(u.id) ? "unread" : ""}`} style={{ cursor: "pointer" }}>
@@ -125,7 +126,7 @@ export function NewChat({ onClose, initial = "dm" }: { onClose: () => void; init
           </div>
           <div className="row" style={{ justifyContent: "flex-end" }}>
             <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={create} disabled={!name.trim()}>
-              Make the room
+              {t("Make the room")}
             </button>
           </div>
         </div>

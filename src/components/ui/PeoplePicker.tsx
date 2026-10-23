@@ -6,9 +6,11 @@ import type { UserSummary } from "@/lib/types";
 import { loadMembers } from "@/components/editor/mention";
 import { Avatar } from "./Avatar";
 import { Modal } from "./ui";
+import { useT } from "@/components/app/AppProvider";
 
 /** Pick people (to invite somewhere): search, tick, done. `exclude`: already in. */
-export function PeoplePicker({ title, exclude = [], onDone, onClose, confirm = "Invite" }: { title: string; exclude?: number[]; onDone: (ids: number[]) => void | Promise<void>; onClose: () => void; confirm?: string }) {
+export function PeoplePicker({ title, exclude = [], onDone, onClose, confirm }: { title: string; exclude?: number[]; onDone: (ids: number[]) => void | Promise<void>; onClose: () => void; confirm?: string }) {
+  const t = useT();
   const [all, setAll] = useState<UserSummary[] | null>(null);
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<number[]>([]);
@@ -27,7 +29,7 @@ export function PeoplePicker({ title, exclude = [], onDone, onClose, confirm = "
       footer={
         <>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="button"
@@ -39,7 +41,7 @@ export function PeoplePicker({ title, exclude = [], onDone, onClose, confirm = "
               setBusy(false);
             }}
           >
-            {confirm}
+            {confirm ?? t("Invite{verb}", { verb: "" })}
             {picked.length ? ` (${picked.length})` : ""}
           </button>
         </>
@@ -57,11 +59,11 @@ export function PeoplePicker({ title, exclude = [], onDone, onClose, confirm = "
         ) : null}
         <div className="search-bar inset" style={{ borderRadius: 12, padding: "8px 12px" }}>
           <Search size={17} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find people" autoFocus style={{ fontSize: "1rem" }} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Find people")} autoFocus style={{ fontSize: "1rem" }} />
         </div>
         <div className="list inset picker-list">
-          {!all ? <div className="panel-body small muted" style={{ paddingTop: 12 }}>Loading…</div> : null}
-          {all && !list.length ? <div className="panel-body small muted" style={{ paddingTop: 12 }}>Nobody to add.</div> : null}
+          {!all ? <div className="panel-body small muted" style={{ paddingTop: 12 }}>{t("Loading…")}</div> : null}
+          {all && !list.length ? <div className="panel-body small muted" style={{ paddingTop: 12 }}>{t("Nobody to add.")}</div> : null}
           {list.map((u) => (
             <button key={u.id} type="button" className={`list-row ${picked.includes(u.id) ? "unread" : ""}`} onClick={() => toggle(u.id)}>
               <Avatar user={u} size={32} presence />

@@ -9,7 +9,7 @@ import { Toolbar } from "./Toolbar";
 import { ImageBubble, LinkBubble, LinkDialog, TextBubble, VideoDialog } from "./Menus";
 import { mentionOpen } from "./mentionState";
 import { uploadFile, Modal } from "@/components/ui/ui";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 
 export interface EditorHandle {
   getHTML: () => string;
@@ -61,10 +61,10 @@ const SHORTCUTS: [string, string][] = [
   ["Bulleted list", "- and a space"],
   ["Numbered list", "1. and a space"],
   ["Checklist", "[ ] and a space"],
-  ["Quote", "> and a space"],
+  ["Block quote", "> and a space"],
   ["Code", "`code` or ``` for a block"],
   ["Divider", "---"],
-  ["Mention", "@ and a name"],
+  ["Mention someone", "@ and a name"],
   ["Send / post", "Ctrl + Enter"],
 ];
 
@@ -86,10 +86,12 @@ function writeDraft(key: string, html: string) {
 }
 
 export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEditor(
-  { name, initial = "", variant = "full", placeholder = "Write something…", onChange, onSubmit, enterSends = false, autoFocus = false, minHeight, draftKey, limit, showToolbar, actions, className = "", label, onFocus },
+  { name, initial = "", variant = "full", placeholder: placeholderProp, onChange, onSubmit, enterSends = false, autoFocus = false, minHeight, draftKey, limit, showToolbar, actions, className = "", label, onFocus },
   ref,
 ) {
   const compact = variant === "compact";
+  const t = useT();
+  const placeholder = placeholderProp ?? t("Write something…");
   const toast = useToast();
   const [html, setHtml] = useState(initial);
   const [uploading, setUploading] = useState(0);
@@ -126,14 +128,14 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
             pos = undefined;
           } else ed.chain().focus().insertContent(node).run();
         } catch (e) {
-          toast(e instanceof Error ? e.message : "The upload didn't work.", { kind: "err" });
+          toast(e instanceof Error ? e.message : t("The upload didn't work."), { kind: "err" });
         } finally {
           uploadingRef.current -= 1;
           setUploading(uploadingRef.current);
         }
       }
     },
-    [toast],
+    [toast, t],
   );
 
   const extensions = useMemo(() => {
@@ -244,8 +246,8 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
       setHTML: (h: string) => {
         editor?.commands.setContent(h, { emitUpdate: true });
       },
-      insertText: (t: string) => {
-        editor?.chain().focus().insertContent(t).run();
+      insertText: (text: string) => {
+        editor?.chain().focus().insertContent(text).run();
       },
       busy: () => uploadingRef.current > 0,
       pickImage: () => fileInput.current?.click(),
@@ -276,10 +278,10 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
       <div className="ed-foot">
         {compact ? (
           <>
-            <button type="button" className={`tb-btn ${toolbar ? "on" : ""}`} title="Formatting" aria-label="Formatting" aria-pressed={toolbar} onMouseDown={(e) => e.preventDefault()} onClick={() => setToolbar((t) => !t)}>
+            <button type="button" className={`tb-btn ${toolbar ? "on" : ""}`} title={t("Formatting")} aria-label={t("Formatting")} aria-pressed={toolbar} onMouseDown={(e) => e.preventDefault()} onClick={() => setToolbar((x) => !x)}>
               <Type size={17} />
             </button>
-            <button type="button" className="tb-btn" title="Add a picture" aria-label="Add a picture" onMouseDown={(e) => e.preventDefault()} onClick={() => fileInput.current?.click()}>
+            <button type="button" className="tb-btn" title={t("Add a picture")} aria-label={t("Add a picture")} onMouseDown={(e) => e.preventDefault()} onClick={() => fileInput.current?.click()}>
               <ImagePlus size={17} />
             </button>
           </>
@@ -287,11 +289,11 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
         <span className="ed-status">
           {uploading ? (
             <span className="row" style={{ gap: 6 }}>
-              <LoaderCircle size={14} className="spin" /> Uploading {uploading} {uploading === 1 ? "picture" : "pictures"}…
+              <LoaderCircle size={14} className="spin" /> {t.n(uploading, "Uploading {n} picture…", "Uploading {n} pictures…")}
             </span>
           ) : restored ? (
             <span>
-              Draft restored ·{" "}
+              {t("Draft restored")} ·{" "}
               <button
                 type="button"
                 className="link"
@@ -302,15 +304,15 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
                   if (draftKey) writeDraft(draftKey, "");
                 }}
               >
-                discard
+                {t("discard")}
               </button>
             </span>
           ) : !compact ? (
-            <span>{words ? `${words} ${words === 1 ? "word" : "words"}` : "Drop or paste pictures anywhere"}</span>
+            <span>{words ? t.n(words, "{n} word", "{n} words") : t("Drop or paste pictures anywhere")}</span>
           ) : null}
         </span>
         {!compact ? (
-          <button type="button" className="tb-btn" title="Shortcuts" aria-label="Keyboard shortcuts" onClick={() => setHelp(true)}>
+          <button type="button" className="tb-btn" title={t("Shortcuts")} aria-label={t("Keyboard shortcuts")} onClick={() => setHelp(true)}>
             <CircleHelp size={16} />
           </button>
         ) : null}
@@ -331,15 +333,15 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
       {link && editor ? <LinkDialog editor={editor} onClose={() => setLink(false)} /> : null}
       {video && editor ? <VideoDialog editor={editor} onClose={() => setVideo(false)} /> : null}
       {help ? (
-        <Modal title="Writing tips" onClose={() => setHelp(false)}>
+        <Modal title={t("Writing tips")} onClose={() => setHelp(false)}>
           <p className="muted small" style={{ marginTop: 0 }}>
-            Everything is in the bar above the text. Select words for quick formatting, and drop, paste or pick pictures (then drag their corner to resize). These shortcuts work too:
+            {t("Everything is in the bar above the text. Select words for quick formatting, and drop, paste or pick pictures (then drag their corner to resize). These shortcuts work too:")}
           </p>
           <div className="list inset">
             {SHORTCUTS.map(([a, b]) => (
               <div key={a} className="list-row" style={{ padding: "8px 12px" }}>
-                <span className="grow">{a}</span>
-                <span className="mono small muted">{b}</span>
+                <span className="grow">{t(a)}</span>
+                <span className="mono small muted">{t(b)}</span>
               </div>
             ))}
           </div>

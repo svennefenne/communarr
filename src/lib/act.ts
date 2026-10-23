@@ -1,6 +1,7 @@
 import "server-only";
 import { requireUser } from "./auth";
 import { UserError } from "./errors";
+import { userT } from "./t";
 import type { User } from "./users";
 import type { ActionResult } from "./types";
 
@@ -10,10 +11,10 @@ export async function act<T>(fn: (u: User) => T | Promise<T>): Promise<ActionRes
   try {
     return { ok: true, data: await fn(u) };
   } catch (e) {
-    if (e instanceof UserError) return { ok: false, error: e.message };
+    if (e instanceof UserError) return { ok: false, error: e.translated(userT(u.id)) };
     // redirect() and notFound() inside an action must pass through
     if (e && typeof e === "object" && "digest" in e) throw e;
     console.error(e);
-    return { ok: false, error: "Something went wrong. Try again." };
+    return { ok: false, error: userT(u.id)("Something went wrong. Try again.") };
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/components/app/AppProvider";
 
 export interface NavGroup {
   label: string;
@@ -9,6 +10,7 @@ export interface NavGroup {
 
 /** The Admin page's sections down the left (chips along the top on a narrow screen), marking where you are. */
 export function AdminNav({ groups }: { groups: NavGroup[] }) {
+  const t = useT();
   const [current, setCurrent] = useState("");
   useEffect(() => {
     const ids = groups.flatMap((g) => g.items.map((i) => i.id));
@@ -26,7 +28,7 @@ export function AdminNav({ groups }: { groups: NavGroup[] }) {
     return () => io.disconnect();
   }, [groups]);
   return (
-    <nav className="admin-nav" aria-label="Admin sections">
+    <nav className="admin-nav" aria-label={t("Admin sections")}>
       {groups.map((g) => (
         <div key={g.label} className="admin-nav-group">
           <span className="menu-label">{g.label}</span>

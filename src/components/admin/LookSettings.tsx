@@ -5,7 +5,8 @@ import { useState, useTransition } from "react";
 import type { SiteSettings } from "@/lib/settings";
 import { CATEGORY_LABEL, PALETTES, type PaletteCategory } from "@/lib/palettes";
 import { BACKDROPS } from "@/lib/theme";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
+import { LANGS, type Lang } from "@/lib/i18n";
 import { ImagePick } from "@/components/ui/ImagePick";
 import { Switch } from "@/components/ui/ui";
 import { SchemeTile } from "@/components/theme/SchemeTile";
@@ -13,17 +14,18 @@ import { SaveBar } from "./Section";
 import { saveSettingsAction } from "@/app/actions/admin";
 
 function useSave() {
+  const t = useT();
   const toast = useToast();
   const router = useRouter();
   const [pending, start] = useTransition();
   return {
     pending,
-    save: (patch: Partial<SiteSettings>, done = "Saved.") =>
+    save: (patch: Partial<SiteSettings>, done?: string) =>
       start(async () => {
         const r = await saveSettingsAction(patch);
         if (!r.ok) toast(r.error, { kind: "err" });
         else {
-          toast(done);
+          toast(done ?? t("Saved."));
           router.refresh();
         }
       }),
@@ -31,26 +33,47 @@ function useSave() {
 }
 
 export function IdentitySettings({ s }: { s: SiteSettings }) {
+  const t = useT();
+  const toast = useToast();
   const { save, pending } = useSave();
   const [v, setV] = useState({ siteName: s.siteName, tagline: s.tagline, welcome: s.welcome, footer: s.footer });
+  const [switching, startSwitch] = useTransition();
+  // on its own (not with the texts below), and a full reload so every page and menu switches over
+  const setLanguage = (language: Lang) =>
+    startSwitch(async () => {
+      const r = await saveSettingsAction({ language });
+      if (!r.ok) toast(r.error, { kind: "err" });
+      else window.location.reload();
+    });
   return (
     <div className="stack">
+      <div className="field">
+        <label htmlFor="site-language">{t("Site language")}</label>
+        <select id="site-language" className="select" value={s.language} disabled={switching} onChange={(e) => setLanguage(e.target.value as Lang)} style={{ maxWidth: 260 }}>
+          {LANGS.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+        <span className="small muted">{t("The default for everyone who hasn't picked their own (Settings → Display, or the switch in their menu), for the log-in page and for what's saved for everyone, like chat notices. Changes straight away.")}</span>
+      </div>
       <div className="grid-2">
         <div className="field">
-          <label>The site&apos;s name</label>
+          <label>{t("The site's name")}</label>
           <input className="input" value={v.siteName} onChange={(e) => setV({ ...v, siteName: e.target.value })} maxLength={40} />
         </div>
         <div className="field">
-          <label>In a few words</label>
+          <label>{t("In a few words")}</label>
           <input className="input" value={v.tagline} onChange={(e) => setV({ ...v, tagline: e.target.value })} maxLength={200} />
         </div>
       </div>
       <div className="field">
-        <label>Welcome on the log-in page</label>
+        <label>{t("Welcome on the log-in page")}</label>
         <input className="input" value={v.welcome} onChange={(e) => setV({ ...v, welcome: e.target.value })} maxLength={400} />
       </div>
       <div className="field">
-        <label>The line along the bottom</label>
+        <label>{t("The line along the bottom")}</label>
         <input className="input" value={v.footer} onChange={(e) => setV({ ...v, footer: e.target.value })} maxLength={120} />
       </div>
       <SaveBar pending={pending} onSave={() => save(v)} />
@@ -59,6 +82,7 @@ export function IdentitySettings({ s }: { s: SiteSettings }) {
 }
 
 export function LookSettings({ s }: { s: SiteSettings }) {
+  const t = useT();
   const { save, pending } = useSave();
   const [scheme, setScheme] = useState(s.defaultScheme);
   const [mode, setMode] = useState(s.defaultMode);
@@ -71,14 +95,14 @@ export function LookSettings({ s }: { s: SiteSettings }) {
   return (
     <div className="stack loose">
       <p className="small muted" style={{ margin: 0 }}>
-        What everyone sees until they pick their own (Settings → Theme), and what visitors see on the log-in page.
+        {t("What everyone sees until they pick their own (Settings → Theme), and what visitors see on the log-in page.")}
       </p>
       <div className="stack tight">
-        <span className="label">Default colour scheme</span>
+        <span className="label">{t("Default colour scheme")}</span>
         <div className="pills scroll">
           {(["all", "hooden", "builtin", "gaming", "community"] as const).map((c) => (
             <button key={c} type="button" className={`pill ${cat === c ? "active" : ""}`} onClick={() => setCat(c)}>
-              {c === "all" ? "All" : CATEGORY_LABEL[c]}
+              {c === "all" ? t("All") : t(CATEGORY_LABEL[c])}
             </button>
           ))}
         </div>
@@ -90,14 +114,14 @@ export function LookSettings({ s }: { s: SiteSettings }) {
       </div>
       <div className="setting-row">
         <span className="grow">
-          <b>Light or dark</b>
+          <b>{t("Light or dark")}</b>
         </span>
         <div className="pills">
           {(
             [
-              ["dark", "Dark"],
-              ["light", "Light"],
-              ["system", "Follow the device"],
+              ["dark", t("Dark")],
+              ["light", t("Light")],
+              ["system", t("Follow the device")],
             ] as const
           ).map(([m, l]) => (
             <button key={m} type="button" className={`pill ${mode === m ? "active" : ""}`} onClick={() => setMode(m)}>
@@ -108,52 +132,52 @@ export function LookSettings({ s }: { s: SiteSettings }) {
       </div>
       <div className="setting-row">
         <span className="grow">
-          <b>Members can make their own themes</b>
-          <span className="small muted">Their colours, fonts and background pictures (only they see them).</span>
+          <b>{t("Members can make their own themes")}</b>
+          <span className="small muted">{t("Their colours, fonts and background pictures (only they see them).")}</span>
         </span>
-        <Switch on={allow} onChange={setAllow} label="Custom themes" />
+        <Switch on={allow} onChange={setAllow} label={t("Custom themes")} />
       </div>
       <div className="setting-row">
         <span className="grow">
-          <b>Frame round the site</b>
-          <span className="small muted">Glass down the sides and along the bottom, on computers and tablets.</span>
+          <b>{t("Frame round the site")}</b>
+          <span className="small muted">{t("Glass down the sides and along the bottom, on computers and tablets.")}</span>
         </span>
-        <Switch on={frame} onChange={setFrame} label="Frame" />
+        <Switch on={frame} onChange={setFrame} label={t("Frame")} />
       </div>
       <label className="field">
-        <span className="label">Glass of the header and frame: {glass}% solid</span>
+        <span className="label">{t("Glass of the header and frame: {n}% solid", { n: glass })}</span>
         <input type="range" min={0} max={100} value={glass} onChange={(e) => setGlass(Number(e.target.value))} />
       </label>
       <div className="field">
-        <span className="label">Backdrop</span>
+        <span className="label">{t("Backdrop")}</span>
         <div className="pills">
           {BACKDROPS.map((b) => (
             <button key={b.id} type="button" className={`pill ${backdrop === b.id ? "active" : ""}`} onClick={() => setBackdrop(b.id)}>
-              {b.label}
+              {t(b.label)}
             </button>
           ))}
         </div>
       </div>
       <div className="stack tight">
-        <span className="label">Site background picture (instead of the backdrop)</span>
+        <span className="label">{t("Site background picture (instead of the backdrop)")}</span>
         <div className="grid-2">
-          <ImagePick value={bg.desktop || null} onChange={(u) => setBg({ ...bg, desktop: u ?? "" })} kind="background" shape="wide" label="Computer and tablet" />
-          <ImagePick value={bg.mobile || null} onChange={(u) => setBg({ ...bg, mobile: u ?? "" })} kind="background" shape="tall" label="Phone (optional)" />
+          <ImagePick value={bg.desktop || null} onChange={(u) => setBg({ ...bg, desktop: u ?? "" })} kind="background" shape="wide" label={t("Computer and tablet")} />
+          <ImagePick value={bg.mobile || null} onChange={(u) => setBg({ ...bg, mobile: u ?? "" })} kind="background" shape="tall" label={t("Phone (optional)")} />
         </div>
         {bg.desktop || bg.mobile ? (
           <div className="grid-2">
             <label className="field">
-              <span className="label">Darken it: {bg.dim}%</span>
+              <span className="label">{t("Darken it: {n}%", { n: bg.dim })}</span>
               <input type="range" min={0} max={90} value={bg.dim} onChange={(e) => setBg({ ...bg, dim: Number(e.target.value) })} />
             </label>
             <label className="field">
-              <span className="label">Blur it: {bg.blur}px</span>
+              <span className="label">{t("Blur it: {n}px", { n: bg.blur })}</span>
               <input type="range" min={0} max={20} value={bg.blur} onChange={(e) => setBg({ ...bg, blur: Number(e.target.value) })} />
             </label>
           </div>
         ) : null}
       </div>
-      <SaveBar pending={pending} onSave={() => save({ defaultScheme: scheme, defaultMode: mode, allowCustomThemes: allow, frame, glass, backdrop, background: bg }, "Saved. Everyone using the default sees it now.")} />
+      <SaveBar pending={pending} onSave={() => save({ defaultScheme: scheme, defaultMode: mode, allowCustomThemes: allow, frame, glass, backdrop, background: bg }, t("Saved. Everyone using the default sees it now."))} />
     </div>
   );
 }
@@ -169,6 +193,7 @@ const FEATURES: [keyof SiteSettings["features"], string, string][] = [
 ];
 
 export function FeatureSettings({ s }: { s: SiteSettings }) {
+  const t = useT();
   const { save, pending } = useSave();
   const [f, setF] = useState(s.features);
   const [can, setCan] = useState(s.canCreate);
@@ -179,38 +204,38 @@ export function FeatureSettings({ s }: { s: SiteSettings }) {
         {FEATURES.map(([k, label, hint]) => (
           <div key={k} className="setting-row">
             <span className="grow">
-              <b>{label}</b>
-              {hint ? <span className="small muted">{hint}</span> : null}
+              <b>{t(label)}</b>
+              {hint ? <span className="small muted">{t(hint)}</span> : null}
             </span>
-            <Switch on={f[k]} onChange={(v) => setF({ ...f, [k]: v })} label={label} />
+            <Switch on={f[k]} onChange={(v) => setF({ ...f, [k]: v })} label={t(label)} />
           </div>
         ))}
       </div>
       <div className="stack tight">
-        <span className="label">Who can start…</span>
+        <span className="label">{t("Who can start…")}</span>
         {(
           [
-            ["groups", "Groups"],
-            ["rooms", "Chat rooms"],
-            ["events", "Events"],
-            ["polls", "Polls"],
+            ["groups", t("Groups")],
+            ["rooms", t("Chat rooms")],
+            ["events", t("Events")],
+            ["polls", t("Polls")],
           ] as const
         ).map(([k, label]) => (
           <div key={k} className="setting-row">
             <span className="grow">{label}</span>
             <div className="pills">
               <button type="button" className={`pill ${can[k] === "members" ? "active" : ""}`} onClick={() => setCan({ ...can, [k]: "members" })}>
-                Everyone
+                {t("Everyone")}
               </button>
               <button type="button" className={`pill ${can[k] === "mods" ? "active" : ""}`} onClick={() => setCan({ ...can, [k]: "mods" })}>
-                Moderators
+                {t("Moderators")}
               </button>
             </div>
           </div>
         ))}
       </div>
       <label className="row">
-        <span className="grow">Biggest picture upload</span>
+        <span className="grow">{t("Biggest picture upload")}</span>
         <input type="number" className="input sm" style={{ width: 90 }} min={1} max={200} value={maxUp} onChange={(e) => setMaxUp(Number(e.target.value))} /> MB
       </label>
       <SaveBar pending={pending} onSave={() => save({ features: f, canCreate: can, maxUploadMb: maxUp })} />
@@ -219,6 +244,7 @@ export function FeatureSettings({ s }: { s: SiteSettings }) {
 }
 
 export function AnnouncementSettings({ s }: { s: SiteSettings }) {
+  const t = useT();
   const { save, pending } = useSave();
   const [a, setA] = useState(s.announcement);
   const [words, setWords] = useState(s.wordFilter.join("\n"));
@@ -227,18 +253,18 @@ export function AnnouncementSettings({ s }: { s: SiteSettings }) {
       <div className="stack tight">
         <div className="setting-row">
           <span className="grow">
-            <b>Announcement line</b>
-            <span className="small muted">Shown under the header on every page until someone closes it.</span>
+            <b>{t("Announcement line")}</b>
+            <span className="small muted">{t("Shown under the header on every page until someone closes it.")}</span>
           </span>
-          <Switch on={a.on} onChange={(v) => setA({ ...a, on: v })} label="Announcement" />
+          <Switch on={a.on} onChange={(v) => setA({ ...a, on: v })} label={t("Announcement")} />
         </div>
-        <textarea className="textarea" value={a.text} onChange={(e) => setA({ ...a, text: e.target.value })} maxLength={400} placeholder="Game night moved to Saturday!" style={{ minHeight: 70 }} />
+        <textarea className="textarea" value={a.text} onChange={(e) => setA({ ...a, text: e.target.value })} maxLength={400} placeholder={t("Game night moved to Saturday!")} style={{ minHeight: 70 }} />
         <div className="pills">
           {(
             [
-              ["info", "Info"],
-              ["warn", "Important"],
-              ["party", "Party"],
+              ["info", t("Info")],
+              ["warn", t("Important")],
+              ["party", t("Party")],
             ] as const
           ).map(([st, l]) => (
             <button key={st} type="button" className={`pill ${a.style === st ? "active" : ""}`} onClick={() => setA({ ...a, style: st })}>
@@ -249,8 +275,8 @@ export function AnnouncementSettings({ s }: { s: SiteSettings }) {
         <SaveBar pending={pending} onSave={() => save({ announcement: a })} />
       </div>
       <div className="stack tight">
-        <b>Word filter</b>
-        <span className="small muted">One word per line. In posts, comments and chat they&apos;re starred out (f***).</span>
+        <b>{t("Word filter")}</b>
+        <span className="small muted">{t("One word per line. In posts, comments and chat they're starred out (f***).")}</span>
         <textarea className="textarea" value={words} onChange={(e) => setWords(e.target.value)} style={{ minHeight: 90 }} />
         <SaveBar pending={pending} onSave={() => save({ wordFilter: words.split(/\n+/).map((w) => w.trim()).filter(Boolean) })} />
       </div>

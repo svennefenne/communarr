@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { act } from "@/lib/act";
 import { UserError } from "@/lib/errors";
+import { userT } from "@/lib/t";
 import { audit } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { DEFAULTS, getSettings, setSettings, type SiteSettings } from "@/lib/settings";
+import { DEFAULTS, dropDefaultTexts, getSettings, setSettings, type SiteSettings } from "@/lib/settings";
+import { isLang } from "@/lib/i18n";
 import { addMember, approve, ban, deleteMember, logoutEverywhere, reindexAll, resetLink, setPasswordFor, setRole, suspend, vacuum } from "@/lib/admin";
 import { createInvite } from "@/lib/accounts";
 import { resolveReport } from "@/lib/reports";
@@ -121,6 +123,8 @@ export async function saveSettingsAction(patch: Partial<SiteSettings>) {
       if (Array.isArray(d) !== Array.isArray(v)) continue;
       (clean as Record<string, unknown>)[k] = v;
     }
+    if (clean.language !== undefined && !isLang(clean.language)) delete clean.language;
+    if (clean.language !== undefined && clean.language !== s.language) dropDefaultTexts();
     if (clean.siteName !== undefined) clean.siteName = cleanLine(clean.siteName, 40) || s.siteName;
     if (clean.tagline !== undefined) clean.tagline = cleanLine(clean.tagline, 200);
     if (clean.welcome !== undefined) clean.welcome = cleanLine(clean.welcome, 400);
@@ -222,7 +226,10 @@ export async function reindexAction() {
   });
 }
 export async function testPushAction() {
-  return act(async (u) => pushTo(u.id, { title: "Test from the admin page", body: "Push notifications work.", url: "/admin#notifications", tag: "test" }));
+  return act(async (u) => {
+    const t = userT(u.id);
+    return pushTo(u.id, { title: t("Test from the admin page"), body: t("Push notifications work."), url: "/admin#notifications", tag: "test" });
+  });
 }
 export async function rotateVapidAction() {
   return act((u) => {

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CornerDownRight, Send } from "lucide-react";
 import type { CommentView } from "@/lib/contentTypes";
 import type { CommentTarget } from "@/lib/comments";
-import { useLive, useMe, useToast } from "@/components/app/AppProvider";
+import { useLive, useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
@@ -14,7 +14,8 @@ import { Reactions } from "./Reactions";
 import { ItemMenu } from "./ItemMenu";
 import { addCommentAction, commentsAction, deleteCommentAction, editCommentAction } from "@/app/actions/content";
 
-function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCancel, sendLabel = "Send" }: { placeholder: string; onSend: (html: string) => Promise<boolean>; autoFocus?: boolean; draftKey?: string; initial?: string; onCancel?: () => void; sendLabel?: string }) {
+function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCancel, sendLabel }: { placeholder: string; onSend: (html: string) => Promise<boolean>; autoFocus?: boolean; draftKey?: string; initial?: string; onCancel?: () => void; sendLabel?: string }) {
+  const t = useT();
   const ed = useRef<EditorHandle>(null);
   const [busy, setBusy] = useState(false);
   const send = async () => {
@@ -39,11 +40,11 @@ function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCance
         <>
           {onCancel ? (
             <button type="button" className="btn btn-ghost btn-xs" onClick={onCancel}>
-              Cancel
+              {t("Cancel")}
             </button>
           ) : null}
-          <button type="button" className={`btn btn-primary btn-xs ${busy ? "loading" : ""}`} onClick={send} title="Send (Ctrl+Enter)">
-            <Send size={13} /> {sendLabel}
+          <button type="button" className={`btn btn-primary btn-xs ${busy ? "loading" : ""}`} onClick={send} title={t("Send (Ctrl+Enter)")}>
+            <Send size={13} /> {sendLabel ?? t("Send")}
           </button>
         </>
       }
@@ -53,6 +54,7 @@ function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCance
 
 function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: CommentView; type: CommentTarget; id: number; onChanged: () => void; onReply: (c: CommentView) => void; replyTo: number | null; depth: number }) {
   const me = useMe();
+  const t = useT();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const { confirm, node } = useConfirm();
@@ -65,7 +67,7 @@ function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: Comme
             <UserLink user={c.author} />
             <span className="tiny faint">
               <Time t={c.createdAt} />
-              {c.editedAt ? " · edited" : ""}
+              {c.editedAt ? ` · ${t("edited")}` : ""}
             </span>
             <span className="spacer" />
             <ItemMenu
@@ -74,7 +76,7 @@ function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: Comme
               onDelete={
                 c.canDelete
                   ? () =>
-                      confirm("Delete this comment (and the answers to it)?", "Delete", async () => {
+                      confirm(t("Delete this comment (and the answers to it)?"), t("Delete"), async () => {
                         const r = await deleteCommentAction(c.id);
                         if (r.ok) onChanged();
                         else toast(r.error, { kind: "err" });
@@ -86,10 +88,10 @@ function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: Comme
           </div>
           {editing ? (
             <CommentBox
-              placeholder="Edit your comment"
+              placeholder={t("Edit your comment")}
               initial={c.html}
               autoFocus
-              sendLabel="Save"
+              sendLabel={t("Save")}
               onCancel={() => setEditing(false)}
               onSend={async (html) => {
                 const r = await editCommentAction(c.id, html);
@@ -109,7 +111,7 @@ function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: Comme
         <div className="comment-actions">
           <Reactions type="comment" id={c.id} initial={c.reactions} myName={me?.name ?? ""} small />
           <button type="button" className="btn btn-ghost btn-xs" onClick={() => onReply(c)}>
-            <CornerDownRight size={13} /> Reply
+            <CornerDownRight size={13} /> {t("Reply")}
           </button>
         </div>
         {c.replies.map((r) => (
@@ -120,7 +122,7 @@ function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: Comme
             <Avatar user={me!} size={28} />
             <div className="comment-main">
               <CommentBox
-                placeholder={`Answer ${c.author.name}…`}
+                placeholder={t("Answer {name}…", { name: c.author.name })}
                 autoFocus
                 draftKey={`c-${type}-${id}-${c.id}`}
                 onCancel={() => onReply({ ...c, id: -1 })}
@@ -147,6 +149,7 @@ function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: Comme
 /** Comments under a post, poll or event: the list, answers one level in, and a box to write. */
 export function Comments({ type, id, initial, locked = false, onCount }: { type: CommentTarget; id: number; initial?: CommentView[]; locked?: boolean; onCount?: (n: number) => void }) {
   const me = useMe();
+  const t = useT();
   const toast = useToast();
   const [list, setList] = useState<CommentView[] | null>(initial ?? null);
   const [replyTo, setReplyTo] = useState<number | null>(null);
@@ -172,13 +175,13 @@ export function Comments({ type, id, initial, locked = false, onCount }: { type:
         <Comment key={c.id} c={c} type={type} id={id} onChanged={load} onReply={(x) => setReplyTo(x.id === -1 ? null : x.id)} replyTo={replyTo} depth={0} />
       ))}
       {locked ? (
-        <p className="small muted">Comments are closed.</p>
+        <p className="small muted">{t("Comments are closed.")}</p>
       ) : (
         <div className="comment">
           <Avatar user={me} size={34} />
           <div className="comment-main">
             <CommentBox
-              placeholder={list?.length ? "Write a comment…" : "Be the first to comment…"}
+              placeholder={t(list?.length ? "Write a comment…" : "Be the first to comment…")}
               draftKey={`c-${type}-${id}`}
               onSend={async (html) => {
                 const r = await addCommentAction(type, id, html);

@@ -1,12 +1,13 @@
 import { getUser } from "@/lib/auth";
 import { isPushEndpoint, pushTo, removeSubscription, saveSubscription, vapidPublicKey } from "@/lib/push";
 import { getSettings } from "@/lib/settings";
+import { requestT } from "@/lib/t";
 
 export const dynamic = "force-dynamic";
 
 /** GET /api/push → { key }: the key a browser subscribes with. */
 export async function GET() {
-  if (!(await getUser())) return Response.json({ error: "Log in first." }, { status: 401 });
+  if (!(await getUser())) return Response.json({ error: (await requestT())("Log in first.") }, { status: 401 });
   return Response.json({ key: vapidPublicKey() });
 }
 
@@ -16,14 +17,15 @@ export async function GET() {
  */
 export async function POST(req: Request) {
   const user = await getUser();
-  if (!user) return Response.json({ error: "Log in first." }, { status: 401 });
+  const t = await requestT();
+  if (!user) return Response.json({ error: t("Log in first.") }, { status: 401 });
   const b = (await req.json().catch(() => ({}))) as { subscription?: { endpoint?: string; keys?: { p256dh?: string; auth?: string } }; test?: boolean };
   if (b.test) {
-    const r = await pushTo(user.id, { title: `${getSettings().siteName} says hi 👋`, body: "Notifications work on this device.", url: "/settings/notifications", tag: "test" });
+    const r = await pushTo(user.id, { title: t("{site} says hi 👋", { site: getSettings().siteName }), body: t("Notifications work on this device."), url: "/settings/notifications", tag: "test" });
     return Response.json(r);
   }
   const s = b.subscription;
-  if (!s?.endpoint || !s.keys?.p256dh || !s.keys.auth || !isPushEndpoint(s.endpoint)) return Response.json({ error: "That isn't a subscription from a browser's push service." }, { status: 400 });
+  if (!s?.endpoint || !s.keys?.p256dh || !s.keys.auth || !isPushEndpoint(s.endpoint)) return Response.json({ error: t("That isn't a subscription from a browser's push service.") }, { status: 400 });
   saveSubscription(user.id, { endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh, auth: s.keys.auth } }, req.headers.get("user-agent") || "");
   return Response.json({ ok: true });
 }
@@ -31,7 +33,7 @@ export async function POST(req: Request) {
 /** DELETE /api/push { endpoint }: this device doesn't want notifications any more. */
 export async function DELETE(req: Request) {
   const user = await getUser();
-  if (!user) return Response.json({ error: "Log in first." }, { status: 401 });
+  if (!user) return Response.json({ error: (await requestT())("Log in first.") }, { status: 401 });
   const b = (await req.json().catch(() => ({}))) as { endpoint?: string };
   if (b.endpoint) removeSubscription(user.id, b.endpoint);
   return Response.json({ ok: true });

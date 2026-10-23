@@ -2,19 +2,23 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { summary, type UserRow } from "@/lib/users";
 import { MemberGrid } from "@/components/profile/MemberGrid";
+import { requestT } from "@/lib/t";
 
-export const metadata = { title: "Members" };
+export async function generateMetadata() {
+  return { title: (await requestT())("Members") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function MembersPage() {
   await requireUser();
+  const t = await requestT();
   const rows = db().prepare("select * from users where banned = 0 and (ban_reason is null or ban_reason != 'pending') order by display_name collate nocase").all() as UserRow[];
   return (
     <div className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">The crew</span>
-          <h1 className="display page-title">Members</h1>
+          <span className="eyebrow">{t("The crew")}</span>
+          <h1 className="display page-title">{t("Members")}</h1>
         </div>
       </div>
       <MemberGrid members={rows.map((r) => ({ ...summary(r), pronouns: r.pronouns }))} />

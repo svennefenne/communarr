@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { db, DATA_DIR, now, tx, UPLOAD_DIR } from "./db";
 import { UserError } from "./errors";
+import { serverT } from "./t";
 import { audit, hashPassword, randomToken } from "./auth";
 import { dropUser, onlineCount, sendTo } from "./hub";
 import { indexItem } from "./search";
@@ -208,6 +209,8 @@ export function auditLog(limit = 200) {
 
 /** Everything back into the search index (after an import, or if search seems off). */
 export function reindexAll(): number {
+  // titles kept in the index, so in the site's language (as when they were first indexed)
+  const tr = serverT();
   let n = 0;
   tx(() => {
     db().prepare("delete from search_index").run();
@@ -233,7 +236,7 @@ export function reindexAll(): number {
       n++;
     }
     for (const m of db().prepare("select m.*, r.name, r.kind rk from messages m join rooms r on r.id = m.room_id where m.deleted = 0 and m.kind = 'text'").all() as { id: number; room_id: number; body_text: string; author_id: number; created_at: number; name: string; rk: string }[]) {
-      indexItem("message", m.id, `r:${m.room_id}`, m.author_id, m.created_at, m.rk === "dm" ? "Direct message" : m.name, m.body_text);
+      indexItem("message", m.id, `r:${m.room_id}`, m.author_id, m.created_at, m.rk === "dm" ? tr("Direct message") : m.name, m.body_text);
       n++;
     }
     for (const c of db().prepare("select * from comments").all() as { id: number; target_type: string; target_id: number; author_id: number; body_text: string; created_at: number }[]) {
@@ -242,7 +245,7 @@ export function reindexAll(): number {
       if (!t) continue;
       // comments on an "only me" post stay with its author
       const scope = t.visibility === "private" ? `u:${t.author_id}` : groupScope(t.group_id);
-      indexItem("comment", c.id, scope, c.author_id, c.created_at, "Comment", c.body_text);
+      indexItem("comment", c.id, scope, c.author_id, c.created_at, tr("Comment"), c.body_text);
       n++;
     }
     for (const g of db().prepare("select * from groups").all() as { id: number; name: string; tagline: string; privacy: string; owner_id: number; created_at: number }[]) {

@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { isLang, type Lang } from "./i18n";
 
 /** Site settings (Admin). Stored as JSON per key; anything missing falls back to DEFAULTS. */
 
@@ -10,6 +11,8 @@ export interface IceServer {
 }
 
 export interface SiteSettings {
+  /** the site's language (every page, notification and message from the server) */
+  language: Lang;
   siteName: string;
   tagline: string;
   /** shown on the log-in page */
@@ -44,6 +47,7 @@ export interface SiteSettings {
 }
 
 export const DEFAULTS: SiteSettings = {
+  language: "en",
   siteName: "Hooden",
   tagline: "A closed community space for friends to hang around, chat, discuss, plan and more.",
   welcome: "Welcome home. Log in to see what everyone's up to.",
@@ -67,11 +71,22 @@ export const DEFAULTS: SiteSettings = {
   wordFilter: [],
 };
 
+/** The default texts in the other languages (until an admin writes their own). */
+const DEFAULT_TEXTS: Record<Exclude<Lang, "en">, Pick<SiteSettings, "tagline" | "welcome" | "footer">> = {
+  sv: {
+    tagline: "En sluten gemenskap där vänner kan hänga, chatta, diskutera, planera och mycket mer.",
+    welcome: "Välkommen hem. Logga in och se vad alla håller på med.",
+    footer: "HOODEN · ETT STÄLLE FÖR VÄNNER",
+  },
+};
+
 type Key = keyof SiteSettings;
 
 export function getSettings(): SiteSettings {
   const rows = db().prepare("select key, value from settings").all() as { key: string; value: string }[];
-  const out: Record<string, unknown> = { ...DEFAULTS };
+  const lang = rows.find((r) => r.key === "language");
+  const language = lang ? JSON.parse(lang.value) : DEFAULTS.language;
+  const out: Record<string, unknown> = { ...DEFAULTS, ...(isLang(language) && language !== "en" ? DEFAULT_TEXTS[language] : {}) };
   for (const r of rows) {
     if (!(r.key in DEFAULTS)) continue;
     try {
@@ -83,11 +98,35 @@ export function getSettings(): SiteSettings {
       /* keep the default */
     }
   }
+  if (!isLang(out.language)) out.language = DEFAULTS.language;
   return out as unknown as SiteSettings;
+}
+
+/** Has an admin (or the setup page) stored this setting, rather than it being the default? */
+export function hasSetting(key: Key): boolean {
+  return !!db().prepare("select 1 from settings where key = ?").get(key);
 }
 
 export function getSetting<K extends Key>(key: K): SiteSettings[K] {
   return getSettings()[key];
+}
+
+/** A tagline, welcome or footer for someone reading in `lang`: still a default, so in their language. */
+export function defaultTextIn(key: "tagline" | "welcome" | "footer", value: string, lang: Lang): string {
+  const all: Record<Lang, string> = { en: DEFAULTS[key], ...Object.fromEntries(Object.entries(DEFAULT_TEXTS).map(([l, d]) => [l, d[key]])) } as Record<Lang, string>;
+  return Object.values(all).includes(value) ? all[lang] : value;
+}
+
+/**
+ * A new language: texts still at some language's default go back to being unset, so the new
+ * language's defaults show (texts an admin wrote stay).
+ */
+export function dropDefaultTexts() {
+  const all = [{ tagline: DEFAULTS.tagline, welcome: DEFAULTS.welcome, footer: DEFAULTS.footer }, ...Object.values(DEFAULT_TEXTS)];
+  for (const k of ["tagline", "welcome", "footer"] as const) {
+    const r = db().prepare("select value from settings where key = ?").get(k) as { value: string } | undefined;
+    if (r && all.some((d) => JSON.stringify(d[k]) === r.value)) db().prepare("delete from settings where key = ?").run(k);
+  }
 }
 
 export function setSettings(patch: Partial<SiteSettings>) {

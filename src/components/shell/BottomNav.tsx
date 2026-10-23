@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
-import { useApp } from "@/components/app/AppProvider";
+import { useApp, useT } from "@/components/app/AppProvider";
 import { isActive, isBare, visibleSections } from "./nav";
 import { Drawer } from "./Drawer";
 
 /** Phones: the first four sections and More, in a glass bar along the bottom. */
 export function BottomNav() {
   const { me, site, counts } = useApp();
+  const t = useT();
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
   useEffect(() => setDrawer(false), [pathname]);
@@ -19,7 +20,7 @@ export function BottomNav() {
   const moreActive = !shown.some((s) => isActive(s, pathname));
   return (
     <>
-      <nav className="bottom-nav" aria-label="Sections">
+      <nav className="bottom-nav" aria-label={t("Sections")}>
         {shown.map((s) => {
           const Icon = s.icon;
           const active = isActive(s, pathname);
@@ -30,15 +31,15 @@ export function BottomNav() {
                 <Icon size={21} />
                 {n ? <span className="count-badge">{n}</span> : null}
               </span>
-              {s.label}
+              {t(s.label)}
             </Link>
           );
         })}
-        <button type="button" className={moreActive && pathname !== "/" ? "active" : ""} onClick={() => setDrawer(true)} aria-label="More">
+        <button type="button" className={moreActive && pathname !== "/" ? "active" : ""} onClick={() => setDrawer(true)} aria-label={t("More")}>
           <span className="bn-icon">
             <Menu size={21} />
           </span>
-          More
+          {t("More")}
         </button>
       </nav>
       {drawer ? <Drawer onClose={() => setDrawer(false)} /> : null}

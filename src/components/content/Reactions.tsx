@@ -5,7 +5,7 @@ import { SmilePlus } from "lucide-react";
 import type { Reaction } from "@/lib/types";
 import { EmojiPopover, QUICK_REACTIONS } from "@/components/ui/EmojiPicker";
 import { Popover } from "@/components/ui/Popover";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 import { reactAction } from "@/app/actions/content";
 import type { ReactTarget } from "@/lib/reactions";
 
@@ -24,6 +24,7 @@ export function Reactions({ type, id, initial, myName, onReact, small = false, r
   const [quick, setQuick] = useState(false);
   const [full, setFull] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
+  const t = useT();
   const toast = useToast();
   // the parent may hand over a fresher list (live updates)
   const [seen, setSeen] = useState(initial);
@@ -44,12 +45,12 @@ export function Reactions({ type, id, initial, myName, onReact, small = false, r
   return (
     <div className={`reactions ${small ? "small" : ""}`}>
       {list.map((r) => (
-        <button key={r.emoji} type="button" className={`react-chip ${r.mine ? "mine" : ""}`} onClick={() => toggle(r.emoji)} title={`${r.users.join(", ")}${r.count > r.users.length ? ` and ${r.count - r.users.length} more` : ""}`}>
+        <button key={r.emoji} type="button" className={`react-chip ${r.mine ? "mine" : ""}`} onClick={() => toggle(r.emoji)} title={r.count > r.users.length ? t("{names} and {n} more", { names: r.users.join(", "), n: r.count - r.users.length }) : r.users.join(", ")}>
           <span className="react-emoji">{r.emoji}</span>
           <span className="react-n">{r.count}</span>
         </button>
       ))}
-      <button ref={btn} type="button" className="react-add" aria-label="Add a reaction" title="Add a reaction" onClick={() => setQuick((q) => !q)}>
+      <button ref={btn} type="button" className="react-add" aria-label={t("Add a reaction")} title={t("Add a reaction")} onClick={() => setQuick((q) => !q)}>
         <SmilePlus size={small ? 15 : 17} />
       </button>
       {quick ? (
@@ -70,7 +71,7 @@ export function Reactions({ type, id, initial, myName, onReact, small = false, r
             <button
               type="button"
               className="more"
-              aria-label="More emoji"
+              aria-label={t("More emoji")}
               onClick={() => {
                 setQuick(false);
                 setFull(true);

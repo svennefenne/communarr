@@ -1,3 +1,4 @@
+import type { Lang } from "./i18n";
 import type { Presence, ThemePrefs, UserSummary } from "./types";
 
 export interface Me extends UserSummary {
@@ -18,6 +19,8 @@ export interface Features {
 }
 
 export interface SiteInfo {
+  /** the viewer's language (their own choice, else the site's) */
+  lang: Lang;
   name: string;
   tagline: string;
   footer: string;

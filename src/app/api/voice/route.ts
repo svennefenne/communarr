@@ -2,11 +2,14 @@ import { getUser } from "@/lib/auth";
 import { connById } from "@/lib/hub";
 import { canSee, room } from "@/lib/chat";
 import { getSettings } from "@/lib/settings";
+import { requestT } from "@/lib/t";
+import type { Vars } from "@/lib/i18n";
 import { iceServers, joinVoice, leaveVoice, muteVoice, relayVoice, voiceSnapshot } from "@/lib/voice";
 
 export const dynamic = "force-dynamic";
 
-const fail = (error: string, status = 400) => Response.json({ error }, { status });
+/** an error for the person (English text, sent in their language) */
+const fail = async (error: string, status = 400, vars?: Vars) => Response.json({ error: (await requestT())(error, vars) }, { status });
 
 /** GET /api/voice → { channels, ice }: who's talking where, and the servers for the calls. */
 export async function GET() {
@@ -43,7 +46,7 @@ export async function POST(req: Request) {
       const r = room(roomId);
       if (!r || !canSee(user, r)) return fail("You can't join this room's voice.", 403);
       const others = joinVoice(user.id, roomId, conn.id);
-      if (others === "full") return fail(`The voice channel is full (${getSettings().voice.max} at most).`, 409);
+      if (others === "full") return fail("The voice channel is full ({n} at most).", 409, { n: getSettings().voice.max });
       return Response.json({ others, ice: iceServers() });
     }
     case "leave":
