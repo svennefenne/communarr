@@ -9,6 +9,7 @@ import { isActive, isBare, visibleSections } from "./nav";
 import { Drawer } from "./Drawer";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
+import { OnlineButton } from "./OnlineButton";
 
 export function Brand({ name }: { name: string }) {
   const t = useT();
@@ -57,7 +58,7 @@ function SiteHeader({ pathname }: { pathname: string }) {
     return () => ro.disconnect();
   }, []);
 
-  // Q and E: the section before and after this one (through the links, so the wipe plays)
+  // Q and E on the keyboard: the section before and after this one (through the links, so the wipe plays)
   const step = (dir: -1 | 1) => {
     const links = navRef.current?.querySelectorAll<HTMLAnchorElement>("a[data-section]");
     if (!links?.length) return;
@@ -98,10 +99,7 @@ function SiteHeader({ pathname }: { pathname: string }) {
       </div>
 
       {me ? (
-        <nav className="hd-nav" aria-label={t("Sections")} ref={navRef}>
-          <button type="button" className="nav-key" onClick={() => step(-1)} title={t("Previous section (Q)")} aria-label={t("Previous section (Q)")} aria-keyshortcuts="Q">
-            Q
-          </button>
+        <nav className="hd-nav" aria-label={t("Sections")} aria-keyshortcuts="Q E" ref={navRef}>
           {sections.map((s, i) => {
             const Icon = s.icon;
             const dot = s.href === "/chat" && counts.chat > 0;
@@ -113,9 +111,6 @@ function SiteHeader({ pathname }: { pathname: string }) {
               </Link>
             );
           })}
-          <button type="button" className="nav-key" onClick={() => step(1)} title={t("Next section (E)")} aria-label={t("Next section (E)")} aria-keyshortcuts="E">
-            E
-          </button>
         </nav>
       ) : (
         <span />
@@ -129,6 +124,7 @@ function SiteHeader({ pathname }: { pathname: string }) {
               <span className="search-label">{t("Search everything")}</span>
               <span className="kbd hint-only">/</span>
             </button>
+            <OnlineButton />
             <NotificationBell />
             <UserMenu />
           </>

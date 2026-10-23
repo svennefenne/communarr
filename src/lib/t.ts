@@ -31,12 +31,17 @@ export function memberLang(userId: number): Lang | null {
   return isLang(r?.lang) ? r.lang : null;
 }
 
+/** t for a language, with the admin's own wording for it (Admin → Texts). */
+export function inLang(lang: Lang): T {
+  return makeT(lang, getSetting("texts")[lang]);
+}
+
 export function serverT(): T {
-  return makeT(getSetting("language"));
+  return inLang(getSetting("language"));
 }
 
 export function userT(userId: number): T {
-  return makeT(memberLang(userId) ?? getSetting("language"));
+  return inLang(memberLang(userId) ?? getSetting("language"));
 }
 
 /** The language of whoever this request is for (once per request). */
@@ -49,5 +54,5 @@ export const requestLang = cache(async (): Promise<Lang> => {
 });
 
 export async function requestT(): Promise<T> {
-  return makeT(await requestLang());
+  return inLang(await requestLang());
 }

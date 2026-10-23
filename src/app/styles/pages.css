@@ -949,3 +949,55 @@
   text-align: center;
   min-width: 0;
 }
+
+/* ── Backdrop pictures (the library an admin uploads; picked like the built-in backdrops) ── */
+.backdrop-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.backdrop-tile {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--line-strong);
+  background-color: var(--surface-2);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  text-align: left;
+  cursor: pointer;
+}
+div.backdrop-tile {
+  cursor: default;
+}
+.backdrop-tile > span {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 8px 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.65));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.backdrop-tile.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / 0.35);
+}
+.backdrop-tile .backdrop-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  color: #fff;
+  background: rgb(0 0 0 / 0.55);
+}
