@@ -26,7 +26,11 @@ export async function GET(req: Request) {
           cleanup();
         }
       };
-      const conn = addConn(user.id, (t, d) => write(`data: ${JSON.stringify({ t, d })}\n\n`));
+      const conn = addConn(
+        user.id,
+        (t, d) => write(`data: ${JSON.stringify({ t, d })}\n\n`),
+        () => cleanup(),
+      );
       const ping = setInterval(() => write(`: ping\n\n`), 20_000);
       cleanup = () => {
         if (!open) return;

@@ -71,7 +71,8 @@ export async function saveThemeAction(id: number | null, name: string, data: The
 
 export async function deleteThemeAction(id: number) {
   return act((u) => {
-    db().prepare("delete from themes where id = ? and (user_id = ? or ? = 1)").run(id, u.id, u.isAdmin ? 1 : 0);
+    const r = db().prepare("delete from themes where id = ? and (user_id = ? or ? = 1)").run(id, u.id, u.isAdmin ? 1 : 0);
+    if (!r.changes) throw new UserError("You can only delete your own themes.");
     // anyone using it goes back to their scheme
     for (const r of db().prepare("select id, theme_json from users where theme_json like ?").all(`%"custom":${id}%`) as { id: number; theme_json: string }[]) {
       try {

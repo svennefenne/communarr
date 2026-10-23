@@ -10,8 +10,17 @@ const fail = (error: string, status = 400) => Response.json({ error }, { status 
 
 /** GET /api/voice → { channels, ice }: who's talking where, and the servers for the calls. */
 export async function GET() {
-  if (!(await getUser())) return fail("Log in first.", 401);
-  return Response.json({ channels: voiceSnapshot(), ice: iceServers() });
+  const user = await getUser();
+  if (!user) return fail("Log in first.", 401);
+  // only the channels of rooms you can see (who's in a call in a DM is nobody else's business)
+  const all = voiceSnapshot();
+  const channels = Object.fromEntries(
+    Object.entries(all).filter(([id]) => {
+      const r = room(Number(id));
+      return !!r && canSee(user, r);
+    }),
+  );
+  return Response.json({ channels, ice: iceServers() });
 }
 
 /**
@@ -43,8 +52,15 @@ export async function POST(req: Request) {
     case "mute":
       muteVoice(roomId, conn.id, !!b.muted);
       return Response.json({ ok: true });
-    case "signal":
+    case "signal": {
+      // still allowed in the room (not removed since joining)
+      const r = room(roomId);
+      if (!r || !canSee(user, r)) {
+        leaveVoice(roomId, conn.id);
+        return fail("You can't be in this room's voice.", 403);
+      }
       return relayVoice(roomId, conn.id, Number(b.to), b.data) ? Response.json({ ok: true }) : fail("Not in the voice channel.", 404);
+    }
     default:
       return fail("Unknown action.");
   }

@@ -24,6 +24,12 @@ function Face({ p, user, talking, me }: { p: VoicePeer; user?: UserSummary; talk
 /** While you're in a call: who's in it (talking ones glow), mute, deafen and hang up. */
 export function VoiceDock() {
   const v = useVoice();
+  // (the member list is only fetched while there's a call)
+  return v.room == null ? null : <Dock />;
+}
+
+function Dock() {
+  const v = useVoice();
   const { conn } = useApp();
   const people = useMembers();
   if (v.room == null) return null;

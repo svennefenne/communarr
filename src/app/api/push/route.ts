@@ -1,5 +1,5 @@
 import { getUser } from "@/lib/auth";
-import { pushTo, removeSubscription, saveSubscription, vapidPublicKey } from "@/lib/push";
+import { isPushEndpoint, pushTo, removeSubscription, saveSubscription, vapidPublicKey } from "@/lib/push";
 import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     return Response.json(r);
   }
   const s = b.subscription;
-  if (!s?.endpoint || !s.keys?.p256dh || !s.keys.auth || !/^https:\/\//.test(s.endpoint)) return Response.json({ error: "That isn't a subscription." }, { status: 400 });
+  if (!s?.endpoint || !s.keys?.p256dh || !s.keys.auth || !isPushEndpoint(s.endpoint)) return Response.json({ error: "That isn't a subscription from a browser's push service." }, { status: 400 });
   saveSubscription(user.id, { endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh, auth: s.keys.auth } }, req.headers.get("user-agent") || "");
   return Response.json({ ok: true });
 }

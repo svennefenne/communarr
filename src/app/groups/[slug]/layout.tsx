@@ -9,8 +9,9 @@ import { BackPill } from "@/components/ui/BackPill";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const u = await requireUser();
   const g = groupRow(decodeURIComponent((await params).slug));
-  return { title: g ? g.name : "Group" };
+  return { title: g && canSeeGroup(u, g) ? g.name : "Group" };
 }
 
 export default async function GroupLayout({ params, children }: { params: Promise<{ slug: string }>; children: React.ReactNode }) {
@@ -18,7 +19,9 @@ export default async function GroupLayout({ params, children }: { params: Promis
   const s = getSettings();
   const row = groupRow(decodeURIComponent((await params).slug));
   if (!row || !canSeeGroup(u, row) || !s.features.groups) notFound();
-  const g = groupInfo(u, row, true);
+  const info = groupInfo(u, row, true);
+  // outside a closed group you see its name, not what's said in it or who's in it
+  const g = info.canRead ? info : { ...info, descriptionHtml: "", members: [] };
   return (
     <div className="page">
       <BackPill href="/groups" label="Groups" />

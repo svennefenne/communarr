@@ -213,10 +213,31 @@ export function updateGroup(u: User, id: number, o: { name?: string; tagline?: s
       id,
     );
   if (g.room_id && name !== g.name) db().prepare("update rooms set name = ? where id = ?").run(name, g.room_id);
-  // what's posted in the group follows its privacy in search
-  if (privacy !== g.privacy) db().prepare("update search_index set scope = ? where scope = ?").run(scopeFor({ id, privacy }), scopeFor(g));
+  // what's posted in the group follows its privacy in search (only the group's own things)
+  if (privacy !== g.privacy) {
+    const scope = scopeFor({ id, privacy });
+    const up = db().prepare("update search_index set scope = ? where kind = ? and ref = ?");
+    tx(() => {
+      for (const [kind, ref] of groupSearchItems(id)) up.run(scope, kind, ref);
+    });
+  }
   const ng = groupRow(id)!;
   indexItem("group", id, privacy === "secret" ? `g:${id}` : "members", g.owner_id, g.created_at, ng.name, `${ng.tagline} ${desc?.text ?? ""}`);
+}
+
+/** Everything in the search index that belongs to a group: [kind, ref]. */
+function groupSearchItems(id: number): [string, number][] {
+  const q = (sql: string) => (db().prepare(sql).all(id) as { k: string; r: number }[]).map((x): [string, number] => [x.k, x.r]);
+  return [
+    ...q("select kind k, id r from posts where group_id = ?"),
+    ...q("select 'poll' k, id r from polls where group_id = ?"),
+    ...q("select 'event' k, id r from events where group_id = ?"),
+    ...q("select 'thread' k, t.id r from forum_threads t join forum_categories c on c.id = t.category_id where c.group_id = ?"),
+    ...q("select 'reply' k, p.id r from forum_posts p join forum_threads t on t.id = p.thread_id join forum_categories c on c.id = t.category_id where c.group_id = ?"),
+    ...q("select 'comment' k, c.id r from comments c join posts p on c.target_type = 'post' and p.id = c.target_id where p.group_id = ?"),
+    ...q("select 'comment' k, c.id r from comments c join polls p on c.target_type = 'poll' and p.id = c.target_id where p.group_id = ?"),
+    ...q("select 'comment' k, c.id r from comments c join events e on c.target_type = 'event' and e.id = c.target_id where e.group_id = ?"),
+  ];
 }
 
 export function deleteGroup(u: User, id: number) {
@@ -224,11 +245,7 @@ export function deleteGroup(u: User, id: number) {
   if (!g) return;
   if (!(u.isAdmin || groupRole(id, u.id) === "owner")) throw new GroupError("Only the group's owner can delete it.");
   tx(() => {
-    db().prepare("delete from search_index where scope = ?").run(`g:${id}`);
-    for (const t of ["post", "poll", "event"] as const) {
-      const table = t === "post" ? "posts" : t === "poll" ? "polls" : "events";
-      for (const r of db().prepare(`select id from ${table} where group_id = ?`).all(id) as { id: number }[]) unindex(t, r.id);
-    }
+    for (const [kind, ref] of groupSearchItems(id)) db().prepare("delete from search_index where kind = ? and ref = ?").run(kind, ref);
     unindex("group", id);
     if (g.room_id) db().prepare("delete from rooms where id = ?").run(g.room_id);
     db().prepare("delete from groups where id = ?").run(id);
@@ -323,6 +340,9 @@ export function removeFromGroup(u: User, id: number, userId: number) {
 export function setGroupRole(u: User, id: number, userId: number, role: GroupRole) {
   const g = groupRow(id);
   if (!g || !canManageGroup(u, g)) throw new GroupError("Only the group's admins can do that.");
+  if (!["owner", "admin", "member"].includes(role)) throw new GroupError("No such role.");
+  // the owner's own role is the owner's (or a site admin's) to change
+  if (groupRole(id, userId) === "owner" && groupRole(id, u.id) !== "owner" && !u.isAdmin) throw new GroupError("Only the owner can change that.");
   if (role === "owner") {
     if (groupRole(id, u.id) !== "owner" && !u.isAdmin) throw new GroupError("Only the owner can hand the group over.");
     db().prepare("update group_members set role = 'admin' where group_id = ? and role = 'owner'").run(id);

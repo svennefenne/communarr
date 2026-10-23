@@ -15,8 +15,15 @@ export interface FormState {
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "");
 
+/** Back to where you were, but only somewhere on this site ("/\evil.example" is another site to a browser). */
 function safeNext(next: string) {
-  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login") ? next : "/";
+  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || next.startsWith("/login")) return "/";
+  try {
+    const u = new URL(next, "http://hooden.invalid");
+    return u.origin === "http://hooden.invalid" ? u.pathname + u.search + u.hash : "/";
+  } catch {
+    return "/";
+  }
 }
 
 export async function setupAction(_: FormState, fd: FormData): Promise<FormState> {
@@ -42,11 +49,15 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
   const username = str(fd, "username").trim();
   const password = str(fd, "password");
   const { ip } = await clientInfo();
-  const key = `${ip}|${username.toLowerCase()}`;
-  if (tooManyAttempts(key)) return { error: "Too many tries. Wait ten minutes and try again." };
+  const name = username.toLowerCase();
+  // per address (when there is one) and per name from anywhere: made-up addresses don't help
+  const key = ip ? `${ip}|${name}` : null;
+  const nameKey = `*|${name}`;
+  if ((key && tooManyAttempts(key)) || tooManyAttempts(nameKey, 30)) return { error: "Too many tries. Wait ten minutes and try again." };
   const row = db().prepare("select * from users where username = ?").get(username) as UserRow | undefined;
   if (!row || !(await verifyPassword(password, row.password_hash))) {
-    noteFailure(key);
+    if (key) noteFailure(key);
+    noteFailure(nameKey);
     return { error: "That username and password don't match." };
   }
   if (row.banned) return { error: `This account has been closed${row.ban_reason ? `: ${row.ban_reason}` : "."}` };
@@ -54,7 +65,7 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
   if (row.suspended_until && row.suspended_until > now()) {
     return { error: `This account is suspended until ${new Date(row.suspended_until).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}.` };
   }
-  clearFailures(key);
+  if (key) clearFailures(key);
   await startSession(row.id);
   redirect(safeNext(str(fd, "next")));
 }

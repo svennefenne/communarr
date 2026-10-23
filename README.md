@@ -130,6 +130,8 @@ approval), or add members yourself with a made-up password. Forgotten passwords:
 | `PUID` / `PGID` | `99` / `100` | Who owns the files in `/data` (compose file: `1000`/`1000`) |
 | `UMASK` | `002` | File permissions for new files |
 | `VOICE_TURN_URL`, `VOICE_TURN_USER`, `VOICE_TURN_PASS` | | A TURN server for voice chat (also Admin → Notifications & voice) |
+| `TRUSTED_IP_HEADER` | | The header your proxy puts the visitor's address in, e.g. `cf-connecting-ip` behind a Cloudflare Tunnel (used to slow down password guessing; otherwise the last `X-Forwarded-For` hop) |
+| `PUSH_HOSTS` | | Extra push-service hosts to accept, comma-separated (Google, Mozilla, Apple and Microsoft are built in) |
 | `PORT` | `3000` | The port inside the container |
 | `DATA_DIR` | `/data` | Where everything is kept |
 

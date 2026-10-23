@@ -78,6 +78,11 @@ export function leaveVoiceConn(conn: number) {
   for (const [room, ch] of channels) if (ch.has(conn)) leaveVoice(room, conn);
 }
 
+/** Someone left or was removed from a room: out of its voice channel too, every tab of theirs. */
+export function kickFromVoice(roomId: number, userId: number) {
+  for (const p of voicePeers(roomId)) if (p.userId === userId) leaveVoice(roomId, p.conn);
+}
+
 export function muteVoice(roomId: number, conn: number, muted: boolean) {
   const p = channels.get(roomId)?.get(conn);
   if (!p) return;

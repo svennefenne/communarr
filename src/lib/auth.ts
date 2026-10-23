@@ -38,12 +38,17 @@ async function secureRequest(): Promise<boolean> {
   return (process.env.PUBLIC_URL || "").startsWith("https://");
 }
 
+/**
+ * The visitor's address. Headers can be made up by anyone talking to the server directly, so only
+ * one is trusted: the one named in TRUSTED_IP_HEADER (e.g. cf-connecting-ip behind a Cloudflare
+ * Tunnel), or else the last hop of X-Forwarded-For, which the reverse proxy in front adds itself.
+ */
 export async function clientInfo() {
   const h = await headers();
-  return {
-    ua: (h.get("user-agent") || "").slice(0, 300),
-    ip: (h.get("cf-connecting-ip") || h.get("x-real-ip") || h.get("x-forwarded-for")?.split(",")[0] || "").trim(),
-  };
+  const trusted = process.env.TRUSTED_IP_HEADER?.toLowerCase();
+  const xff = h.get("x-forwarded-for")?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
+  const ip = trusted ? h.get(trusted) || "" : xff[xff.length - 1] || h.get("x-real-ip") || "";
+  return { ua: (h.get("user-agent") || "").slice(0, 300), ip: ip.trim().slice(0, 64) };
 }
 
 export async function startSession(userId: number) {
@@ -125,14 +130,15 @@ export function hasAnyUser(): boolean {
   return !!db().prepare("select 1 from users limit 1").get();
 }
 
-// ── log-in attempts: at most 8 failures per name and address in 10 minutes ──
+// ── log-in attempts: at most 8 failures per name and address, and 30 per name from anywhere,
+//    in 10 minutes ──
 const g = globalThis as typeof globalThis & { __hdAttempts?: Map<string, number[]> };
 const attempts = (g.__hdAttempts ??= new Map());
 
-export function tooManyAttempts(key: string): boolean {
+export function tooManyAttempts(key: string, max = 8): boolean {
   const list = (attempts.get(key) || []).filter((t: number) => t > Date.now() - 10 * 60_000);
   attempts.set(key, list);
-  return list.length >= 8;
+  return list.length >= max;
 }
 export function noteFailure(key: string) {
   const list = attempts.get(key) || [];

@@ -3,6 +3,8 @@ import { db, now } from "./db";
 import { notify } from "./notify";
 import { cleanLine } from "./sanitize";
 import { summaries, type User } from "./users";
+import { UserError } from "./errors";
+import { canSeeTarget } from "./visibility";
 import type { UserSummary } from "./types";
 
 /** Members can flag something for the moderators (Admin → Reports). */
@@ -53,7 +55,8 @@ function preview(type: ReportTarget, id: number): string {
 }
 
 export function report(u: User, type: ReportTarget, id: number, reason: string) {
-  if (!(type in URL)) throw new Error("Can't report that.");
+  // own keys only ("constructor" is "in" every object), and only what you can see yourself
+  if (!Object.hasOwn(URL, type) || !canSeeTarget(u, type, Number(id))) throw new UserError("Can't report that.");
   const why = cleanLine(reason, 500) || "No reason given";
   db().prepare("insert into reports (reporter_id, target_type, target_id, reason, created_at) values (?, ?, ?, ?, ?)").run(u.id, type, id, why, now());
   const mods = (db().prepare("select id from users where role in ('admin','moderator') and banned = 0").all() as { id: number }[]).map((r) => r.id);
@@ -65,7 +68,7 @@ export function listReports(status: "open" | "all" = "open"): ReportView[] {
     .prepare(`select * from reports ${status === "open" ? "where status = 'open'" : ""} order by created_at desc limit 200`)
     .all() as { id: number; reporter_id: number | null; target_type: ReportTarget; target_id: number; reason: string; status: ReportView["status"]; resolved_by: number | null; resolved_at: number | null; note: string; created_at: number }[];
   const people = summaries(rows.flatMap((r) => [r.reporter_id!, r.resolved_by!]).filter(Boolean));
-  return rows.map((r) => ({
+  return rows.filter((r) => Object.hasOwn(URL, r.target_type)).map((r) => ({
     id: r.id,
     type: r.target_type,
     targetId: r.target_id,

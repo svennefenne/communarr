@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { categories, countView, markThreadRead, pageOfReply, threadPage, threadRow } from "@/lib/forum";
+import { canSeeThread, categories, countView, markThreadRead, pageOfReply, threadPage, threadRow } from "@/lib/forum";
 import { markReadByUrl } from "@/lib/notify";
 import { ThreadView } from "@/components/forum/ThreadView";
 import { BackPill } from "@/components/ui/BackPill";
@@ -8,8 +8,9 @@ import { BackPill } from "@/components/ui/BackPill";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const u = await requireUser();
   const t = threadRow(Number((await params).id));
-  return { title: t ? t.title : "Thread" };
+  return { title: t && canSeeThread(u, t) ? t.title : "Thread" };
 }
 
 export default async function ThreadPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string; p?: string }> }) {

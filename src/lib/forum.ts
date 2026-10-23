@@ -6,7 +6,7 @@ import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { canPostInGroup, canReadGroup, groupRow, groupScope, readableGroupIds } from "./groups";
-import { GHOST, summaries, userByName, type User } from "./users";
+import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { groupRefs } from "./posts";
 import type { CategoryView, ThreadCard } from "./contentTypes";
@@ -289,7 +289,7 @@ export function createThread(u: User, o: { categoryId: number; title: string; ht
     indexItem("thread", id, threadScope(c), u.id, t, title, b.text);
     return id;
   });
-  const mentioned = b.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x);
+  const mentioned = usersWho(b.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeCategory(x, c));
   notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in the forum`, body: title, url: `/forum/t/${id}` });
   broadcast("feed", { type: "thread", id, by: u.id, group: c.group_id });
   return id;
@@ -316,9 +316,13 @@ export function reply(u: User, threadId: number, html: string): number {
     return id;
   });
   const url = `/go/reply/${id}`;
-  const mentioned = b.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x);
+  const mentioned = usersWho(b.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeThread(x, t));
   if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in “${t.title}”`, body: b.text.slice(0, 160), url });
-  const subs = (db().prepare("select user_id from forum_subs where thread_id = ?").all(threadId) as { user_id: number }[]).map((r) => r.user_id).filter((x) => !mentioned.includes(x));
+  // (followers who left the group, or never could see it, hear nothing)
+  const subs = usersWho(
+    (db().prepare("select user_id from forum_subs where thread_id = ?").all(threadId) as { user_id: number }[]).map((r) => r.user_id).filter((x) => !mentioned.includes(x)),
+    (x) => canSeeThread(x, t),
+  );
   notify(subs, { kind: "forum", actorId: u.id, title: `${u.name} replied to “${t.title}”`, body: b.text.slice(0, 160), url });
   broadcast("thread", { id: threadId, reply: id, by: u.id });
   return id;
@@ -391,6 +395,8 @@ export function moderateThread(u: User, id: number, o: { pinned?: boolean; locke
 }
 
 export function follow(u: User, id: number, on: boolean) {
+  const t = threadRow(id);
+  if (on && (!t || !canSeeThread(u, t))) throw new ForumError("That thread is gone.");
   if (on) db().prepare("insert or ignore into forum_subs (thread_id, user_id) values (?, ?)").run(id, u.id);
   else db().prepare("delete from forum_subs where thread_id = ? and user_id = ?").run(id, u.id);
 }

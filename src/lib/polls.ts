@@ -6,7 +6,7 @@ import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf } from "./groups";
-import { GHOST, summaries, userByName, type User } from "./users";
+import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { commentCounts, groupRefs } from "./posts";
 import type { PollView } from "./contentTypes";
@@ -191,7 +191,8 @@ export function createPoll(u: User, o: PollInput): number {
     return id;
   });
   const url = `/polls/${id}`;
-  const mentioned = c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x);
+  const row = pollRow(id)!;
+  const mentioned = usersWho(c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeePoll(x, row));
   if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a poll`, body: question, url });
   if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: `New poll in ${groupRow(groupId)!.name}: ${question}`, url });
   broadcast("feed", { type: "poll", id, by: u.id, group: groupId });
