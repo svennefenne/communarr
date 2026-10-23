@@ -1,0 +1,25 @@
+import fs from "node:fs";
+import { getUser } from "@/lib/auth";
+import { mediaFile } from "@/lib/uploads";
+
+const TYPES: Record<string, string> = { webp: "image/webp", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif" };
+
+/** GET /media/…: an uploaded picture (members only, except backgrounds the log-in page shows). */
+export async function GET(_: Request, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path: parts } = await params;
+  if (parts[0] !== "bg" && !(await getUser())) return new Response("Log in first", { status: 401 });
+  const file = mediaFile(parts);
+  if (!file) return new Response("Not found", { status: 404 });
+  const ext = file.split(".").pop()!.toLowerCase();
+  const stat = fs.statSync(file);
+  const body = fs.readFileSync(file);
+  return new Response(new Uint8Array(body), {
+    headers: {
+      "Content-Type": TYPES[ext] || "application/octet-stream",
+      "Content-Length": String(stat.size),
+      // file names never change: keep them for good
+      "Cache-Control": "private, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}

@@ -1,0 +1,49 @@
+"use client";
+
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import type { SearchHit, SearchKind } from "@/lib/search";
+import { Empty } from "@/components/ui/ui";
+import { HitRow } from "./SearchResults";
+
+export function SearchPage({ hits, q, page, pages, kind }: { hits: SearchHit[]; q: string; page: number; pages: number; kind?: SearchKind }) {
+  const link = (p: number) => `/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}${p > 1 ? `&page=${p}` : ""}`;
+  if (!hits.length)
+    return (
+      <div className="panel">
+        <Empty icon={<Search size={24} />} title="Nothing found">
+          Try fewer or different words. The last word also matches the start of words (&ldquo;pizz&rdquo; finds pizza).
+        </Empty>
+      </div>
+    );
+  return (
+    <>
+      <div className="panel list">
+        {hits.map((h) => (
+          <HitRow key={`${h.kind}-${h.ref}`} h={h} />
+        ))}
+      </div>
+      {pages > 1 ? (
+        <nav className="pager">
+          {page > 1 ? (
+            <Link href={link(page - 1)} className="btn btn-sm">
+              <ChevronLeft size={15} /> Back
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="small muted">
+            Page {page} of {pages}
+          </span>
+          {page < pages ? (
+            <Link href={link(page + 1)} className="btn btn-sm">
+              More <ChevronRight size={15} />
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
+    </>
+  );
+}
