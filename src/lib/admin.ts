@@ -4,7 +4,7 @@ import path from "node:path";
 import { db, DATA_DIR, now, tx, UPLOAD_DIR } from "./db";
 import { UserError } from "./errors";
 import { audit, hashPassword, randomToken } from "./auth";
-import { onlineCount, sendTo } from "./hub";
+import { dropUser, onlineCount, sendTo } from "./hub";
 import { indexItem } from "./search";
 import { groupScope } from "./groups";
 import { openReportCount } from "./reports";
@@ -102,9 +102,11 @@ function target(id: number): UserRow {
   return r;
 }
 
+/** Logged out everywhere: sessions gone, and every open stream (live chat, voice) closed. */
 function kick(userId: number) {
   db().prepare("delete from sessions where user_id = ?").run(userId);
   sendTo(userId, "refresh", {});
+  dropUser(userId);
 }
 
 export function setRole(by: User, id: number, role: Role) {
@@ -140,6 +142,8 @@ export function ban(by: User, id: number, banned: boolean, reason = "") {
 
 export function approve(by: User, id: number, yes: boolean) {
   const t = target(id);
+  // only for sign-ups waiting to get in (not a way round a suspension)
+  if (t.ban_reason !== "pending" || t.banned) throw new UserError("They aren't waiting to get in.");
   if (yes) db().prepare("update users set suspended_until = null, ban_reason = null where id = ?").run(id);
   else db().prepare("delete from users where id = ? and ban_reason = 'pending'").run(id);
   audit(by.id, yes ? "approve" : "reject", t.username);
@@ -156,6 +160,7 @@ export function resetLink(by: User, id: number): string {
 
 export function logoutEverywhere(by: User, id: number) {
   const t = target(id);
+  if (t.role === "admin" && !by.isAdmin) throw new UserError("Moderators can't do that to admins.");
   kick(id);
   audit(by.id, "log out everywhere", t.username);
 }
@@ -232,8 +237,12 @@ export function reindexAll(): number {
       n++;
     }
     for (const c of db().prepare("select * from comments").all() as { id: number; target_type: string; target_id: number; author_id: number; body_text: string; created_at: number }[]) {
-      const g = (db().prepare(`select group_id from ${c.target_type === "post" ? "posts" : c.target_type === "poll" ? "polls" : "events"} where id = ?`).get(c.target_id) as { group_id: number | null } | undefined)?.group_id ?? null;
-      indexItem("comment", c.id, groupScope(g), c.author_id, c.created_at, "Comment", c.body_text);
+      const table = c.target_type === "post" ? "posts" : c.target_type === "poll" ? "polls" : "events";
+      const t = db().prepare(`select * from ${table} where id = ?`).get(c.target_id) as { group_id: number | null; visibility?: string; author_id: number } | undefined;
+      if (!t) continue;
+      // comments on an "only me" post stay with its author
+      const scope = t.visibility === "private" ? `u:${t.author_id}` : groupScope(t.group_id);
+      indexItem("comment", c.id, scope, c.author_id, c.created_at, "Comment", c.body_text);
       n++;
     }
     for (const g of db().prepare("select * from groups").all() as { id: number; name: string; tagline: string; privacy: string; owner_id: number; created_at: number }[]) {

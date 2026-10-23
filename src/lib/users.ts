@@ -147,6 +147,14 @@ export function summaries(ids: Iterable<number>): Map<number, UserSummary> {
   return out;
 }
 
+/** Of these people, the ones for whom `check` holds (who may see something, before telling them about it). */
+export function usersWho(ids: Iterable<number>, check: (u: User) => boolean): number[] {
+  return [...new Set(ids)].filter((id) => {
+    const u = userById(id);
+    return !!u && !u.banned && check(u);
+  });
+}
+
 export const GHOST: UserSummary = { id: 0, username: "ghost", name: "Former member", avatar: null, accent: "#6b7280", role: "member", statusText: "", statusEmoji: "" };
 
 export function allMembers(): UserSummary[] {

@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getUser } from "@/lib/auth";
+import { canSeeTarget } from "@/lib/visibility";
 
 /** Short links to things whose page needs looking up (from search results and notifications). */
 export async function GET(req: Request, { params }: { params: Promise<{ kind: string; id: string }> }) {
   const { kind, id } = await params;
   const n = Number(id);
   const to = (path: string) => NextResponse.redirect(new URL(path, req.url));
-  if (!(await getUser())) return to("/login");
+  const u = await getUser();
+  if (!u) return to("/login");
+  // only to things you can see (a secret group's address would give its name away)
+  if (!canSeeTarget(u, kind, n)) return to("/");
   switch (kind) {
     case "comment": {
       const c = db().prepare("select target_type t, target_id i from comments where id = ?").get(n) as { t: string; i: number } | undefined;

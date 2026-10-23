@@ -2,6 +2,7 @@ import "server-only";
 import { UserError } from "./errors";
 import { db, now, tx } from "./db";
 import { broadcast, isInRoom, sendTo, sendToMany } from "./hub";
+import { kickFromVoice } from "./voice";
 import { notify } from "./notify";
 import { reactionsFor, reactionsRaw, clearReactions, toggleReaction } from "./reactions";
 import { cleanHtml, cleanLine, textToHtml } from "./sanitize";
@@ -242,6 +243,7 @@ export function leaveRoom(u: User, id: number) {
   const m = member(id, u.id);
   if (!m) return;
   db().prepare("delete from room_members where room_id = ? and user_id = ?").run(id, u.id);
+  if (!isOpenRoom(r)) kickFromVoice(id, u.id);
   // the owner leaving hands the room to the longest-standing admin or member
   if (m.role === "owner") {
     const next = db().prepare("select user_id from room_members where room_id = ? order by case role when 'admin' then 0 else 1 end, joined_at limit 1").get(id) as { user_id: number } | undefined;
@@ -254,6 +256,8 @@ export function leaveRoom(u: User, id: number) {
 export function inviteToRoom(u: User, id: number, userIds: number[]) {
   const r = room(id);
   if (!r || r.kind === "dm") throw new ChatError("You can't invite people here.");
+  // a group's room has the group's members: invite them to the group instead
+  if (r.kind === "group") throw new ChatError("This is a group's room: invite people to the group instead.");
   if (!member(id, u.id) && !u.isAdmin) throw new ChatError("Join the room first.");
   const already = new Set(memberIds(id));
   const t = now();
@@ -282,6 +286,7 @@ export function removeMember(u: User, id: number, userId: number) {
   const target = member(id, userId);
   if (!target || target.role === "owner") throw new ChatError("You can't remove the room's owner.");
   db().prepare("delete from room_members where room_id = ? and user_id = ?").run(id, userId);
+  kickFromVoice(id, userId);
   const who = summaries([userId]).get(userId);
   systemMessage(r, `${u.name} removed ${who?.name ?? "someone"}.`);
   sendTo(userId, "rooms", { changed: id, removed: true });
@@ -291,6 +296,9 @@ export function setMemberRole(u: User, id: number, userId: number, role: MemberR
   const r = room(id);
   if (!r || !canManage(u, r)) throw new ChatError("Only the room's owner and admins can do that.");
   const me = member(id, u.id);
+  if (!["owner", "admin", "member"].includes(role)) throw new ChatError("No such role.");
+  // the owner's own role is the owner's (or a site admin's) to change
+  if (member(id, userId)?.role === "owner" && me?.role !== "owner" && !u.isAdmin) throw new ChatError("Only the owner can change that.");
   if (role === "owner") {
     if (me?.role !== "owner" && !u.isAdmin) throw new ChatError("Only the owner can hand the room over.");
     db().prepare("update room_members set role = 'admin' where room_id = ? and role = 'owner'").run(id);
@@ -337,7 +345,10 @@ export function syncGroupMember(roomId: number | null, userId: number, inGroup: 
   if (inGroup) {
     const last = (db().prepare("select coalesce(max(id), 0) m from messages where room_id = ?").get(roomId) as { m: number }).m;
     db().prepare("insert or ignore into room_members (room_id, user_id, role, joined_at, last_read_id) values (?, ?, 'member', ?, ?)").run(roomId, userId, now(), last);
-  } else db().prepare("delete from room_members where room_id = ? and user_id = ?").run(roomId, userId);
+  } else {
+    db().prepare("delete from room_members where room_id = ? and user_id = ?").run(roomId, userId);
+    kickFromVoice(roomId, userId);
+  }
   sendTo(userId, "rooms", { changed: roomId });
 }
 

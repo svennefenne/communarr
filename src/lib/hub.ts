@@ -15,6 +15,8 @@ export interface Conn {
   id: number;
   userId: number;
   send: Send;
+  /** end the stream (the browser reconnects only if its session is still good) */
+  close: () => void;
   /** the tab is in sight right now (push notifications skip people looking at the site) */
   visible: boolean;
   /** out of sight for a while: counts as away */
@@ -64,8 +66,8 @@ export function presenceList(): { id: number; state: LiveState }[] {
   return [...hub.states.entries()].map(([id, state]) => ({ id, state }));
 }
 
-export function addConn(userId: number, send: Send): Conn {
-  const conn: Conn = { id: ++hub.seq, userId, send, visible: true, idle: false, room: null };
+export function addConn(userId: number, send: Send, close: () => void): Conn {
+  const conn: Conn = { id: ++hub.seq, userId, send, close, visible: true, idle: false, room: null };
   hub.conns.set(conn.id, conn);
   if (!hub.byUser.has(userId)) hub.byUser.set(userId, new Set());
   hub.byUser.get(userId)!.add(conn.id);
@@ -94,6 +96,16 @@ export function removeConn(conn: Conn) {
       }, 6000),
     );
   } else refreshPresence(conn.userId);
+}
+
+/** Close every stream someone has open (logged out everywhere, suspended, closed, password changed). */
+export function dropUser(userId: number) {
+  for (const id of [...(hub.byUser.get(userId) ?? [])]) hub.conns.get(id)?.close();
+}
+
+/** The connections someone has open right now. */
+export function connsOf(userId: number): number[] {
+  return [...(hub.byUser.get(userId) ?? [])];
 }
 
 export function connById(id: number, userId: number): Conn | null {

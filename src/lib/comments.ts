@@ -9,7 +9,7 @@ import { canSeePost, postRow } from "./posts";
 import { canSeePoll, pollRow } from "./polls";
 import { canSeeEvent, eventRow } from "./events";
 import { groupScope } from "./groups";
-import { GHOST, summaries, userByName, type User } from "./users";
+import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import type { CommentView } from "./contentTypes";
 
@@ -95,16 +95,21 @@ export function addComment(u: User, type: CommentTarget, id: number, html: strin
   indexItem("comment", cid, t.scope, u.id, ts, `Comment on ${t.title}`, c.text);
   const url = `${t.url}#c-${cid}`;
   const body = c.text.slice(0, 160);
-  const mentioned = c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x);
+  // only people who can see the thing hear about it
+  const sees = (x: User) => !!target(x, type, id);
+  const mentioned = usersWho(c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), sees);
   if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a comment`, body, url });
   const told = new Set([u.id, ...mentioned]);
-  if (parent && !told.has(parent.author_id)) {
+  if (parent && !told.has(parent.author_id) && usersWho([parent.author_id], sees).length) {
     notify([parent.author_id], { kind: "reply", actorId: u.id, title: `${u.name} answered your comment on “${t.title}”`, body, url });
     told.add(parent.author_id);
   }
-  if (!told.has(t.authorId)) notify([t.authorId], { kind: "reply", actorId: u.id, title: `${u.name} commented on “${t.title}”`, body, url });
+  if (!told.has(t.authorId) && usersWho([t.authorId], sees).length) notify([t.authorId], { kind: "reply", actorId: u.id, title: `${u.name} commented on “${t.title}”`, body, url });
   // others who commented hear about new comments too (not the ones told already)
-  const others = (db().prepare("select distinct author_id from comments where target_type = ? and target_id = ?").all(type, id) as { author_id: number }[]).map((r) => r.author_id).filter((x) => !told.has(x) && x !== t.authorId);
+  const others = usersWho(
+    (db().prepare("select distinct author_id from comments where target_type = ? and target_id = ?").all(type, id) as { author_id: number }[]).map((r) => r.author_id).filter((x) => !told.has(x) && x !== t.authorId),
+    sees,
+  );
   if (others.length) notify(others, { kind: "reply", actorId: u.id, title: `${u.name} also commented on “${t.title}”`, body, url });
   broadcast("comment", { type, id, comment: cid, by: u.id });
   return listComments(u, type, id).flatMap((x) => [x, ...x.replies]).find((x) => x.id === cid)!;

@@ -11,12 +11,16 @@ import { cancelEvent, createEvent, deleteEvent, eventsBetween, getEvent, rsvp, u
 import { createThread, deleteReply, deleteThread, editReply, editThread, follow, moderateThread, quoteFor, reply } from "@/lib/forum";
 import { feed } from "@/lib/feed";
 import { report, type ReportTarget } from "@/lib/reports";
+import { canSeeTarget } from "@/lib/visibility";
+import { getSettings, type SiteSettings } from "@/lib/settings";
+import type { User } from "@/lib/users";
 import type { FeedFilter, RsvpStatus } from "@/lib/contentTypes";
 
 // ── posts ──
 
 export async function createPostAction(input: PostInput) {
   return act((u) => {
+    if (input.kind === "news") allowed(u, "news");
     const id = createPost(u, input);
     revalidatePath("/");
     return id;
@@ -61,8 +65,16 @@ export async function saveAction(type: BookmarkType, id: number) {
 export async function reactAction(type: ReactTarget, id: number, emoji: string) {
   return act((u) => {
     if (!["post", "comment", "thread", "reply", "poll", "event"].includes(type)) throw new UserError("Can't react to that.");
+    if (!canSeeTarget(u, type, id)) throw new UserError("That's gone.");
     return toggleReaction(u.id, type, id, emoji).reactions;
   });
+}
+
+/** The admin's switches (Admin → Features & permissions), checked here too, not only on the pages. */
+function allowed(u: User, feature: keyof SiteSettings["features"], who?: keyof SiteSettings["canCreate"]) {
+  const s = getSettings();
+  if (!s.features[feature]) throw new UserError("That's switched off on this site.");
+  if (who && s.canCreate[who] === "mods" && !u.isMod) throw new UserError("Only moderators can start that.");
 }
 
 export async function feedAction(filter: FeedFilter, before?: number, groupId?: number, authorId?: number) {
@@ -96,7 +108,10 @@ export async function deleteCommentAction(cid: number) {
 // ── polls ──
 
 export async function createPollAction(input: PollInput) {
-  return act((u) => createPoll(u, input));
+  return act((u) => {
+    allowed(u, "polls", "polls");
+    return createPoll(u, input);
+  });
 }
 
 export async function updatePollAction(id: number, input: Partial<PollInput>) {
@@ -142,7 +157,10 @@ export async function pollAction(id: number) {
 // ── events ──
 
 export async function createEventAction(input: EventInput) {
-  return act((u) => createEvent(u, input));
+  return act((u) => {
+    allowed(u, "calendar", "events");
+    return createEvent(u, input);
+  });
 }
 
 export async function updateEventAction(id: number, input: EventInput) {
@@ -181,7 +199,10 @@ export async function eventsAction(from: number, to: number, o: { groupId?: numb
 // ── forum ──
 
 export async function createThreadAction(input: { categoryId: number; title: string; html: string }) {
-  return act((u) => createThread(u, input));
+  return act((u) => {
+    allowed(u, "forum");
+    return createThread(u, input);
+  });
 }
 
 export async function replyAction(threadId: number, html: string) {

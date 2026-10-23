@@ -7,7 +7,7 @@ import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf } from "./groups";
-import { GHOST, summaries, userByName, type User } from "./users";
+import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { commentCounts, groupRefs } from "./posts";
 import { getMeta, getSettings, setMeta } from "./settings";
@@ -205,7 +205,8 @@ export function createEvent(u: User, o: EventInput): number {
     return id;
   });
   const url = `/events/${id}`;
-  const mentioned = v.c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x);
+  const row = eventRow(id)!;
+  const mentioned = usersWho(v.c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeEvent(x, row));
   if (mentioned.length) notify(mentioned, { kind: "invite", actorId: u.id, title: `${u.name} invited you to ${v.title}`, body: when(v.start, !!v.allDay), url });
   if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: `New event in ${groupRow(groupId)!.name}: ${v.title}`, body: when(v.start, !!v.allDay), url });
   broadcast("feed", { type: "event", id, by: u.id, group: groupId });

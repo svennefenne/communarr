@@ -4,7 +4,7 @@ import { UserError } from "./errors";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { hashPassword, verifyPassword } from "./auth";
 import { indexItem } from "./search";
-import { broadcast } from "./hub";
+import { broadcast, dropUser } from "./hub";
 import { USERNAME_RE, type User, type UserRow } from "./users";
 import { NOTIFY_KINDS, type NotifyKind, type NotifyPrefs } from "./types";
 
@@ -52,8 +52,9 @@ export async function changePassword(u: User, current: string, next: string, kee
   if (!(await verifyPassword(current, row.password_hash))) throw new UserError("Your current password isn't right.");
   if (next.length < 8) throw new UserError("Passwords need at least 8 characters.");
   db().prepare("update users set password_hash = ? where id = ?").run(await hashPassword(next), u.id);
-  // everywhere else is logged out
+  // everywhere else is logged out, and open streams closed (this tab reconnects on its own)
   if (keepSession) db().prepare("delete from sessions where user_id = ? and id != ?").run(u.id, keepSession);
+  dropUser(u.id);
 }
 
 export function changeUsername(u: User, username: string) {

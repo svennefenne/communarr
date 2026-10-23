@@ -2,9 +2,11 @@
 
 import { act } from "@/lib/act";
 import { UserError } from "@/lib/errors";
+import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import {
   archiveRoom,
+  canSee,
   createRoom,
   declineInvite,
   deleteMessage,
@@ -39,7 +41,8 @@ export async function roomsAction() {
 export async function roomInfoAction(id: number) {
   return act((u) => {
     const r = room(id);
-    if (!r) throw new UserError("That room is gone.");
+    // members (or anyone, for an open room), and people invited in
+    if (!r || !(canSee(u, r) || db().prepare("select 1 from room_invites where room_id = ? and user_id = ?").get(id, u.id))) throw new UserError("That room is gone.");
     return roomInfo(u, r);
   });
 }
@@ -48,8 +51,16 @@ export async function messagesAction(roomId: number, o: { before?: number; aroun
   return act((u) => messages(u, roomId, o));
 }
 
+/** Chat switched off under Admin → Features: nothing new can be written or started. */
+function chatOn() {
+  if (!getSettings().features.chat) throw new UserError("Chat is switched off.");
+}
+
 export async function sendAction(roomId: number, html: string, replyTo?: number | null) {
-  return act((u) => sendMessage(u, roomId, html, replyTo));
+  return act((u) => {
+    chatOn();
+    return sendMessage(u, roomId, html, replyTo);
+  });
 }
 
 export async function editMessageAction(id: number, html: string) {
@@ -94,6 +105,7 @@ export async function typingAction(roomId: number) {
 
 export async function createRoomAction(input: { name: string; topic?: string; emoji?: string; visibility: RoomVisibility; invite?: number[] }) {
   return act((u) => {
+    chatOn();
     const s = getSettings();
     if (s.canCreate.rooms === "mods" && !u.isMod) throw new UserError("Only moderators can make rooms.");
     return createRoom(u, input);
@@ -109,6 +121,7 @@ export async function updateRoomAction(id: number, input: { name?: string; topic
 
 export async function joinRoomAction(id: number) {
   return act((u) => {
+    chatOn();
     joinRoom(u, id);
     return true;
   });
@@ -129,7 +142,10 @@ export async function declineInviteAction(id: number) {
 }
 
 export async function inviteToRoomAction(id: number, userIds: number[]) {
-  return act((u) => inviteToRoom(u, id, userIds));
+  return act((u) => {
+    chatOn();
+    return inviteToRoom(u, id, userIds);
+  });
 }
 
 export async function removeMemberAction(id: number, userId: number) {
@@ -147,7 +163,11 @@ export async function setMemberRoleAction(id: number, userId: number, role: Memb
 }
 
 export async function membersAction(id: number) {
-  return act(() => members(id));
+  return act((u) => {
+    const r = room(id);
+    if (!r || !canSee(u, r)) throw new UserError("That room is gone.");
+    return members(id);
+  });
 }
 
 export async function setNotifyAction(id: number, mode: "all" | "mentions" | "none") {
@@ -158,7 +178,10 @@ export async function setNotifyAction(id: number, mode: "all" | "mentions" | "no
 }
 
 export async function dmAction(userId: number) {
-  return act((u) => dmRoom(u, userId));
+  return act((u) => {
+    chatOn();
+    return dmRoom(u, userId);
+  });
 }
 
 export async function archiveRoomAction(id: number, archived: boolean) {

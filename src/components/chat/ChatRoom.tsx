@@ -395,9 +395,11 @@ export function ChatRoom(p: Props) {
             {info.kind !== "dm" ? (
               <>
                 <div className="menu-sep" />
-                <button type="button" className="menu-item" data-close onClick={() => setPanel("invite")}>
-                  <UserPlus size={16} /> Invite people
-                </button>
+                {info.kind === "room" ? (
+                  <button type="button" className="menu-item" data-close onClick={() => setPanel("invite")}>
+                    <UserPlus size={16} /> Invite people
+                  </button>
+                ) : null}
                 {p.canManage ? (
                   <button type="button" className="menu-item" data-close onClick={() => setPanel("settings")}>
                     <Settings size={16} /> Room settings
@@ -606,7 +608,7 @@ export function ChatRoom(p: Props) {
                 ) : null}
               </div>
             ))}
-            {info.kind !== "dm" && isMember ? (
+            {info.kind === "room" && isMember ? (
               <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start", marginTop: 8 }} onClick={() => setPanel("invite")}>
                 <UserPlus size={15} /> Invite people
               </button>

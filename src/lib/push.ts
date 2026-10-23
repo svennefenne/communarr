@@ -62,6 +62,18 @@ interface SubRow {
   fails: number;
 }
 
+/** The browsers' push services (Chrome/Android, Firefox, Safari/iOS, Edge); PUSH_HOSTS adds more. */
+const PUSH_HOSTS = ["fcm.googleapis.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com", ...(process.env.PUSH_HOSTS || "").split(",").map((s) => s.trim()).filter(Boolean)];
+
+export function isPushEndpoint(endpoint: string): boolean {
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === "https:" && !u.username && !u.port && PUSH_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+}
+
 export function saveSubscription(userId: number, sub: { endpoint: string; keys: { p256dh: string; auth: string } }, ua: string) {
   db()
     .prepare(

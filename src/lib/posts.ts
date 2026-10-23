@@ -6,7 +6,7 @@ import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, canManageGroup } from "./groups";
-import { GHOST, summaries, userByName, type User } from "./users";
+import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { getSettings } from "./settings";
 import { sendTo, broadcast } from "./hub";
 import type { GroupRef, PostView } from "./contentTypes";
@@ -176,7 +176,8 @@ export function createPost(u: User, o: PostInput): number {
   if (visibility === "private") return id;
 
   const url = `/posts/${id}`;
-  const mentioned = mentionPeople(c.mentions, [u.id]);
+  const row = postRow(id)!;
+  const mentioned = usersWho(mentionPeople(c.mentions, [u.id]), (x) => canSeePost(x, row));
   const preview = title || c.text.slice(0, 140);
   if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a post`, body: preview, url });
   if (kind === "news" && o.notifyAll !== false) {
@@ -204,7 +205,8 @@ export function updatePost(u: User, id: number, o: PostInput) {
   indexItem(r.kind, id, scopeOf({ visibility, group_id: r.group_id, author_id: r.author_id }), r.author_id, r.created_at, title || c.text.slice(0, 80), c.text);
   // newly mentioned people hear about it
   const before = new Set([...r.body_html.matchAll(/data-type="mention"[^>]*data-id="([^"]+)"/g)].map((m) => m[1]));
-  const fresh = mentionPeople(c.mentions.filter((m) => !before.has(m)), [u.id]);
+  const after = postRow(id)!;
+  const fresh = usersWho(mentionPeople(c.mentions.filter((m) => !before.has(m)), [u.id]), (x) => canSeePost(x, after));
   if (fresh.length && visibility !== "private") notify(fresh, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a post`, body: title || c.text.slice(0, 140), url: `/posts/${id}` });
 }
 
