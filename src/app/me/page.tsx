@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, FileText, MessagesSquare, UsersRound, Vote } from "lucide-react";
 import { requireUser } from "@/lib/auth";
+import { requestT } from "@/lib/t";
 import { listPosts } from "@/lib/posts";
 import { threads } from "@/lib/forum";
 import { listPolls } from "@/lib/polls";
@@ -12,7 +13,9 @@ import { EventCard } from "@/components/feed/EventCard";
 import { ThreadList } from "@/components/forum/ThreadList";
 import { Empty } from "@/components/ui/ui";
 
-export const metadata = { title: "My stuff" };
+export async function generateMetadata() {
+  return { title: (await requestT())("My stuff") };
+}
 export const dynamic = "force-dynamic";
 
 const TABS = [
@@ -25,19 +28,20 @@ const TABS = [
 
 export default async function MyStuff({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const u = await requireUser();
+  const t = await requestT();
   const { tab = "posts" } = await searchParams;
   return (
     <div className="page mid">
       <div className="page-head">
         <div>
-          <span className="eyebrow">Everything you made</span>
-          <h1 className="display page-title">My stuff</h1>
+          <span className="eyebrow">{t("Everything you made")}</span>
+          <h1 className="display page-title">{t("My stuff")}</h1>
         </div>
       </div>
       <nav className="tabs">
         {TABS.map(([id, label, Icon]) => (
           <Link key={id} href={`/me?tab=${id}`} className={tab === id ? "active" : ""}>
-            <Icon size={15} /> {label}
+            <Icon size={15} /> {t(label)}
           </Link>
         ))}
       </nav>
@@ -45,25 +49,25 @@ export default async function MyStuff({ searchParams }: { searchParams: Promise<
         {tab === "posts"
           ? (() => {
               const list = listPosts(u, { authorId: u.id, includePrivate: true, limit: 100 });
-              return list.length ? list.map((p) => <PostCard key={p.id} post={p} />) : <Empty icon={<FileText size={24} />} title="No posts yet">Write one on the front page. Posts set to &ldquo;Only me&rdquo; show up here too.</Empty>;
+              return list.length ? list.map((p) => <PostCard key={p.id} post={p} />) : <Empty icon={<FileText size={24} />} title={t("No posts yet")}>{t("Write one on the front page. Posts set to “Only me” show up here too.")}</Empty>;
             })()
           : null}
         {tab === "threads"
           ? (() => {
               const list = threads(u, { authorId: u.id, sort: "new", limit: 100 }).list;
-              return list.length ? <ThreadList threads={list} showCategory /> : <Empty icon={<MessagesSquare size={24} />} title="No threads yet" />;
+              return list.length ? <ThreadList threads={list} showCategory /> : <Empty icon={<MessagesSquare size={24} />} title={t("No threads yet")} />;
             })()
           : null}
         {tab === "polls"
           ? (() => {
               const list = listPolls(u, { authorId: u.id, limit: 100 });
-              return list.length ? list.map((p) => <PollCard key={p.id} poll={p} />) : <Empty icon={<Vote size={24} />} title="No polls yet" />;
+              return list.length ? list.map((p) => <PollCard key={p.id} poll={p} />) : <Empty icon={<Vote size={24} />} title={t("No polls yet")} />;
             })()
           : null}
         {tab === "events"
           ? (() => {
               const list = eventsBetween(u, Date.now() - 365 * 86_400_000, Date.now() + 366 * 86_400_000, { mineOnly: true }).filter((e, i, a) => a.findIndex((x) => x.id === e.id) === i);
-              return list.length ? list.map((e) => <EventCard key={e.id} event={e} />) : <Empty icon={<CalendarDays size={24} />} title="Nothing planned">Events you plan or say you&apos;re going to show up here.</Empty>;
+              return list.length ? list.map((e) => <EventCard key={e.id} event={e} />) : <Empty icon={<CalendarDays size={24} />} title={t("Nothing planned")}>{t("Events you plan or say you're going to show up here.")}</Empty>;
             })()
           : null}
         {tab === "groups"
@@ -79,14 +83,14 @@ export default async function MyStuff({ searchParams }: { searchParams: Promise<
                       <span className="grow">
                         <b>{g.name}</b>
                         <span className="tiny muted" style={{ display: "block" }}>
-                          {g.myRole} · {g.memberCount} members
+                          {g.myRole ? t(g.myRole) : ""} · {t.n(g.memberCount, "{n} member", "{n} members")}
                         </span>
                       </span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <Empty icon={<UsersRound size={24} />} title="No groups yet" />
+                <Empty icon={<UsersRound size={24} />} title={t("No groups yet")} />
               );
             })()
           : null}

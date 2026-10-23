@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { Bell, CheckCheck, Settings } from "lucide-react";
 import type { NotificationItem } from "@/lib/types";
-import { useApp, useLive } from "@/components/app/AppProvider";
+import { useApp, useLive, useT } from "@/components/app/AppProvider";
 import { Empty } from "@/components/ui/ui";
 import { NotificationRow } from "./NotificationBell";
 import { listNotificationsAction, markReadAction } from "@/app/actions/notifications";
 
 export function NotificationList({ initial }: { initial: NotificationItem[] }) {
   const { counts } = useApp();
+  const t = useT();
   const [items, setItems] = useState(initial);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [more, setMore] = useState(initial.length >= 30);
@@ -36,7 +37,7 @@ export function NotificationList({ initial }: { initial: NotificationItem[] }) {
               void load(false);
             }}
           >
-            All
+            {t("All")}
           </button>
           <button
             type="button"
@@ -46,7 +47,7 @@ export function NotificationList({ initial }: { initial: NotificationItem[] }) {
               void load(true);
             }}
           >
-            Unread {counts.notifications ? `· ${counts.notifications}` : ""}
+            {t("Unread")} {counts.notifications ? `· ${counts.notifications}` : ""}
           </button>
         </div>
         <div className="row">
@@ -59,10 +60,10 @@ export function NotificationList({ initial }: { initial: NotificationItem[] }) {
               setItems((l) => l.map((n) => ({ ...n, read: true })));
             }}
           >
-            <CheckCheck size={15} /> Mark all read
+            <CheckCheck size={15} /> {t("Mark all read")}
           </button>
           <Link href="/settings/notifications" className="btn btn-sm">
-            <Settings size={15} /> Settings
+            <Settings size={15} /> {t("Settings")}
           </Link>
         </div>
       </div>
@@ -76,11 +77,11 @@ export function NotificationList({ initial }: { initial: NotificationItem[] }) {
             }}
           />
         ))}
-        {!shown.length ? <Empty icon={<Bell size={24} />} title={unreadOnly ? "All caught up" : "Nothing yet"}>Mentions, replies, invitations and reminders show up here.</Empty> : null}
+        {!shown.length ? <Empty icon={<Bell size={24} />} title={unreadOnly ? t("All caught up") : t("Nothing yet")}>{t("Mentions, replies, invitations and reminders show up here.")}</Empty> : null}
       </div>
       {more ? (
         <button type="button" className={`btn ${busy ? "loading" : ""}`} style={{ alignSelf: "center" }} onClick={() => load(unreadOnly, items[items.length - 1]?.id)}>
-          Older
+          {t("Older")}
         </button>
       ) : null}
     </div>

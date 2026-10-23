@@ -6,13 +6,14 @@ import { ArrowRight, CalendarDays, Hash, Headphones, Lock, MessageCircle, Messag
 import type { EventView, PollView, PostView, ThreadCard } from "@/lib/contentTypes";
 import type { RoomInfo } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
-import { useApp } from "@/components/app/AppProvider";
+import { useApp, useT } from "@/components/app/AppProvider";
 import { useVoice } from "@/components/voice/VoiceProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { DateTile, EventWhen } from "@/components/feed/EventCard";
 
-function Widget({ title, icon, href, more = "See all", children }: { title: string; icon: React.ReactNode; href?: string; more?: string; children: React.ReactNode }) {
+function Widget({ title, icon, href, more, children }: { title: string; icon: React.ReactNode; href?: string; more?: string; children: React.ReactNode }) {
+  const t = useT();
   return (
     <section className="panel widget">
       <div className="panel-head">
@@ -21,7 +22,7 @@ function Widget({ title, icon, href, more = "See all", children }: { title: stri
         </span>
         {href ? (
           <Link href={href} className="small muted row widget-more" style={{ gap: 4 }}>
-            {more} <ArrowRight size={13} />
+            {more ?? t("See all")} <ArrowRight size={13} />
           </Link>
         ) : null}
       </div>
@@ -31,32 +32,34 @@ function Widget({ title, icon, href, more = "See all", children }: { title: stri
 }
 
 export function Greeting({ name }: { name: string }) {
+  const t = useT();
   const [hi, setHi] = useState("Hi");
   const [day, setDay] = useState("");
   useEffect(() => {
     const h = new Date().getHours();
     setHi(h < 5 ? "Up late" : h < 10 ? "Good morning" : h < 17 ? "Hi" : h < 22 ? "Good evening" : "Good night");
-    setDay(new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }));
-  }, []);
+    setDay(new Date().toLocaleDateString(t.locale, { weekday: "long", day: "numeric", month: "long" }));
+  }, [t]);
   return (
     <div>
       <span className="eyebrow" suppressHydrationWarning>
-        Front page {day ? `· ${day}` : ""}
+        {t("Front page")} {day ? `· ${day}` : ""}
       </span>
       <h1 className="display page-title" suppressHydrationWarning>
-        {hi}, {name.split(" ")[0]}
+        {t(hi)}, {name.split(" ")[0]}
       </h1>
     </div>
   );
 }
 
 export function NewsHero({ post }: { post: PostView }) {
+  const t = useT();
   return (
     <Link href={`/posts/${post.id}`} className="panel news-hero hoverable stripe-top">
       {post.cover ? <span className="news-hero-pic" style={{ backgroundImage: `url("${post.cover}")` }} /> : null}
       <span className="news-hero-text">
         <span className="eyebrow">
-          {post.pinned ? "Pinned news" : "Latest news"} · <Time t={post.createdAt} />
+          {t(post.pinned ? "Pinned news" : "Latest news")} · <Time t={post.createdAt} />
         </span>
         <span className="display news-hero-title">{post.title}</span>
         <span className="small dim clamp-2">{post.html.replace(/<\/(p|h\d|li)>/g, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 200)}</span>
@@ -69,8 +72,9 @@ export function NewsHero({ post }: { post: PostView }) {
 }
 
 export function UpcomingWidget({ events }: { events: EventView[] }) {
+  const t = useT();
   return (
-    <Widget title="Coming up" icon={<CalendarDays size={14} />} href="/calendar" more="Calendar">
+    <Widget title={t("Coming up")} icon={<CalendarDays size={14} />} href="/calendar" more={t("Calendar")}>
       {events.length ? (
         <div className="list">
           {events.map((e) => (
@@ -84,15 +88,15 @@ export function UpcomingWidget({ events }: { events: EventView[] }) {
                   <EventWhen e={e} />
                 </span>
               </span>
-              {e.mine === "going" ? <span className="badge accent">Going</span> : e.mine === "maybe" ? <span className="badge">Maybe</span> : <span className="tiny muted">{e.going.length} going</span>}
+              {e.mine === "going" ? <span className="badge accent">{t("Going")}</span> : e.mine === "maybe" ? <span className="badge">{t("Maybe")}</span> : <span className="tiny muted">{t("{n} going", { n: e.going.length })}</span>}
             </Link>
           ))}
         </div>
       ) : (
         <div className="panel-body small muted">
-          Nothing planned.{" "}
+          {t("Nothing planned.")}{" "}
           <Link href="/events/new" className="link">
-            Plan something
+            {t("Plan something")}
           </Link>
         </div>
       )}
@@ -103,8 +107,9 @@ export function UpcomingWidget({ events }: { events: EventView[] }) {
 export function ChatWidget({ rooms }: { rooms: RoomInfo[] }) {
   const { counts } = useApp();
   const voice = useVoice();
+  const t = useT();
   return (
-    <Widget title="Chat" icon={<MessageCircle size={14} />} href="/chat" more="Open chat">
+    <Widget title={t("Chat")} icon={<MessageCircle size={14} />} href="/chat" more={t("Open chat")}>
       {rooms.length ? (
         <div className="list">
           {rooms.map((r) => {
@@ -122,7 +127,7 @@ export function ChatWidget({ rooms }: { rooms: RoomInfo[] }) {
                   </span>
                 </span>
                 {talking ? (
-                  <span className="badge teal" title={`${talking} in voice`}>
+                  <span className="badge teal" title={t("{n} in voice", { n: talking })}>
                     <Headphones size={11} /> {talking}
                   </span>
                 ) : null}
@@ -132,7 +137,7 @@ export function ChatWidget({ rooms }: { rooms: RoomInfo[] }) {
           })}
         </div>
       ) : (
-        <div className="panel-body small muted">No chats yet.</div>
+        <div className="panel-body small muted">{t("No chats yet.")}</div>
       )}
     </Widget>
   );
@@ -140,9 +145,10 @@ export function ChatWidget({ rooms }: { rooms: RoomInfo[] }) {
 
 export function OnlineWidget({ members }: { members: UserSummary[] }) {
   const { presence } = useApp();
+  const t = useT();
   const online = members.filter((m) => presence.has(m.id));
   return (
-    <Widget title={`Here now · ${online.length}`} icon={<span className="dot" style={{ background: "var(--ok)" }} />} href="/members" more="Everyone">
+    <Widget title={t("Here now · {n}", { n: online.length })} icon={<span className="dot" style={{ background: "var(--ok)" }} />} href="/members" more={t("Everyone")}>
       <div className="panel-body">
         {online.length ? (
           <div className="online-grid">
@@ -154,7 +160,7 @@ export function OnlineWidget({ members }: { members: UserSummary[] }) {
             ))}
           </div>
         ) : (
-          <span className="small muted">Nobody else right now.</span>
+          <span className="small muted">{t("Nobody else right now.")}</span>
         )}
       </div>
     </Widget>
@@ -162,16 +168,17 @@ export function OnlineWidget({ members }: { members: UserSummary[] }) {
 }
 
 export function PollsWidget({ polls }: { polls: PollView[] }) {
+  const t = useT();
   if (!polls.length) return null;
   return (
-    <Widget title="Waiting for your vote" icon={<Vote size={14} />} href="/polls">
+    <Widget title={t("Waiting for your vote")} icon={<Vote size={14} />} href="/polls">
       <div className="list">
         {polls.map((p) => (
           <Link key={p.id} href={`/polls/${p.id}`} className="list-row">
             <span className="grow" style={{ minWidth: 0 }}>
               <b className="clamp-2">{p.question}</b>
               <span className="tiny muted">
-                {p.totalVoters} voted{p.closesAt ? <> · closes <Time t={p.closesAt} /></> : null}
+                {t("{n} voted", { n: p.totalVoters })}{p.closesAt ? <> · {t("closes")} <Time t={p.closesAt} /></> : null}
               </span>
             </span>
             <ArrowRight size={15} className="muted" />
@@ -183,8 +190,9 @@ export function PollsWidget({ polls }: { polls: PollView[] }) {
 }
 
 export function ForumWidget({ threads }: { threads: ThreadCard[] }) {
+  const tr = useT();
   return (
-    <Widget title="In the forum" icon={<MessagesSquare size={14} />} href="/forum">
+    <Widget title={tr("In the forum")} icon={<MessagesSquare size={14} />} href="/forum">
       {threads.length ? (
         <div className="list">
           {threads.map((t) => (
@@ -195,7 +203,7 @@ export function ForumWidget({ threads }: { threads: ThreadCard[] }) {
                   {t.title}
                 </b>
                 <span className="tiny muted">
-                  {t.replies} {t.replies === 1 ? "reply" : "replies"} · <Time t={t.lastPostAt} />
+                  {tr.n(t.replies, "{n} reply", "{n} replies")} · <Time t={t.lastPostAt} />
                 </span>
               </span>
             </Link>
@@ -203,9 +211,9 @@ export function ForumWidget({ threads }: { threads: ThreadCard[] }) {
         </div>
       ) : (
         <div className="panel-body small muted">
-          Quiet so far.{" "}
+          {tr("Quiet so far.")}{" "}
           <Link href="/forum/new" className="link">
-            Start a thread
+            {tr("Start a thread")}
           </Link>
         </div>
       )}
@@ -214,8 +222,9 @@ export function ForumWidget({ threads }: { threads: ThreadCard[] }) {
 }
 
 export function GroupsWidget({ groups }: { groups: { id: number; slug: string; name: string; color: string; avatar: string | null; memberCount: number }[] }) {
+  const t = useT();
   return (
-    <Widget title="Your groups" icon={<UsersRound size={14} />} href="/groups">
+    <Widget title={t("Your groups")} icon={<UsersRound size={14} />} href="/groups">
       {groups.length ? (
         <div className="list">
           {groups.map((g) => (
@@ -230,9 +239,9 @@ export function GroupsWidget({ groups }: { groups: { id: number; slug: string; n
         </div>
       ) : (
         <div className="panel-body small muted">
-          You&apos;re not in any groups.{" "}
+          {t("You're not in any groups.")}{" "}
           <Link href="/groups" className="link">
-            Find one
+            {t("Find one")}
           </Link>
         </div>
       )}

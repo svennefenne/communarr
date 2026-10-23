@@ -4,24 +4,26 @@ import { getEvent } from "@/lib/events";
 import { markReadByUrl } from "@/lib/notify";
 import { EventDetail } from "@/components/events/EventDetail";
 import { BackPill } from "@/components/ui/BackPill";
+import { requestT } from "@/lib/t";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const u = await requireUser();
   const e = getEvent(u, Number((await params).id));
-  return { title: e ? e.title : "Event" };
+  return { title: e ? e.title : (await requestT())("Event") };
 }
 
 export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const u = await requireUser();
+  const t = await requestT();
   const id = Number((await params).id);
   const e = getEvent(u, id);
   if (!e) notFound();
   markReadByUrl(u.id, `/events/${id}`);
   return (
     <div className="page">
-      <BackPill href="/calendar" label="Calendar" />
+      <BackPill href="/calendar" label={t("Calendar")} />
       <EventDetail event={e} />
     </div>
   );

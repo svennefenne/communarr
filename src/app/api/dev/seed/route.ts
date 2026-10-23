@@ -97,7 +97,8 @@ export async function POST() {
   createEvent(cleo, { title: "Film night", startAt: day(6, 20), endAt: day(6, 23, 30), location: "Cleo's", color: "#9c5bb5" });
   createEvent(fia, { title: "Fia's birthday 🎂", startAt: day(11, 0), endAt: day(11, 23, 59), allDay: true, color: "#e2a634", location: "The park by the river" });
 
-  const lounge = db().prepare("select id from rooms where name = 'Lounge'").get() as { id: number };
+  // the first room setup made (named in the site's language)
+  const lounge = db().prepare("select id from rooms where kind = 'room' order by id limit 1").get() as { id: number };
   for (const u of [anna, bjorn, cleo, dani, erik, fia]) joinRoom(u, lounge.id);
   sendMessage(anna, lounge.id, "<p>Morning all ☕</p>");
   sendMessage(erik, lounge.id, "<p>Morning! Who's in for lunch at 12?</p>");

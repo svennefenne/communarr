@@ -1,27 +1,51 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth";
 import { inviteState } from "@/lib/accounts";
-import { getSettings } from "@/lib/settings";
+import { defaultTextIn, getSettings } from "@/lib/settings";
 import { userById } from "@/lib/users";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignupForm } from "@/components/auth/AuthForms";
+import { requestT } from "@/lib/t";
 
-export const metadata = { title: "You're invited" };
+export async function generateMetadata() {
+  return { title: (await requestT())("You're invited") };
+}
 
 export default async function InvitePage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   if (await getUser()) redirect("/");
   const s = getSettings();
+  const t = await requestT();
   const st = inviteState(code);
   if (!st.ok)
     return (
-      <AuthShell siteName={s.siteName} eyebrow="Invitation" title="This link doesn't work">
-        <div className="form-error">{st.error}</div>
+      <AuthShell siteName={s.siteName} eyebrow={t("Invitation")} title={t("This link doesn't work")}>
+        <div className="form-error">{t(st.error)}</div>
       </AuthShell>
     );
   const by = st.invite.created_by ? userById(st.invite.created_by) : null;
+  // the inviter's name in bold, wherever the sentence puts it
+  const [before, after = ""] = t("{name} invited you to {site}.", { site: s.siteName }).split("{name}");
   return (
-    <AuthShell siteName={s.siteName} eyebrow="Invitation" title="You're invited" intro={<>{by ? <><b>{by.name}</b> invited you to </> : "Welcome to "}{s.siteName}. {s.tagline}</>}>
+    <AuthShell
+      siteName={s.siteName}
+      eyebrow={t("Invitation")}
+      title={t("You're invited")}
+      intro={
+        <>
+          {by ? (
+            <>
+              {before}
+              <b>{by.name}</b>
+              {after}
+            </>
+          ) : (
+            t("Welcome to {site}.", { site: s.siteName })
+          )}{" "}
+          {defaultTextIn("tagline", s.tagline, t.lang)}
+        </>
+      }
+    >
       <SignupForm code={code} />
     </AuthShell>
   );

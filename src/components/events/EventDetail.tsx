@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Ban, CalendarPlus, Clock, MapPin, Repeat, RotateCcw, Users } from "lucide-react";
 import type { EventView } from "@/lib/contentTypes";
-import { useMe, useToast } from "@/components/app/AppProvider";
+import { useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserChip, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
@@ -36,6 +36,7 @@ function People({ title, list }: { title: string; list: EventView["going"] }) {
 export function EventDetail({ event }: { event: EventView }) {
   const me = useMe();
   const toast = useToast();
+  const t = useT();
   const router = useRouter();
   const [e, setE] = useState(event);
   const { confirm, node } = useConfirm();
@@ -49,17 +50,17 @@ export function EventDetail({ event }: { event: EventView }) {
             <div className="row top" style={{ gap: 16 }}>
               <DateTile t={e.startAt} color={e.color} />
               <div className="grow" style={{ minWidth: 0 }}>
-                {e.cancelled ? <span className="badge danger">Cancelled</span> : null}
+                {e.cancelled ? <span className="badge danger">{t("Cancelled")}</span> : null}
                 <h1 className="display event-h1">{e.title}</h1>
                 <div className="small muted" style={{ marginTop: 6 }}>
-                  Planned by <UserLink user={e.author} /> {e.group ? <>for <GroupChip g={e.group} /></> : null} · <Time t={e.createdAt} />
+                  {t("Planned by")} <UserLink user={e.author} /> {e.group ? <>{t("for")} <GroupChip g={e.group} /></> : null} · <Time t={e.createdAt} />
                 </div>
               </div>
               <ItemMenu
                 url={`/events/${e.id}`}
                 onSave={async () => {
                   const r = await saveAction("event", e.id);
-                  if (r.ok) toast(r.data ? "Saved." : "Taken out of Saved.");
+                  if (r.ok) toast(r.data ? t("Saved.") : t("Taken out of Saved."));
                 }}
                 onEdit={e.canEdit ? () => router.push(`/events/${e.id}/edit`) : undefined}
                 extra={
@@ -72,18 +73,18 @@ export function EventDetail({ event }: { event: EventView }) {
                         const r = await cancelEventAction(e.id, !e.cancelled);
                         if (r.ok && r.data) {
                           setE(r.data);
-                          toast(r.data.cancelled ? "Cancelled: everyone going has been told." : "It's back on.");
+                          toast(r.data.cancelled ? t("Cancelled: everyone going has been told.") : t("It's back on."));
                         }
                       }}
                     >
-                      {e.cancelled ? <RotateCcw size={16} /> : <Ban size={16} />} {e.cancelled ? "Back on" : "Cancel the event"}
+                      {e.cancelled ? <RotateCcw size={16} /> : <Ban size={16} />} {e.cancelled ? t("Back on") : t("Cancel the event")}
                     </button>
                   ) : null
                 }
                 onDelete={
                   e.canEdit
                     ? () =>
-                        confirm("Delete the event with its comments? (Cancelling tells people; deleting just removes it.)", "Delete", async () => {
+                        confirm(t("Delete the event with its comments? (Cancelling tells people; deleting just removes it.)"), t("Delete"), async () => {
                           const r = await deleteEventAction(e.id);
                           if (r.ok) router.push("/calendar");
                           else toast(r.error, { kind: "err" });
@@ -100,8 +101,8 @@ export function EventDetail({ event }: { event: EventView }) {
                   <EventWhen e={e} />
                   {e.repeat !== "none" ? (
                     <div className="small muted row" style={{ gap: 4 }}>
-                      <Repeat size={13} /> {REPEAT_LABEL[e.repeat]}
-                      {e.repeatUntil ? <> until <Time t={e.repeatUntil} mode="date" /></> : null}
+                      <Repeat size={13} /> {t(REPEAT_LABEL[e.repeat])}
+                      {e.repeatUntil ? <> {t("until")} <Time t={e.repeatUntil} mode="date" /></> : null}
                     </div>
                   ) : null}
                 </div>
@@ -115,7 +116,7 @@ export function EventDetail({ event }: { event: EventView }) {
                       <>
                         {" "}
                         <a href={maps} target="_blank" rel="noopener noreferrer" className="link small">
-                          Map
+                          {t("Map")}
                         </a>
                       </>
                     ) : null}
@@ -125,15 +126,15 @@ export function EventDetail({ event }: { event: EventView }) {
               <div className="row top">
                 <Users size={18} className="muted" />
                 <div>
-                  {e.going.length} going{e.capacity ? ` of ${e.capacity} places` : ""}
-                  {e.maybe.length ? ` · ${e.maybe.length} maybe` : ""}
+                  {e.capacity ? t("{n} going of {cap} places", { n: e.going.length, cap: e.capacity }) : t("{n} going", { n: e.going.length })}
+                  {e.maybe.length ? ` · ${t("{n} maybe", { n: e.maybe.length })}` : ""}
                 </div>
               </div>
             </div>
             <div className="row wrap" style={{ gap: 10 }}>
               <RsvpButtons e={e} onChange={setE} size="md" />
               <a href={`/events/${e.id}/ics`} className="btn" download>
-                <CalendarPlus size={16} /> Add to my calendar
+                <CalendarPlus size={16} /> {t("Add to my calendar")}
               </a>
             </div>
             {e.html ? (
@@ -148,19 +149,19 @@ export function EventDetail({ event }: { event: EventView }) {
           </div>
         </article>
         <section className="panel panel-pad">
-          <span className="eyebrow">Talk about it</span>
+          <span className="eyebrow">{t("Talk about it")}</span>
           <Comments type="event" id={e.id} />
         </section>
       </div>
       <aside className="stack side-sticky">
         <div className="panel panel-pad stack">
-          <People title="Going" list={e.going} />
-          <People title="Maybe" list={e.maybe} />
-          <People title="Can't make it" list={e.no} />
-          {!e.going.length && !e.maybe.length && !e.no.length ? <span className="small muted">No answers yet.</span> : null}
+          <People title={t("Going")} list={e.going} />
+          <People title={t("Maybe")} list={e.maybe} />
+          <People title={t("Can't make it")} list={e.no} />
+          {!e.going.length && !e.maybe.length && !e.no.length ? <span className="small muted">{t("No answers yet.")}</span> : null}
           {e.going.length > 1 ? (
             <Link href={`/chat?dm=${e.author.id}`} className="small link">
-              Message the planner
+              {t("Message the planner")}
             </Link>
           ) : null}
         </div>

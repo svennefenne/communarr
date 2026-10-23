@@ -6,13 +6,15 @@ import { canSeeCategory, categories, categoryRow, PAGE_SIZE, threads } from "@/l
 import { ThreadList } from "@/components/forum/ThreadList";
 import { BackPill } from "@/components/ui/BackPill";
 import { Empty } from "@/components/ui/ui";
+import { requestT } from "@/lib/t";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const u = await requireUser();
+  const t = await requestT();
   const c = categoryRow(decodeURIComponent((await params).slug));
-  return { title: c && canSeeCategory(u, c) ? `${c.name} · Forum` : "Forum" };
+  return { title: c && canSeeCategory(u, c) ? `${c.name} · ${t("Forum")}` : t("Forum") };
 }
 
 const SORTS = [
@@ -23,6 +25,7 @@ const SORTS = [
 
 export default async function CategoryPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ sort?: string; page?: string }> }) {
   const u = await requireUser();
+  const t = await requestT();
   const c = categoryRow(decodeURIComponent((await params).slug));
   if (!c || !canSeeCategory(u, c)) notFound();
   const sp = await searchParams;
@@ -35,14 +38,17 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const canStart = !c.locked || u.isMod;
   return (
     <div className="page mid">
-      <BackPill href="/forum" label="Forum" />
+      <BackPill href="/forum" label={t("Forum")} />
       <div className="page-head">
         <div className="row" style={{ gap: 16, alignItems: "flex-end" }}>
           <span className="cat-icon big" style={{ ["--cc" as string]: info.color }}>
             {info.icon || info.name.slice(0, 1)}
           </span>
           <div>
-            <span className="eyebrow">Forum{info.group ? ` · ${info.group.name}` : ""}</span>
+            <span className="eyebrow">
+              {t("Forum")}
+              {info.group ? ` · ${info.group.name}` : ""}
+            </span>
             <h1 className="display page-title">{c.name}</h1>
             {c.description ? <p className="dim" style={{ margin: "8px 0 0" }}>{c.description}</p> : null}
           </div>
@@ -50,11 +56,11 @@ export default async function CategoryPage({ params, searchParams }: { params: P
         <div className="page-actions">
           {canStart ? (
             <Link href={`/forum/new?cat=${c.id}`} className="btn btn-primary">
-              <Plus size={16} /> New thread
+              <Plus size={16} /> {t("New thread")}
             </Link>
           ) : (
             <span className="pill">
-              <Lock size={13} /> Moderators start threads here
+              <Lock size={13} /> {t("Moderators start threads here")}
             </span>
           )}
         </div>
@@ -63,42 +69,38 @@ export default async function CategoryPage({ params, searchParams }: { params: P
         <div className="pills">
           {SORTS.map(([id, label]) => (
             <Link key={id} href={link({ sort: id })} className={`pill ${sort === id ? "active" : ""}`}>
-              {label}
+              {t(label)}
             </Link>
           ))}
         </div>
-        <span className="small muted">
-          {total} {total === 1 ? "thread" : "threads"}
-        </span>
+        <span className="small muted">{t.n(total, "{n} thread", "{n} threads")}</span>
       </div>
       {list.length ? (
         <ThreadList threads={list} />
       ) : (
         <div className="panel">
-          <Empty icon={<MessagesSquare size={24} />} title="No threads here yet">
+          <Empty icon={<MessagesSquare size={24} />} title={t("No threads here yet")}>
             {canStart ? (
               <Link href={`/forum/new?cat=${c.id}`} className="link">
-                Start the first one
+                {t("Start the first one")}
               </Link>
             ) : null}
           </Empty>
         </div>
       )}
       {pages > 1 ? (
-        <nav className="pager" aria-label="Pages">
+        <nav className="pager" aria-label={t("Pages")}>
           {page > 1 ? (
             <Link href={link({ page: page - 1 })} className="btn btn-sm">
-              <ChevronLeft size={15} /> Newer
+              <ChevronLeft size={15} /> {t("Newer")}
             </Link>
           ) : (
             <span />
           )}
-          <span className="small muted">
-            Page {page} of {pages}
-          </span>
+          <span className="small muted">{t("Page {page} of {pages}", { page, pages })}</span>
           {page < pages ? (
             <Link href={link({ page: page + 1 })} className="btn btn-sm">
-              Older <ChevronRight size={15} />
+              {t("Older")} <ChevronRight size={15} />
             </Link>
           ) : (
             <span />

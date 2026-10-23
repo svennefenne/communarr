@@ -1,15 +1,16 @@
 import fs from "node:fs";
 import { getUser } from "@/lib/auth";
 import { mediaFile } from "@/lib/uploads";
+import { requestT } from "@/lib/t";
 
 const TYPES: Record<string, string> = { webp: "image/webp", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif" };
 
 /** GET /media/…: an uploaded picture (members only, except backgrounds the log-in page shows). */
 export async function GET(_: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path: parts } = await params;
-  if (parts[0] !== "bg" && !(await getUser())) return new Response("Log in first", { status: 401 });
+  if (parts[0] !== "bg" && !(await getUser())) return new Response((await requestT())("Log in first."), { status: 401 });
   const file = mediaFile(parts);
-  if (!file) return new Response("Not found", { status: 404 });
+  if (!file) return new Response((await requestT())("Not found"), { status: 404 });
   const ext = file.split(".").pop()!.toLowerCase();
   const stat = fs.statSync(file);
   const body = fs.readFileSync(file);

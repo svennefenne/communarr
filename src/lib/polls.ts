@@ -48,7 +48,7 @@ export function closeDuePolls() {
   for (const p of due) {
     db().prepare("update polls set closed = 1 where id = ?").run(p.id);
     const voters = (db().prepare("select distinct user_id from poll_votes where poll_id = ?").all(p.id) as { user_id: number }[]).map((r) => r.user_id);
-    notify([...voters, p.author_id], { kind: "poll", title: `The poll is closed: ${p.question}`, body: "See how it ended.", url: `/polls/${p.id}` });
+    notify([...voters, p.author_id], { kind: "poll", title: "The poll is closed: {question}", body: "See how it ended.", vars: { question: p.question }, url: `/polls/${p.id}` });
   }
 }
 
@@ -193,8 +193,8 @@ export function createPoll(u: User, o: PollInput): number {
   const url = `/polls/${id}`;
   const row = pollRow(id)!;
   const mentioned = usersWho(c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeePoll(x, row));
-  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a poll`, body: question, url });
-  if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: `New poll in ${groupRow(groupId)!.name}: ${question}`, url });
+  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: "{name} mentioned you in a poll", body: "{text}", vars: { name: u.name, text: question }, url });
+  if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: "New poll in {group}: {question}", vars: { group: groupRow(groupId)!.name, question }, url });
   broadcast("feed", { type: "poll", id, by: u.id, group: groupId });
   return id;
 }
@@ -251,7 +251,7 @@ export function vote(u: User, id: number, optionIds: number[]) {
   const valid = new Set((db().prepare("select id from poll_options where poll_id = ?").all(id) as { id: number }[]).map((r) => r.id));
   const picked = [...new Set(optionIds)].filter((o) => valid.has(o));
   if (!p.multiple && picked.length > 1) throw new PollError("Pick one.");
-  if (p.max_choices && picked.length > p.max_choices) throw new PollError(`Pick at most ${p.max_choices}.`);
+  if (p.max_choices && picked.length > p.max_choices) throw new PollError("Pick at most {n}.", { n: p.max_choices });
   const had = db().prepare("select 1 from poll_votes where poll_id = ? and user_id = ?").get(id, u.id);
   if (had && !p.allow_change) throw new PollError("You've voted, and this poll doesn't allow changing it.");
   tx(() => {
@@ -284,7 +284,7 @@ export function closePoll(u: User, id: number, closed: boolean) {
   db().prepare("update polls set closed = ?, closes_at = case when ? = 0 and closes_at <= ? then null else closes_at end where id = ?").run(closed ? 1 : 0, closed ? 1 : 0, now(), id);
   if (closed) {
     const voters = (db().prepare("select distinct user_id from poll_votes where poll_id = ?").all(id) as { user_id: number }[]).map((r) => r.user_id);
-    notify(voters, { kind: "poll", actorId: u.id, title: `The poll is closed: ${p.question}`, body: "See how it ended.", url: `/polls/${id}` });
+    notify(voters, { kind: "poll", actorId: u.id, title: "The poll is closed: {question}", body: "See how it ended.", vars: { question: p.question }, url: `/polls/${id}` });
   }
   broadcast("poll", { id });
 }

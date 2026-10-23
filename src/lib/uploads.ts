@@ -4,6 +4,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { db, now, UPLOAD_DIR } from "./db";
+import { UserError } from "./errors";
 
 /**
  * Pictures people upload. Every one is re-encoded (WebP; animated GIFs stay animated), turned the
@@ -28,7 +29,7 @@ const ALLOWED = new Set(["jpeg", "png", "webp", "gif", "avif", "heif", "tiff"]);
 
 export async function saveUpload(userId: number, buf: Buffer, kind: UploadKind, name: string): Promise<Uploaded> {
   const meta = await sharp(buf, { animated: true, limitInputPixels: 120_000_000 }).metadata();
-  if (!meta.format || !ALLOWED.has(meta.format)) throw new Error("That isn't a picture we can use (JPEG, PNG, WebP, GIF or AVIF).");
+  if (!meta.format || !ALLOWED.has(meta.format)) throw new UserError("That isn't a picture we can use (JPEG, PNG, WebP, GIF or AVIF).");
   const animated = (meta.pages ?? 1) > 1 && (kind === "image" || kind === "avatar");
   const id = crypto.randomBytes(12).toString("base64url");
   const d = new Date();

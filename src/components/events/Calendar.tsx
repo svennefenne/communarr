@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarPlus, ChevronLeft, ChevronRight, MapPin, Plus, Repeat, Rss } from "lucide-react";
 import type { EventView } from "@/lib/contentTypes";
-import { useApp, useToast } from "@/components/app/AppProvider";
+import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/ui";
 import { eventsAction } from "@/app/actions/content";
@@ -17,7 +17,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 /** Monday-first weeks */
 const startOfWeek = (d: Date) => addDays(startOfDay(d), -((d.getDay() + 6) % 7));
-const timeLabel = (t: number) => new Date(t).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+const timeLabel = (t: number, locale: string | undefined) => new Date(t).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 
 function rangeFor(view: View, anchor: Date): [Date, Date] {
   if (view === "month") {
@@ -43,11 +43,12 @@ function daysOf(e: EventView): string[] {
 }
 
 function EventLine({ e, showDay = false }: { e: EventView; showDay?: boolean }) {
+  const t = useT();
   return (
     <Link href={`/events/${e.id}`} className={`cal-line ${e.cancelled ? "cancelled" : ""}`} style={{ ["--ec" as string]: e.color }}>
       <span className="cal-line-time mono">
-        {showDay ? new Date(e.startAt).toLocaleDateString(undefined, { weekday: "short", day: "numeric" }) + " " : ""}
-        {e.allDay ? "All day" : timeLabel(e.startAt)}
+        {showDay ? new Date(e.startAt).toLocaleDateString(t.locale, { weekday: "short", day: "numeric" }) + " " : ""}
+        {e.allDay ? t("All day") : timeLabel(e.startAt, t.locale)}
       </span>
       <span className="grow" style={{ minWidth: 0 }}>
         <b className="ellipsis" style={{ display: "block" }}>
@@ -60,7 +61,7 @@ function EventLine({ e, showDay = false }: { e: EventView; showDay?: boolean }) 
           </span>
         ) : null}
       </span>
-      {e.mine === "going" ? <span className="badge accent">Going</span> : e.mine === "maybe" ? <span className="badge">Maybe</span> : null}
+      {e.mine === "going" ? <span className="badge accent">{t("Going")}</span> : e.mine === "maybe" ? <span className="badge">{t("Maybe")}</span> : null}
       {e.going.length ? (
         <span className="avatar-stack">
           {e.going.slice(0, 3).map((u) => (
@@ -75,6 +76,7 @@ function EventLine({ e, showDay = false }: { e: EventView; showDay?: boolean }) 
 export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: EventView[]; feedUrl: { mine: string; all: string }; canCreate: boolean; groupId?: number }) {
   const { site } = useApp();
   const toast = useToast();
+  const t = useT();
   const [view, setView] = useState<View>("month");
   const [anchor, setAnchor] = useState(() => new Date());
   const [mineOnly, setMineOnly] = useState(false);
@@ -110,11 +112,11 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
   const today = dayKey(new Date());
   const title =
     view === "month"
-      ? anchor.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+      ? anchor.toLocaleDateString(t.locale, { month: "long", year: "numeric" })
       : view === "week"
-        ? `${from.toLocaleDateString(undefined, { day: "numeric", month: "short" })} – ${addDays(to, -1).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`
-        : `From ${from.toLocaleDateString(undefined, { day: "numeric", month: "long" })}`;
-  const weekdays = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(new Date()), i).toLocaleDateString(undefined, { weekday: "short" }));
+        ? `${from.toLocaleDateString(t.locale, { day: "numeric", month: "short" })} – ${addDays(to, -1).toLocaleDateString(t.locale, { day: "numeric", month: "short", year: "numeric" })}`
+        : t("From {date}", { date: from.toLocaleDateString(t.locale, { day: "numeric", month: "long" }) });
+  const weekdays = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(new Date()), i).toLocaleDateString(t.locale, { weekday: "short" }));
   const selectedEvents = byDay.get(selected) ?? [];
   const selectedDate = new Date(`${selected}T12:00`);
   const newLink = (day?: string) => `/events/new?${day ? `date=${day}` : ""}${groupId ? `&group=${groupId}` : ""}`;
@@ -123,7 +125,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
     <div className="calendar">
       <div className="cal-bar">
         <div className="row" style={{ gap: 6 }}>
-          <button type="button" className="icon-btn framed" onClick={() => step(-1)} aria-label="Back">
+          <button type="button" className="icon-btn framed" onClick={() => step(-1)} aria-label={t("Back")}>
             <ChevronLeft size={18} />
           </button>
           <button
@@ -134,9 +136,9 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
               setSelected(today);
             }}
           >
-            Today
+            {t("Today")}
           </button>
-          <button type="button" className="icon-btn framed" onClick={() => step(1)} aria-label="Forward">
+          <button type="button" className="icon-btn framed" onClick={() => step(1)} aria-label={t("Forward")}>
             <ChevronRight size={18} />
           </button>
           <h2 className="h2 cal-title" suppressHydrationWarning>
@@ -148,24 +150,24 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
           <div className="pills">
             {(["month", "week", "list"] as View[]).map((v) => (
               <button key={v} type="button" className={`pill ${view === v ? "active" : ""}`} onClick={() => setView(v)}>
-                {v === "month" ? "Month" : v === "week" ? "Week" : "List"}
+                {v === "month" ? t("Month") : v === "week" ? t("Week") : t("List")}
               </button>
             ))}
           </div>
           <div className="pills">
             <button type="button" className={`pill ${!mineOnly ? "active" : ""}`} onClick={() => setMineOnly(false)}>
-              All
+              {t("All")}
             </button>
             <button type="button" className={`pill ${mineOnly ? "active" : ""}`} onClick={() => setMineOnly(true)}>
-              Mine
+              {t("Mine")}
             </button>
           </div>
-          <button type="button" className="btn btn-sm" onClick={() => setSubscribe(true)} title="Put the calendar in your phone's calendar app">
-            <Rss size={15} /> Subscribe
+          <button type="button" className="btn btn-sm" onClick={() => setSubscribe(true)} title={t("Put the calendar in your phone's calendar app")}>
+            <Rss size={15} /> {t("Subscribe")}
           </button>
           {canCreate && site.can.events ? (
             <Link href={newLink(view === "month" ? selected : undefined)} className="btn btn-primary btn-sm">
-              <Plus size={15} /> New event
+              <Plus size={15} /> {t("New event")}
             </Link>
           ) : null}
         </div>
@@ -192,16 +194,16 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
                   className={`cal-cell ${other ? "other" : ""} ${k === today ? "today" : ""} ${k === selected ? "sel" : ""}`}
                   onClick={() => setSelected(k)}
                   onKeyDown={(e) => e.key === "Enter" && setSelected(k)}
-                  aria-label={d.toDateString()}
+                  aria-label={d.toLocaleDateString(t.locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                 >
                   <span className="cal-num">{d.getDate()}</span>
                   <span className="cal-chips">
                     {list.slice(0, 3).map((e) => (
                       <Link key={`${e.id}-${e.startAt}`} href={`/events/${e.id}`} className={`cal-chip ${e.cancelled ? "cancelled" : ""} ${e.mine === "going" ? "going" : ""}`} style={{ ["--ec" as string]: e.color }} onClick={(ev) => ev.stopPropagation()} title={e.title}>
-                        {!e.allDay && daysOf(e)[0] === k ? <span className="mono">{timeLabel(e.startAt)}</span> : null} {e.title}
+                        {!e.allDay && daysOf(e)[0] === k ? <span className="mono">{timeLabel(e.startAt, t.locale)}</span> : null} {e.title}
                       </Link>
                     ))}
-                    {list.length > 3 ? <span className="cal-more">+{list.length - 3} more</span> : null}
+                    {list.length > 3 ? <span className="cal-more">{t("+{n} more", { n: list.length - 3 })}</span> : null}
                   </span>
                   <span className="cal-dots">
                     {list.slice(0, 4).map((e) => (
@@ -215,16 +217,16 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
           <div className="panel cal-day">
             <div className="panel-head">
               <span className="eyebrow" suppressHydrationWarning>
-                {selectedDate.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
+                {selectedDate.toLocaleDateString(t.locale, { weekday: "long", day: "numeric", month: "long" })}
               </span>
               {canCreate && site.can.events ? (
                 <Link href={newLink(selected)} className="btn btn-ghost btn-xs">
-                  <CalendarPlus size={14} /> Plan
+                  <CalendarPlus size={14} /> {t("Plan{verb}", { verb: "" })}
                 </Link>
               ) : null}
             </div>
             <div className="list">
-              {selectedEvents.length ? selectedEvents.map((e) => <EventLine key={`${e.id}-${e.startAt}`} e={e} />) : <div className="panel-body small muted">Nothing on this day.</div>}
+              {selectedEvents.length ? selectedEvents.map((e) => <EventLine key={`${e.id}-${e.startAt}`} e={e} />) : <div className="panel-body small muted">{t("Nothing on this day.")}</div>}
             </div>
           </div>
         </div>
@@ -238,11 +240,11 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
               <div key={k} className={`panel cal-week-day ${k === today ? "today" : ""}`}>
                 <div className="cal-week-head">
                   <span className="eyebrow" suppressHydrationWarning>
-                    {d.toLocaleDateString(undefined, { weekday: "short" })}
+                    {d.toLocaleDateString(t.locale, { weekday: "short" })}
                   </span>
                   <span className="cal-week-num">{d.getDate()}</span>
                   {canCreate && site.can.events ? (
-                    <Link href={newLink(k)} className="icon-btn xs" aria-label="Plan something on this day">
+                    <Link href={newLink(k)} className="icon-btn xs" aria-label={t("Plan something on this day")}>
                       <Plus size={14} />
                     </Link>
                   ) : null}
@@ -261,8 +263,8 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
               <div key={k} className="panel">
                 <div className="panel-head">
                   <span className="eyebrow" suppressHydrationWarning>
-                    {new Date(`${k}T12:00`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
-                    {k === today ? " · today" : ""}
+                    {new Date(`${k}T12:00`).toLocaleDateString(t.locale, { weekday: "long", day: "numeric", month: "long" })}
+                    {k === today ? ` · ${t("today")}` : ""}
                   </span>
                 </div>
                 <div className="list">
@@ -272,14 +274,14 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
                 </div>
               </div>
             ))}
-          {!byDay.size ? <div className="panel panel-pad muted">Nothing planned in the next three months.</div> : null}
+          {!byDay.size ? <div className="panel panel-pad muted">{t("Nothing planned in the next three months.")}</div> : null}
         </div>
       )}
 
       {subscribe ? (
-        <Modal title="Subscribe in your calendar app" onClose={() => setSubscribe(false)}>
+        <Modal title={t("Subscribe in your calendar app")} onClose={() => setSubscribe(false)}>
           <div className="stack small">
-            <p style={{ margin: 0 }}>Your phone or computer&apos;s calendar can show the events and keep them up to date. Pick what to show:</p>
+            <p style={{ margin: 0 }}>{t("Your phone or computer's calendar can show the events and keep them up to date. Pick what to show:")}</p>
             {(
               [
                 ["What I'm going to", feedUrl.mine],
@@ -287,22 +289,22 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
               ] as const
             ).map(([label, url]) => (
               <div key={label} className="inset panel-pad-sm stack tight">
-                <b>{label}</b>
+                <b>{t(label)}</b>
                 <div className="row wrap">
                   <a className="btn btn-primary btn-sm" href={url.replace(/^https?:/, "webcal:")}>
-                    <CalendarPlus size={15} /> Add to calendar
+                    <CalendarPlus size={15} /> {t("Add to calendar")}
                   </a>
                   <button
                     type="button"
                     className="btn btn-sm"
                     onClick={() =>
                       navigator.clipboard?.writeText(url).then(
-                        () => toast("Address copied."),
+                        () => toast(t("Address copied.")),
                         () => toast(url),
                       )
                     }
                   >
-                    Copy address
+                    {t("Copy address")}
                   </button>
                 </div>
                 <code className="tiny muted" style={{ wordBreak: "break-all" }}>
@@ -311,7 +313,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
               </div>
             ))}
             <p className="muted" style={{ margin: 0 }}>
-              Google Calendar: Other calendars → + → From URL, and paste the address. The address is private to you: don&apos;t share it.
+              {t("Google Calendar: Other calendars → + → From URL, and paste the address. The address is private to you: don't share it.")}
             </p>
           </div>
         </Modal>

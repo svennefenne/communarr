@@ -2,6 +2,7 @@ import "server-only";
 import { db, now } from "./db";
 import { cleanTheme, resolveTheme, type ResolvedTheme, type SiteLook, type ThemeData } from "./theme";
 import { getSettings } from "./settings";
+import { userT } from "./t";
 import type { User } from "./users";
 import { summaries } from "./users";
 import type { UserSummary } from "./types";
@@ -60,7 +61,7 @@ export function sharedThemes(userId: number): ThemeInfo[] {
 export function saveTheme(userId: number, id: number | null, name: string, data: ThemeData, shared: boolean): number {
   const json = JSON.stringify(cleanTheme(data));
   const t = now();
-  const n = name.trim().slice(0, 40) || "My theme";
+  const n = name.trim().slice(0, 40) || userT(userId)("My theme");
   if (id) {
     const r = db().prepare("update themes set name = ?, data_json = ?, shared = ?, updated_at = ? where id = ? and user_id = ?").run(n, json, shared ? 1 : 0, t, id, userId);
     if (r.changes) return id;

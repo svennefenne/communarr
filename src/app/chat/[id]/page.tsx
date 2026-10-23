@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { canManage, canSee, members, messages, readMarks, room, roomInfo } from "@/lib/chat";
+import { requestT } from "@/lib/t";
 import { ChatRoom } from "@/components/chat/ChatRoom";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const u = await requireUser();
   const r = room(Number((await params).id));
-  if (!r || !canSee(u, r)) return { title: "Chat" };
+  if (!r || !canSee(u, r)) return { title: (await requestT())("Chat") };
   return { title: roomInfo(u, r).name };
 }
 

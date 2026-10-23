@@ -39,6 +39,7 @@ import {
 import { PopButton } from "@/components/ui/Popover";
 import { EmojiPopover } from "@/components/ui/EmojiPicker";
 import { CONTENT_FONTS, FONT_SIZES } from "@/lib/fontChoices";
+import { useT } from "@/components/app/AppProvider";
 
 export const TEXT_COLORS = [
   "#e2533a", "#ef8a3a", "#e2a634", "#f2d14b", "#5cc46a", "#2fa39a", "#3fa7d6", "#5b7bd6",
@@ -51,7 +52,7 @@ const BLOCKS = [
   { id: "h1", label: "Big heading" },
   { id: "h2", label: "Heading" },
   { id: "h3", label: "Small heading" },
-  { id: "quote", label: "Quote" },
+  { id: "quote", label: "Block quote" },
   { id: "code", label: "Code block" },
 ] as const;
 
@@ -66,6 +67,7 @@ function Btn({ on, label, onClick, children, disabled, kbd }: { on?: boolean; la
 const Sep = () => <span className="tb-sep" aria-hidden />;
 
 export function ColorGrid({ colors, current, onPick, onClear, clearLabel, custom = true }: { colors: string[]; current?: string | null; onPick: (c: string) => void; onClear: () => void; clearLabel: string; custom?: boolean }) {
+  const t = useT();
   return (
     <div className="stack tight" style={{ padding: 4 }}>
       <button type="button" className="menu-item" onClick={onClear}>
@@ -84,7 +86,7 @@ export function ColorGrid({ colors, current, onPick, onClear, clearLabel, custom
       {custom ? (
         <label className="row small muted" style={{ padding: "4px 2px" }}>
           <input type="color" className="swatch-input" defaultValue={current || "#e2a634"} onChange={(e) => onPick(e.target.value)} />
-          Any colour…
+          {t("Any colour…")}
         </label>
       ) : null}
     </div>
@@ -143,10 +145,12 @@ export function Toolbar({
       canRedo: e.can().redo(),
     }),
   });
+  const t = useT();
   const [emoji, setEmoji] = useState(false);
   const emojiBtn = useRef<HTMLButtonElement>(null);
   const c = () => editor.chain().focus();
-  const fontLabel = CONTENT_FONTS.find((f) => f.value === s.font)?.label ?? "Font";
+  const fontName = CONTENT_FONTS.find((f) => f.value === s.font)?.label;
+  const fontLabel = fontName ? t(fontName) : t("Font");
   const AlignIcon = s.align === "center" ? AlignCenter : s.align === "right" ? AlignRight : s.align === "justify" ? AlignJustify : AlignLeft;
 
   const setBlock = (id: string) => {
@@ -160,17 +164,17 @@ export function Toolbar({
   };
 
   return (
-    <div className="ed-toolbar" role="toolbar" aria-label="Formatting">
+    <div className="ed-toolbar" role="toolbar" aria-label={t("Formatting")}>
       {!compact ? (
         <>
-          <Btn label="Undo" kbd="Ctrl+Z" onClick={() => c().undo().run()} disabled={!s.canUndo}>
+          <Btn label={t("Undo")} kbd="Ctrl+Z" onClick={() => c().undo().run()} disabled={!s.canUndo}>
             <Undo2 size={17} />
           </Btn>
-          <Btn label="Redo" kbd="Ctrl+Shift+Z" onClick={() => c().redo().run()} disabled={!s.canRedo}>
+          <Btn label={t("Redo")} kbd="Ctrl+Shift+Z" onClick={() => c().redo().run()} disabled={!s.canRedo}>
             <Redo2 size={17} />
           </Btn>
           <Sep />
-          <PopButton label="Text style" className="tb-btn tb-wide" width={210} button={<><span className="tb-text">{BLOCKS.find((b) => b.id === s.block)?.label}</span><ChevronDown size={14} /></>}>
+          <PopButton label={t("Text style")} className="tb-btn tb-wide" width={210} button={<><span className="tb-text">{t(BLOCKS.find((b) => b.id === s.block)?.label ?? "Normal text")}</span><ChevronDown size={14} /></>}>
             {(close) => (
               <div className="stack" style={{ gap: 2, padding: 4 }}>
                 {BLOCKS.map((b) => (
@@ -183,7 +187,7 @@ export function Toolbar({
                       close();
                     }}
                   >
-                    {b.label}
+                    {t(b.label)}
                   </button>
                 ))}
               </div>
@@ -191,7 +195,7 @@ export function Toolbar({
           </PopButton>
         </>
       ) : null}
-      <PopButton label="Font" className="tb-btn tb-wide" width={220} button={<><Type size={15} /><span className="tb-text" style={{ fontFamily: s.font ?? undefined }}>{fontLabel}</span><ChevronDown size={14} /></>}>
+      <PopButton label={t("Font")} className="tb-btn tb-wide" width={220} button={<><Type size={15} /><span className="tb-text" style={{ fontFamily: s.font ?? undefined }}>{fontLabel}</span><ChevronDown size={14} /></>}>
         {(close) => (
           <div className="stack popover-scroll" style={{ gap: 2, padding: 4 }}>
             <button
@@ -202,7 +206,7 @@ export function Toolbar({
                 close();
               }}
             >
-              Site font
+              {t("Site font")}
             </button>
             {CONTENT_FONTS.map((f) => (
               <button
@@ -215,13 +219,13 @@ export function Toolbar({
                   close();
                 }}
               >
-                {f.label}
+                {t(f.label)}
               </button>
             ))}
           </div>
         )}
       </PopButton>
-      <PopButton label="Text size" className="tb-btn tb-size" width={150} button={<><span className="tb-text">{s.size ? parseInt(s.size) : "Size"}</span><ChevronDown size={14} /></>}>
+      <PopButton label={t("Text size")} className="tb-btn tb-size" width={150} button={<><span className="tb-text">{s.size ? parseInt(s.size) : t("Size")}</span><ChevronDown size={14} /></>}>
         {(close) => (
           <div className="stack popover-scroll" style={{ gap: 2, padding: 4 }}>
             <button
@@ -232,7 +236,7 @@ export function Toolbar({
                 close();
               }}
             >
-              Normal
+              {t("Normal")}
             </button>
             {FONT_SIZES.map((z) => (
               <button
@@ -252,20 +256,20 @@ export function Toolbar({
         )}
       </PopButton>
       <Sep />
-      <Btn label="Bold" kbd="Ctrl+B" on={s.bold} onClick={() => c().toggleBold().run()}>
+      <Btn label={t("Bold")} kbd="Ctrl+B" on={s.bold} onClick={() => c().toggleBold().run()}>
         <Bold size={17} />
       </Btn>
-      <Btn label="Italic" kbd="Ctrl+I" on={s.italic} onClick={() => c().toggleItalic().run()}>
+      <Btn label={t("Italic")} kbd="Ctrl+I" on={s.italic} onClick={() => c().toggleItalic().run()}>
         <Italic size={17} />
       </Btn>
-      <Btn label="Underline" kbd="Ctrl+U" on={s.underline} onClick={() => c().toggleUnderline().run()}>
+      <Btn label={t("Underline")} kbd="Ctrl+U" on={s.underline} onClick={() => c().toggleUnderline().run()}>
         <Underline size={17} />
       </Btn>
-      <Btn label="Strikethrough" kbd="Ctrl+Shift+S" on={s.strike} onClick={() => c().toggleStrike().run()}>
+      <Btn label={t("Strikethrough")} kbd="Ctrl+Shift+S" on={s.strike} onClick={() => c().toggleStrike().run()}>
         <Strikethrough size={17} />
       </Btn>
       <PopButton
-        label="Text colour"
+        label={t("Text colour")}
         width={260}
         button={
           <span className="tb-color">
@@ -278,7 +282,7 @@ export function Toolbar({
           <ColorGrid
             colors={TEXT_COLORS}
             current={s.color}
-            clearLabel="Default colour"
+            clearLabel={t("Default colour")}
             onClear={() => {
               c().unsetColor().run();
               close();
@@ -289,12 +293,12 @@ export function Toolbar({
           />
         )}
       </PopButton>
-      <PopButton label="Highlight" width={260} active={!!s.highlight} button={<span className="tb-color"><Highlighter size={16} /><i style={{ background: s.highlight || "#fde68a" }} /></span>}>
+      <PopButton label={t("Highlight colour")} width={260} active={!!s.highlight} button={<span className="tb-color"><Highlighter size={16} /><i style={{ background: s.highlight || "#fde68a" }} /></span>}>
         {(close) => (
           <ColorGrid
             colors={HIGHLIGHTS}
             current={s.highlight}
-            clearLabel="No highlight"
+            clearLabel={t("No highlight")}
             onClear={() => {
               c().unsetHighlight().run();
               close();
@@ -307,13 +311,13 @@ export function Toolbar({
         )}
       </PopButton>
       <Sep />
-      <Btn label="Link" kbd="Ctrl+K" on={s.link} onClick={onLink}>
+      <Btn label={t("Link")} kbd="Ctrl+K" on={s.link} onClick={onLink}>
         <Link2 size={17} />
       </Btn>
-      <Btn label="Add a picture" onClick={onImage}>
+      <Btn label={t("Add a picture")} onClick={onImage}>
         <ImagePlus size={17} />
       </Btn>
-      <button ref={emojiBtn} type="button" className={`tb-btn ${emoji ? "on" : ""}`} title="Emoji" aria-label="Emoji" onMouseDown={(e) => e.preventDefault()} onClick={() => setEmoji((x) => !x)}>
+      <button ref={emojiBtn} type="button" className={`tb-btn ${emoji ? "on" : ""}`} title={t("Emoji")} aria-label={t("Emoji")} onMouseDown={(e) => e.preventDefault()} onClick={() => setEmoji((x) => !x)}>
         <Smile size={17} />
       </button>
       {emoji ? (
@@ -325,11 +329,11 @@ export function Toolbar({
           onClose={() => setEmoji(false)}
         />
       ) : null}
-      <Btn label="Mention someone" onClick={() => c().insertContent(" @").run()}>
+      <Btn label={t("Mention someone")} onClick={() => c().insertContent(" @").run()}>
         <AtSign size={17} />
       </Btn>
       <Sep />
-      <PopButton label="Alignment" width={190} button={<AlignIcon size={17} />}>
+      <PopButton label={t("Alignment")} width={190} button={<AlignIcon size={17} />}>
         {(close) => (
           <div className="stack" style={{ gap: 2, padding: 4 }}>
             {(
@@ -350,86 +354,86 @@ export function Toolbar({
                   close();
                 }}
               >
-                <Icon size={16} /> {label}
+                <Icon size={16} /> {t(label)}
               </button>
             ))}
           </div>
         )}
       </PopButton>
-      <Btn label="Bulleted list" on={s.bullet} onClick={() => c().toggleBulletList().run()}>
+      <Btn label={t("Bulleted list")} on={s.bullet} onClick={() => c().toggleBulletList().run()}>
         <List size={17} />
       </Btn>
-      <Btn label="Numbered list" on={s.ordered} onClick={() => c().toggleOrderedList().run()}>
+      <Btn label={t("Numbered list")} on={s.ordered} onClick={() => c().toggleOrderedList().run()}>
         <ListOrdered size={17} />
       </Btn>
-      <Btn label="Checklist" on={s.task} onClick={() => c().toggleTaskList().run()}>
+      <Btn label={t("Checklist")} on={s.task} onClick={() => c().toggleTaskList().run()}>
         <ListTodo size={17} />
       </Btn>
-      <PopButton label="More" width={230} button={<Ellipsis size={17} />} active={s.table || s.code || s.sub || s.sup}>
+      <PopButton label={t("More")} width={230} button={<Ellipsis size={17} />} active={s.table || s.code || s.sub || s.sup}>
         {(close) => (
           <div className="stack" style={{ gap: 2, padding: 4 }}>
             {compact ? (
               <>
                 <button type="button" className="menu-item" onClick={() => { c().toggleHeading({ level: 2 }).run(); close(); }}>
-                  <Type size={16} /> Heading
+                  <Type size={16} /> {t("Heading")}
                 </button>
                 <button type="button" className="menu-item" onClick={() => { c().toggleBlockquote().run(); close(); }}>
-                  <span style={{ width: 16, textAlign: "center", fontWeight: 900 }}>&ldquo;</span> Quote
+                  <span style={{ width: 16, textAlign: "center", fontWeight: 900 }}>&ldquo;</span> {t("Block quote")}
                 </button>
                 <button type="button" className="menu-item" onClick={() => { c().toggleCodeBlock().run(); close(); }}>
-                  <SquareCode size={16} /> Code block
+                  <SquareCode size={16} /> {t("Code block")}
                 </button>
               </>
             ) : (
               <>
                 {!s.table ? (
                   <button type="button" className="menu-item" onClick={() => { c().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); close(); }}>
-                    <Table2 size={16} /> Table
+                    <Table2 size={16} /> {t("Table")}
                   </button>
                 ) : (
                   <>
-                    <div className="menu-label">Table</div>
+                    <div className="menu-label">{t("Table")}</div>
                     <button type="button" className="menu-item" onClick={() => c().addRowAfter().run()}>
-                      + Row below
+                      {t("+ Row below")}
                     </button>
                     <button type="button" className="menu-item" onClick={() => c().addColumnAfter().run()}>
-                      + Column right
+                      {t("+ Column right")}
                     </button>
                     <button type="button" className="menu-item" onClick={() => c().deleteRow().run()}>
-                      − Remove row
+                      {t("− Remove row")}
                     </button>
                     <button type="button" className="menu-item" onClick={() => c().deleteColumn().run()}>
-                      − Remove column
+                      {t("− Remove column")}
                     </button>
                     <button type="button" className="menu-item" onClick={() => c().toggleHeaderRow().run()}>
-                      Header row on/off
+                      {t("Header row on/off")}
                     </button>
                     <button type="button" className="menu-item danger" onClick={() => { c().deleteTable().run(); close(); }}>
-                      Remove the table
+                      {t("Remove the table")}
                     </button>
                     <div className="menu-sep" />
                   </>
                 )}
                 <button type="button" className="menu-item" onClick={() => { c().setHorizontalRule().run(); close(); }}>
-                  <Minus size={16} /> Divider line
+                  <Minus size={16} /> {t("Divider line")}
                 </button>
                 <button type="button" className="menu-item" onClick={() => { onVideo(); close(); }}>
-                  <Film size={16} /> YouTube video
+                  <Film size={16} /> {t("YouTube video")}
                 </button>
               </>
             )}
             <button type="button" className={`menu-item ${s.code ? "sel" : ""}`} onClick={() => { c().toggleCode().run(); close(); }}>
-              <Code size={16} /> Inline code
+              <Code size={16} /> {t("Inline code")}
             </button>
             <button type="button" className={`menu-item ${s.sub ? "sel" : ""}`} onClick={() => { c().toggleSubscript().run(); close(); }}>
-              <SubIcon size={16} /> Subscript
+              <SubIcon size={16} /> {t("Subscript")}
             </button>
             <button type="button" className={`menu-item ${s.sup ? "sel" : ""}`} onClick={() => { c().toggleSuperscript().run(); close(); }}>
-              <SupIcon size={16} /> Superscript
+              <SupIcon size={16} /> {t("Superscript")}
             </button>
             <div className="menu-sep" />
             <button type="button" className="menu-item" onClick={() => { c().unsetAllMarks().clearNodes().run(); close(); }}>
-              <RemoveFormatting size={16} /> Clear formatting
+              <RemoveFormatting size={16} /> {t("Clear formatting")}
             </button>
           </div>
         )}
@@ -437,7 +441,7 @@ export function Toolbar({
       {!compact ? (
         <>
           <span className="spacer" />
-          <Btn label={expanded ? "Smaller" : "Full screen"} onClick={onExpand}>
+          <Btn label={expanded ? t("Smaller") : t("Full screen")} onClick={onExpand}>
             {expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
           </Btn>
         </>

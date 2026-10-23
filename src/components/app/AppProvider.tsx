@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { CircleAlert, Sparkles } from "lucide-react";
 import type { Boot, Me, SiteInfo } from "@/lib/bootTypes";
 import type { LiveState, NotificationItem } from "@/lib/types";
+import { makeT, setClientLang, type T } from "@/lib/i18n";
 
 /**
  * Everything the pages share in the browser: who you are, the site's switches, unread counts,
@@ -46,6 +47,8 @@ export function useApp(): Ctx {
 export const useMe = () => useApp().me;
 export const useSite = () => useApp().site;
 export const useToast = () => useApp().toast;
+/** The site's language: t("Save"), t.n(n, "{n} reply", "{n} replies"), t.locale for dates. */
+export const useT = (): T => makeT(useApp().site.lang);
 
 /** Run `fn` for each live event of a type while the component is mounted. */
 export function useLive(type: string, fn: Handler) {
@@ -60,6 +63,8 @@ export function usePresence(userId: number): LiveState {
 }
 
 export function AppProvider({ boot, children }: { boot: Boot; children: React.ReactNode }) {
+  // for the helpers outside components (clientT): the same for everyone, so safe to set here
+  setClientLang(boot.site.lang);
   const [counts, setCounts] = useState(boot.counts);
   const [presence, setPresence] = useState<Map<number, LiveState>>(new Map());
   const [conn, setConn] = useState<number | null>(null);

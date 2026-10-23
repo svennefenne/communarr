@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Lock, MessageSquare, Megaphone, Pin } from "lucide-react";
 import type { PostView } from "@/lib/contentTypes";
-import { useMe, useToast } from "@/components/app/AppProvider";
+import { useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, ROLE_LABEL, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
@@ -26,6 +26,7 @@ export function GroupChip({ g }: { g: { slug: string; name: string; color: strin
 /** A post or news item, in the feed or on its own page (`full`). */
 export function PostCard({ post, full = false, onGone }: { post: PostView; full?: boolean; onGone?: () => void }) {
   const me = useMe();
+  const t = useT();
   const toast = useToast();
   const router = useRouter();
   const [p, setP] = useState(post);
@@ -46,10 +47,10 @@ export function PostCard({ post, full = false, onGone }: { post: PostView; full?
           <div className="row wrap" style={{ gap: "2px 8px" }}>
             <UserLink user={p.author} />
             {p.author.statusEmoji ? <span title={p.author.statusText}>{p.author.statusEmoji}</span> : null}
-            {ROLE_LABEL[p.author.role] && news ? <span className="role-tag">{ROLE_LABEL[p.author.role]}</span> : null}
+            {ROLE_LABEL[p.author.role] && news ? <span className="role-tag">{t(ROLE_LABEL[p.author.role])}</span> : null}
             {p.group ? (
               <>
-                <span className="faint small">in</span>
+                <span className="faint small">{t("in")}</span>
                 <GroupChip g={p.group} />
               </>
             ) : null}
@@ -58,21 +59,21 @@ export function PostCard({ post, full = false, onGone }: { post: PostView; full?
             <Link href={`/posts/${p.id}`} className="post-time">
               <Time t={p.createdAt} />
             </Link>
-            {p.editedAt ? <span>· edited</span> : null}
+            {p.editedAt ? <span>· {t("edited")}</span> : null}
             {p.visibility === "private" ? (
               <span className="row" style={{ gap: 3 }}>
-                · <Lock size={11} /> only you
+                · <Lock size={11} /> {t("only you")}
               </span>
             ) : null}
           </div>
         </div>
         {news ? (
           <span className="badge hot">
-            <Megaphone size={12} /> News
+            <Megaphone size={12} /> {t("News")}
           </span>
         ) : null}
         {p.pinned ? (
-          <span className="badge accent" title="Pinned">
+          <span className="badge accent" title={t("Pinned")}>
             <Pin size={12} />
           </span>
         ) : null}
@@ -83,7 +84,7 @@ export function PostCard({ post, full = false, onGone }: { post: PostView; full?
             const r = await saveAction("post", p.id);
             if (r.ok) {
               setP({ ...p, saved: r.data });
-              toast(r.data ? "Saved: find it under Saved." : "Taken out of Saved.");
+              toast(t(r.data ? "Saved: find it under Saved." : "Taken out of Saved."));
             }
           }}
           onEdit={p.canEdit || (news && me?.isAdmin) ? () => router.push(`/posts/${p.id}/edit`) : undefined}
@@ -100,7 +101,7 @@ export function PostCard({ post, full = false, onGone }: { post: PostView; full?
           onDelete={
             p.canEdit || p.canModerate
               ? () =>
-                  confirm("Delete this post with its comments? This can't be undone.", "Delete", async () => {
+                  confirm(t("Delete this post with its comments? This can't be undone."), t("Delete"), async () => {
                     const r = await deletePostAction(p.id);
                     if (r.ok) {
                       setGone(true);
@@ -129,7 +130,7 @@ export function PostCard({ post, full = false, onGone }: { post: PostView; full?
         <Reactions type="post" id={p.id} initial={p.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
         <button type="button" className={`btn btn-ghost btn-sm ${open ? "on" : ""}`} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-          <MessageSquare size={16} /> {count ? `${count} ${count === 1 ? "comment" : "comments"}` : "Comment"}
+          <MessageSquare size={16} /> {count ? t.n(count, "{n} comment", "{n} comments") : t("Comment{verb}", { verb: "" })}
         </button>
       </footer>
       {open ? <Comments type="post" id={p.id} locked={p.commentsLocked} onCount={setCount} /> : null}

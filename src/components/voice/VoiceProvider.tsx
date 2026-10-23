@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { useApp, useLive } from "@/components/app/AppProvider";
+import { useApp, useLive, useT } from "@/components/app/AppProvider";
+import { clientT } from "@/lib/i18n";
 
 /**
  * Voice chat in the browser. Joining a room's voice calls every other tab in it directly (WebRTC);
@@ -48,12 +49,13 @@ type Signal = { sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit
 async function post(body: Record<string, unknown>) {
   const res = await fetch("/api/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error || "Voice chat didn't answer.");
+  if (!res.ok) throw new Error((data as { error?: string }).error || clientT()("Voice chat didn't answer."));
   return data;
 }
 
 export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const { conn, me, site } = useApp();
+  const t = useT();
   const [supported, setSupported] = useState(false);
   const [room, setRoom] = useState<number | null>(null);
   const [roomName, setRoomName] = useState("");
@@ -247,7 +249,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     async (r: number, name: string) => {
       setError("");
       if (!connRef.current) {
-        setError("Not connected to the site yet. Try again in a moment.");
+        setError(t("Not connected to the site yet. Try again in a moment."));
         return;
       }
       setJoining(true);
@@ -267,7 +269,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         await enter(r);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        setError(/Permission|NotAllowed/i.test(msg) ? "The browser didn't allow the microphone. Allow it in the address bar's site settings." : msg);
+        setError(/Permission|NotAllowed/i.test(msg) ? t("The browser didn't allow the microphone. Allow it in the address bar's site settings.") : msg);
         stopAll();
         roomRef.current = null;
         setRoom(null);
@@ -275,7 +277,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         setJoining(false);
       }
     },
-    [enter, closePeer, meter, stopAll],
+    [enter, closePeer, meter, stopAll, t],
   );
 
   const leave = useCallback(() => {

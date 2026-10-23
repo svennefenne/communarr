@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
 import { Modal } from "@/components/ui/ui";
 
 type PromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
@@ -16,35 +17,41 @@ export function isIos() {
 
 /** How to put the site on the home screen, for each kind of device. */
 export function InstallHelp() {
+  const t = useT();
   return (
     <div className="stack small">
-      <p style={{ margin: 0 }}>Installed, the site opens like an app, full screen, and can send you notifications even when it&apos;s closed.</p>
+      <p style={{ margin: 0 }}>{t("Installed, the site opens like an app, full screen, and can send you notifications even when it's closed.")}</p>
       <div>
-        <b>iPhone and iPad (Safari)</b>
+        <b>{t("iPhone and iPad (Safari)")}</b>
         <ol style={{ margin: "6px 0 0", paddingLeft: 20 }}>
-          <li>Tap the Share button (the square with the arrow).</li>
-          <li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li>
-          <li>Open it from the home screen and turn notifications on under Settings → Notifications.</li>
+          <li>{t("Tap the Share button (the square with the arrow).")}</li>
+          <li>
+            {t("Choose")} <b>{t("Add to Home Screen")}</b>, {t("then")} <b>{t("Add")}</b>.
+          </li>
+          <li>{t("Open it from the home screen and turn notifications on under Settings → Notifications.")}</li>
         </ol>
       </div>
       <div>
         <b>Android (Chrome)</b>
         <ol style={{ margin: "6px 0 0", paddingLeft: 20 }}>
-          <li>Tap the ⋮ menu.</li>
-          <li>Choose <b>Install app</b> (or <b>Add to Home screen</b>).</li>
+          <li>{t("Tap the ⋮ menu.")}</li>
+          <li>
+            {t("Choose")} <b>{t("Install app")}</b> ({t("or")} <b>{t("Add to Home screen")}</b>).
+          </li>
         </ol>
       </div>
       <div>
-        <b>Computer (Chrome, Edge)</b>
-        <p style={{ margin: "6px 0 0" }}>Click the install icon at the right end of the address bar.</p>
+        <b>{t("Computer (Chrome, Edge)")}</b>
+        <p style={{ margin: "6px 0 0" }}>{t("Click the install icon at the right end of the address bar.")}</p>
       </div>
-      <p className="muted" style={{ margin: 0 }}>Notifications need the site to be opened over https://.</p>
+      <p className="muted" style={{ margin: 0 }}>{t("Notifications need the site to be opened over https://.")}</p>
     </div>
   );
 }
 
 /** "Get the app": the browser's own install prompt where there is one, the steps otherwise. */
 export function InstallButton() {
+  const t = useT();
   const [prompt, setPrompt] = useState<PromptEvent | null>(null);
   const [help, setHelp] = useState(false);
   const [installed, setInstalled] = useState(true);
@@ -70,10 +77,10 @@ export function InstallButton() {
           } else setHelp(true);
         }}
       >
-        <Smartphone size={13} /> Get the app
+        <Smartphone size={13} /> {t("Get the app")}
       </button>
       {help ? (
-        <Modal title="Get the app" onClose={() => setHelp(false)}>
+        <Modal title={t("Get the app")} onClose={() => setHelp(false)}>
           <InstallHelp />
         </Modal>
       ) : null}

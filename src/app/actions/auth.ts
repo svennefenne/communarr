@@ -6,6 +6,7 @@ import { audit, clearFailures, clientInfo, hasAnyUser, hashPassword, noteFailure
 import { createUser, inviteState, pendingUser, seedSite, redeemInvite, validateNewUser } from "@/lib/accounts";
 import { getSettings } from "@/lib/settings";
 import { notify } from "@/lib/notify";
+import { memberLang, requestT, setLangCookie } from "@/lib/t";
 import type { UserRow } from "@/lib/users";
 
 export interface FormState {
@@ -32,7 +33,7 @@ export async function setupAction(_: FormState, fd: FormData): Promise<FormState
   const name = str(fd, "name").trim() || username;
   const password = str(fd, "password");
   const err = validateNewUser(username, name, password, str(fd, "password2"));
-  if (err) return { error: err };
+  if (err) return { error: (await requestT())(err) };
   const id = await createUser({ username, name, password, role: "admin" });
   seedSite(id);
   // the admin joins the rooms made just now
@@ -49,43 +50,48 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
   const username = str(fd, "username").trim();
   const password = str(fd, "password");
   const { ip } = await clientInfo();
+  const t = await requestT();
   const name = username.toLowerCase();
   // per address (when there is one) and per name from anywhere: made-up addresses don't help
   const key = ip ? `${ip}|${name}` : null;
   const nameKey = `*|${name}`;
-  if ((key && tooManyAttempts(key)) || tooManyAttempts(nameKey, 30)) return { error: "Too many tries. Wait ten minutes and try again." };
+  if ((key && tooManyAttempts(key)) || tooManyAttempts(nameKey, 30)) return { error: t("Too many tries. Wait ten minutes and try again.") };
   const row = db().prepare("select * from users where username = ?").get(username) as UserRow | undefined;
   if (!row || !(await verifyPassword(password, row.password_hash))) {
     if (key) noteFailure(key);
     noteFailure(nameKey);
-    return { error: "That username and password don't match." };
+    return { error: t("That username and password don't match.") };
   }
-  if (row.banned) return { error: `This account has been closed${row.ban_reason ? `: ${row.ban_reason}` : "."}` };
-  if (pendingUser(row)) return { error: "Your account is waiting for an admin to let you in. Try again a bit later." };
+  if (row.banned) return { error: row.ban_reason ? t("This account has been closed: {reason}", { reason: row.ban_reason }) : t("This account has been closed.") };
+  if (pendingUser(row)) return { error: t("Your account is waiting for an admin to let you in. Try again a bit later.") };
   if (row.suspended_until && row.suspended_until > now()) {
-    return { error: `This account is suspended until ${new Date(row.suspended_until).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}.` };
+    return { error: t("This account is suspended until {date}.", { date: new Date(row.suspended_until).toLocaleString(t.locale ?? "en-GB", { dateStyle: "medium", timeStyle: "short" }) }) };
   }
   if (key) clearFailures(key);
   await startSession(row.id);
+  // their own language, so this browser's log-in page keeps it after logging out
+  const own = memberLang(row.id);
+  if (own) await setLangCookie(own);
   redirect(safeNext(str(fd, "next")));
 }
 
 export async function signupAction(_: FormState, fd: FormData): Promise<FormState> {
   const s = getSettings();
+  const t = await requestT();
   const code = str(fd, "code");
   let invite = null;
   if (code) {
     const st = inviteState(code);
-    if (!st.ok) return { error: st.error };
+    if (!st.ok) return { error: t(st.error) };
     invite = st.invite;
   } else if (s.registration !== "open") {
-    return { error: "You need an invite link to join." };
+    return { error: t("You need an invite link to join.") };
   }
   const username = str(fd, "username").trim();
   const name = str(fd, "name").trim() || username;
   const password = str(fd, "password");
   const err = validateNewUser(username, name, password, str(fd, "password2"));
-  if (err) return { error: err };
+  if (err) return { error: t(err) };
   const pending = !invite && s.approveNew;
   const id = await createUser({ username, name, password, role: invite?.role === "moderator" ? "moderator" : "member", invitedBy: invite?.created_by ?? null, pending });
   if (invite) redeemInvite(invite, id);
@@ -95,22 +101,24 @@ export async function signupAction(_: FormState, fd: FormData): Promise<FormStat
   notify(admins, {
     kind: "group",
     actorId: id,
-    title: pending ? `${name} wants to join` : `${name} joined`,
-    body: pending ? "Let them in under Admin → Members." : `Say hi to @${username}!`,
+    title: pending ? "{name} wants to join" : "{name} joined",
+    body: pending ? "Let them in under Admin → Members." : "Say hi to @{username}!",
+    vars: { name, username },
     url: pending ? "/admin#members" : `/u/${encodeURIComponent(username)}`,
   });
-  if (pending) return { ok: "Thanks! An admin will let you in soon; then you can log in." };
+  if (pending) return { ok: t("Thanks! An admin will let you in soon; then you can log in.") };
   await startSession(id);
   redirect("/?welcome=1");
 }
 
 export async function resetAction(_: FormState, fd: FormData): Promise<FormState> {
   const token = str(fd, "token");
+  const t = await requestT();
   const row = db().prepare("select * from resets where token = ? and used = 0").get(token) as { user_id: number; expires_at: number } | undefined;
-  if (!row || row.expires_at < now()) return { error: "This link doesn't work any more. Ask an admin for a new one." };
+  if (!row || row.expires_at < now()) return { error: t("This link doesn't work any more. Ask an admin for a new one.") };
   const password = str(fd, "password");
-  if (password.length < 8) return { error: "Passwords need at least 8 characters." };
-  if (password !== str(fd, "password2")) return { error: "The two passwords aren't the same." };
+  if (password.length < 8) return { error: t("Passwords need at least 8 characters.") };
+  if (password !== str(fd, "password2")) return { error: t("The two passwords aren't the same.") };
   db().prepare("update users set password_hash = ? where id = ?").run(await hashPassword(password), row.user_id);
   db().prepare("update resets set used = 1 where token = ?").run(token);
   db().prepare("delete from sessions where user_id = ?").run(row.user_id);

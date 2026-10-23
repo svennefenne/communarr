@@ -403,6 +403,9 @@ const MIGRATIONS: string[] = [
     tokenize = "unicode61 remove_diacritics 2"
   );
   `,
+  /* 2: each member's own language (null: the site's) */ `
+  alter table users add column lang text;
+  `,
 ];
 
 function open(): Database.Database {

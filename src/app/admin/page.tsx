@@ -9,6 +9,7 @@ import { categories } from "@/lib/forum";
 import { uploadStats } from "@/lib/uploads";
 import { vapidPublicKey } from "@/lib/push";
 import { baseUrl } from "@/lib/url";
+import { requestT } from "@/lib/t";
 import { Section } from "@/components/admin/Section";
 import { AdminNav, type NavGroup } from "@/components/admin/AdminNav";
 import { Overview } from "@/components/admin/Overview";
@@ -19,16 +20,19 @@ import { AnnouncementSettings, FeatureSettings, IdentitySettings, LookSettings }
 import { ForumCategories } from "@/components/admin/ForumCategories";
 import { GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
 
-export const metadata = { title: "Admin" };
+export async function generateMetadata() {
+  return { title: (await requestT())("Admin") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ user?: string }> }) {
   const u = await requireMod();
+  const t = await requestT();
   const { user: focus } = await searchParams;
   const s = getSettings();
   const base = await baseUrl();
   const o = overview();
-  const reports = listReports("all");
+  const reports = listReports(t, "all");
   const open = reports.filter((r) => r.status === "open");
   const groups = db()
     .prepare("select g.id, g.slug, g.name, g.privacy, g.created_at createdAt, u.display_name owner, (select count(*) from group_members where group_id = g.id) members from groups g left join users u on u.id = g.owner_id order by g.name collate nocase")
@@ -70,21 +74,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const admin = u.isAdmin;
   const nav: NavGroup[] = [
-    { label: "At a glance", items: [{ id: "overview", label: "Overview" }] },
+    { label: t("At a glance"), items: [{ id: "overview", label: t("Overview") }] },
     {
-      label: "Community",
+      label: t("Community"),
       items: [
-        { id: "members", label: "Members", badge: o.pending },
-        ...(admin ? [{ id: "invites", label: "Invites & sign-up" }] : []),
-        { id: "reports", label: "Reports", badge: o.reports },
-        ...(admin ? [{ id: "rooms", label: "Groups & chat rooms" }] : []),
+        { id: "members", label: t("Members"), badge: o.pending },
+        ...(admin ? [{ id: "invites", label: t("Invites & sign-up") }] : []),
+        { id: "reports", label: t("Reports"), badge: o.reports },
+        ...(admin ? [{ id: "rooms", label: t("Groups & chat rooms") }] : []),
       ],
     },
-    { label: "Content", items: [{ id: "content", label: "Announcement & filter" }, { id: "forum", label: "Forum categories" }] },
+    { label: t("Content"), items: [{ id: "content", label: t("Announcement & filter") }, { id: "forum", label: t("Forum categories") }] },
     ...(admin
       ? [
-          { label: "Look", items: [{ id: "identity", label: "Name & texts" }, { id: "look", label: "Colours & background" }] },
-          { label: "Site", items: [{ id: "features", label: "Features & permissions" }, { id: "notifications", label: "Notifications & voice" }, { id: "system", label: "System & backup" }] },
+          { label: t("Look"), items: [{ id: "identity", label: t("Name & texts") }, { id: "look", label: t("Colours & background") }] },
+          { label: t("Site"), items: [{ id: "features", label: t("Features & permissions") }, { id: "notifications", label: t("Notifications & voice") }, { id: "system", label: t("System & backup") }] },
         ]
       : []),
   ];
@@ -93,58 +97,58 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     <div className="page admin-page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">{admin ? "You run the place" : "Moderator tools"}</span>
-          <h1 className="display page-title">Admin</h1>
+          <span className="eyebrow">{admin ? t("You run the place") : t("Moderator tools")}</span>
+          <h1 className="display page-title">{t("Admin")}</h1>
         </div>
         <div className="page-actions">
           <Link href="/news" className="btn btn-sm">
-            <Sparkles size={15} /> Write news
+            <Sparkles size={15} /> {t("Write news")}
           </Link>
         </div>
       </div>
       <div className="admin-layout">
         <AdminNav groups={nav} />
         <div className="stack">
-          <Section id="overview" title="Overview" icon={<Activity size={18} />}>
+          <Section id="overview" title={t("Overview")} icon={<Activity size={18} />}>
             <Overview o={o} days={activity(30)} isAdmin={admin} />
           </Section>
-          <Section id="members" title="Members" icon={<Users size={18} />} hint="Roles, suspensions, closed accounts, password resets" badge={o.pending}>
+          <Section id="members" title={t("Members")} icon={<Users size={18} />} hint={t("Roles, suspensions, closed accounts, password resets")} badge={o.pending}>
             <Members members={adminMembers()} base={base} focus={focus ? Number(focus) : undefined} />
           </Section>
           {admin ? (
-            <Section id="invites" title="Invites & sign-up" icon={<Mail size={18} />} hint="Who can join, and links to send">
+            <Section id="invites" title={t("Invites & sign-up")} icon={<Mail size={18} />} hint={t("Who can join, and links to send")}>
               <Invites invites={invites} base={base} registration={s.registration} approveNew={s.approveNew} groups={groups.map((g) => ({ id: g.id, name: g.name }))} />
             </Section>
           ) : null}
-          <Section id="reports" title="Reports" icon={<Flag size={18} />} hint="Things members flagged" badge={o.reports}>
+          <Section id="reports" title={t("Reports")} icon={<Flag size={18} />} hint={t("Things members flagged")} badge={o.reports}>
             <Reports open={open} closed={reports.filter((r) => r.status !== "open").slice(0, 50)} />
           </Section>
           {admin ? (
-            <Section id="rooms" title="Groups & chat rooms" icon={<LayoutGrid size={18} />}>
+            <Section id="rooms" title={t("Groups & chat rooms")} icon={<LayoutGrid size={18} />}>
               <GroupsRooms groups={groups} rooms={rooms} />
             </Section>
           ) : null}
-          <Section id="content" title="Announcement & word filter" icon={<Type size={18} />}>
-            {admin ? <AnnouncementSettings s={s} /> : <p className="small muted">Admins set the announcement and word filter.</p>}
+          <Section id="content" title={t("Announcement & word filter")} icon={<Type size={18} />}>
+            {admin ? <AnnouncementSettings s={s} /> : <p className="small muted">{t("Admins set the announcement and word filter.")}</p>}
           </Section>
-          <Section id="forum" title="Forum categories" icon={<MessagesSquare size={18} />}>
+          <Section id="forum" title={t("Forum categories")} icon={<MessagesSquare size={18} />}>
             <ForumCategories cats={categories(u)} groups={groups.map((g) => ({ id: g.id, name: g.name }))} />
           </Section>
           {admin ? (
             <>
-              <Section id="identity" title="Name & texts" icon={<Type size={18} />}>
+              <Section id="identity" title={t("Name & texts")} icon={<Type size={18} />}>
                 <IdentitySettings s={s} />
               </Section>
-              <Section id="look" title="Colours & background" icon={<Palette size={18} />} hint="The default look for everyone">
+              <Section id="look" title={t("Colours & background")} icon={<Palette size={18} />} hint={t("The default look for everyone")}>
                 <LookSettings s={s} />
               </Section>
-              <Section id="features" title="Features & permissions" icon={<SlidersHorizontal size={18} />}>
+              <Section id="features" title={t("Features & permissions")} icon={<SlidersHorizontal size={18} />}>
                 <FeatureSettings s={s} />
               </Section>
-              <Section id="notifications" title="Notifications & voice" icon={<Bell size={18} />}>
+              <Section id="notifications" title={t("Notifications & voice")} icon={<Bell size={18} />}>
                 <NotifyVoice s={s} vapid={vapidPublicKey()} devices={o.devices} timezones={tzs} />
               </Section>
-              <Section id="system" title="System & backup" icon={<Server size={18} />}>
+              <Section id="system" title={t("System & backup")} icon={<Server size={18} />}>
                 <SystemSection sys={system()} storage={{ db: o.dbBytes, uploads: up.bytes, byKind: up.byKind }} audit={auditLog(120)} />
               </Section>
             </>

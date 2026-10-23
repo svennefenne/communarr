@@ -6,9 +6,11 @@ import type { ThreadCard } from "@/lib/contentTypes";
 import { Avatar } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { CategoryChip } from "@/components/feed/ThreadCard";
+import { useT } from "@/components/app/AppProvider";
 
 /** Threads as rows: title and who started it, replies and views, the last post. */
 export function ThreadList({ threads, showCategory = false }: { threads: ThreadCard[]; showCategory?: boolean }) {
+  const tr = useT();
   return (
     <div className="panel thread-list">
       {threads.map((t) => (
@@ -18,7 +20,7 @@ export function ThreadList({ threads, showCategory = false }: { threads: ThreadC
             <span className="thread-title">
               {t.pinned ? <Pin size={14} className="thread-flag" /> : null}
               {t.locked ? <Lock size={14} className="thread-flag" /> : null}
-              {t.unread ? <span className="dot" title="New" /> : null}
+              {t.unread ? <span className="dot" title={tr("New")} /> : null}
               <span>{t.title}</span>
             </span>
             <span className="tiny muted row wrap" style={{ gap: "2px 8px" }}>
@@ -29,10 +31,10 @@ export function ThreadList({ threads, showCategory = false }: { threads: ThreadC
             </span>
           </span>
           <span className="thread-stats">
-            <span title="Replies">
+            <span title={tr("Replies")}>
               <MessagesSquare size={14} /> {t.replies}
             </span>
-            <span title="Views">
+            <span title={tr("Views")}>
               <Eye size={14} /> {t.views}
             </span>
           </span>

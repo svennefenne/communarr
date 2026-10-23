@@ -4,6 +4,8 @@ import { notify } from "./notify";
 import { cleanLine } from "./sanitize";
 import { summaries, type User } from "./users";
 import { UserError } from "./errors";
+import { serverT } from "./t";
+import type { T } from "./i18n";
 import { canSeeTarget } from "./visibility";
 import type { UserSummary } from "./types";
 
@@ -38,7 +40,7 @@ const URL: Record<ReportTarget, (id: number) => string> = {
   group: (id) => `/go/group/${id}`,
 };
 
-function preview(type: ReportTarget, id: number): string {
+function preview(type: ReportTarget, id: number, t: T): string {
   const q: Record<ReportTarget, string> = {
     post: "select coalesce(nullif(title, ''), body_text) t from posts where id = ?",
     comment: "select body_text t from comments where id = ?",
@@ -51,19 +53,21 @@ function preview(type: ReportTarget, id: number): string {
     group: "select name t from groups where id = ?",
   };
   const r = db().prepare(q[type]).get(id) as { t: string } | undefined;
-  return r ? r.t.slice(0, 200) : "(deleted)";
+  return r ? r.t.slice(0, 200) : t("(deleted)");
 }
 
 export function report(u: User, type: ReportTarget, id: number, reason: string) {
   // own keys only ("constructor" is "in" every object), and only what you can see yourself
   if (!Object.hasOwn(URL, type) || !canSeeTarget(u, type, Number(id))) throw new UserError("Can't report that.");
-  const why = cleanLine(reason, 500) || "No reason given";
+  const given = cleanLine(reason, 500);
+  // kept with the report, so in the site's language
+  const why = given || serverT()("No reason given");
   db().prepare("insert into reports (reporter_id, target_type, target_id, reason, created_at) values (?, ?, ?, ?, ?)").run(u.id, type, id, why, now());
   const mods = (db().prepare("select id from users where role in ('admin','moderator') and banned = 0").all() as { id: number }[]).map((r) => r.id);
-  notify(mods, { kind: "group", actorId: u.id, title: `${u.name} reported something`, body: why, url: "/admin#reports" });
+  notify(mods, { kind: "group", actorId: u.id, title: "{name} reported something", body: given ? "{text}" : "No reason given", vars: { name: u.name, text: given }, url: "/admin#reports" });
 }
 
-export function listReports(status: "open" | "all" = "open"): ReportView[] {
+export function listReports(t: T, status: "open" | "all" = "open"): ReportView[] {
   const rows = db()
     .prepare(`select * from reports ${status === "open" ? "where status = 'open'" : ""} order by created_at desc limit 200`)
     .all() as { id: number; reporter_id: number | null; target_type: ReportTarget; target_id: number; reason: string; status: ReportView["status"]; resolved_by: number | null; resolved_at: number | null; note: string; created_at: number }[];
@@ -80,7 +84,7 @@ export function listReports(status: "open" | "all" = "open"): ReportView[] {
     createdAt: r.created_at,
     resolvedAt: r.resolved_at,
     url: URL[r.target_type](r.target_id),
-    preview: preview(r.target_type, r.target_id),
+    preview: preview(r.target_type, r.target_id, t),
   }));
 }
 

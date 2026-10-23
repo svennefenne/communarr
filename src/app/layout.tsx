@@ -10,6 +10,7 @@ import "./styles/admin.css";
 import { fontVariables } from "@/lib/fonts";
 import { getUser } from "@/lib/auth";
 import { boot } from "@/lib/boot";
+import { requestLang } from "@/lib/t";
 import { getSettings } from "@/lib/settings";
 import { themeColor, themeCss } from "@/lib/theme";
 import { themeForUser } from "@/lib/themes";
@@ -56,10 +57,10 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
   const theme = themeForUser(user);
-  const b = boot(user);
+  const b = boot(user, await requestLang());
   return (
     <html
-      lang="en"
+      lang={b.site.lang}
       className={fontVariables}
       data-mode={theme.mode}
       data-frame={theme.frame ? "on" : undefined}
