@@ -4,13 +4,14 @@ import { canSeeThread, categories, countView, markThreadRead, pageOfReply, threa
 import { markReadByUrl } from "@/lib/notify";
 import { ThreadView } from "@/components/forum/ThreadView";
 import { BackPill } from "@/components/ui/BackPill";
+import { requestT } from "@/lib/t";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const u = await requireUser();
   const t = threadRow(Number((await params).id));
-  return { title: t && canSeeThread(u, t) ? t.title : "Thread" };
+  return { title: t && canSeeThread(u, t) ? t.title : (await requestT())("Thread") };
 }
 
 export default async function ThreadPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string; p?: string }> }) {

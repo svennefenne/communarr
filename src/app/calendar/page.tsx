@@ -4,12 +4,16 @@ import { eventsBetween, feedToken } from "@/lib/events";
 import { getSettings } from "@/lib/settings";
 import { baseUrl } from "@/lib/url";
 import { Calendar } from "@/components/events/Calendar";
+import { requestT } from "@/lib/t";
 
-export const metadata = { title: "Calendar" };
+export async function generateMetadata() {
+  return { title: (await requestT())("Calendar") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
   const u = await requireUser();
+  const t = await requestT();
   if (!getSettings().features.calendar) notFound();
   const now = new Date();
   const first = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -20,8 +24,8 @@ export default async function CalendarPage() {
     <div className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">Plans</span>
-          <h1 className="display page-title">Calendar</h1>
+          <span className="eyebrow">{t("Plans")}</span>
+          <h1 className="display page-title">{t("Calendar")}</h1>
         </div>
       </div>
       <Calendar initial={initial} feedUrl={{ mine: `${base}/cal/${tok}.ics`, all: `${base}/cal/${tok}.ics?all=1` }} canCreate />

@@ -6,6 +6,7 @@ import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 import type { UserSummary } from "@/lib/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { mentionOpen } from "./mentionState";
+import { useT } from "@/components/app/AppProvider";
 
 /** Everyone, fetched once per page for @mentions. */
 let members: Promise<UserSummary[]> | null = null;
@@ -31,6 +32,7 @@ interface ListHandle {
 }
 
 const MentionList = forwardRef<ListHandle, SuggestionProps<Item>>(function MentionList(props, ref) {
+  const t = useT();
   const [sel, setSel] = useState(0);
   useEffect(() => setSel(0), [props.items]);
   const pick = (i: number) => {
@@ -54,7 +56,7 @@ const MentionList = forwardRef<ListHandle, SuggestionProps<Item>>(function Menti
       return false;
     },
   }));
-  if (!props.items.length) return <div className="panel mention-list muted small" style={{ padding: "10px 12px" }}>No one by that name</div>;
+  if (!props.items.length) return <div className="panel mention-list muted small" style={{ padding: "10px 12px" }}>{t("No one by that name")}</div>;
   return (
     <div className="panel mention-list" role="listbox">
       {props.items.map((it, i) => (

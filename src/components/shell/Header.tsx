@@ -4,15 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
-import { useApp } from "@/components/app/AppProvider";
+import { useApp, useT } from "@/components/app/AppProvider";
 import { isActive, isBare, visibleSections } from "./nav";
 import { Drawer } from "./Drawer";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
 
 export function Brand({ name }: { name: string }) {
+  const t = useT();
   return (
-    <Link href="/" className="brand" aria-label={`${name} home`}>
+    <Link href="/" className="brand" aria-label={t("{name} home", { name })}>
       <span className="brand-mark" aria-hidden>
         <i />
         <i />
@@ -22,7 +23,7 @@ export function Brand({ name }: { name: string }) {
         <i />
       </span>
       <span className="brand-text">
-        <span className="brand-top">A place for friends</span>
+        <span className="brand-top">{t("A place for friends")}</span>
         <span className="brand-name">{name}</span>
       </span>
     </Link>
@@ -37,6 +38,7 @@ export function Header() {
 
 function SiteHeader({ pathname }: { pathname: string }) {
   const { me, site, counts, openSearch } = useApp();
+  const t = useT();
   const ref = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const [drawer, setDrawer] = useState(false);
@@ -85,7 +87,7 @@ function SiteHeader({ pathname }: { pathname: string }) {
     <header className="site-header" ref={ref}>
       <div className="hd-left">
         {me ? (
-          <button type="button" className="icon-btn burger" aria-label="Menu" aria-expanded={drawer} onClick={() => setDrawer(true)}>
+          <button type="button" className="icon-btn burger" aria-label={t("Menu")} aria-expanded={drawer} onClick={() => setDrawer(true)}>
             <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
               <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -96,22 +98,22 @@ function SiteHeader({ pathname }: { pathname: string }) {
       </div>
 
       {me ? (
-        <nav className="hd-nav" aria-label="Sections" ref={navRef}>
-          <button type="button" className="nav-key" onClick={() => step(-1)} title="Previous section (Q)" aria-label="Previous section (Q)" aria-keyshortcuts="Q">
+        <nav className="hd-nav" aria-label={t("Sections")} ref={navRef}>
+          <button type="button" className="nav-key" onClick={() => step(-1)} title={t("Previous section (Q)")} aria-label={t("Previous section (Q)")} aria-keyshortcuts="Q">
             Q
           </button>
           {sections.map((s, i) => {
             const Icon = s.icon;
             const dot = s.href === "/chat" && counts.chat > 0;
             return (
-              <Link key={s.href} href={s.href} data-section className={`tab ${i === activeIdx ? "active" : ""}`} aria-current={i === activeIdx ? "page" : undefined} title={s.label}>
+              <Link key={s.href} href={s.href} data-section className={`tab ${i === activeIdx ? "active" : ""}`} aria-current={i === activeIdx ? "page" : undefined} title={t(s.label)}>
                 <Icon size={18} aria-hidden />
-                <span className="tab-label">{s.label}</span>
-                {dot ? <span className="tab-dot" title="New messages" /> : null}
+                <span className="tab-label">{t(s.label)}</span>
+                {dot ? <span className="tab-dot" title={t("New messages")} /> : null}
               </Link>
             );
           })}
-          <button type="button" className="nav-key" onClick={() => step(1)} title="Next section (E)" aria-label="Next section (E)" aria-keyshortcuts="E">
+          <button type="button" className="nav-key" onClick={() => step(1)} title={t("Next section (E)")} aria-label={t("Next section (E)")} aria-keyshortcuts="E">
             E
           </button>
         </nav>
@@ -122,9 +124,9 @@ function SiteHeader({ pathname }: { pathname: string }) {
       <div className="hd-right">
         {me ? (
           <>
-            <button type="button" className="search-btn" onClick={() => openSearch()} aria-label="Search">
+            <button type="button" className="search-btn" onClick={() => openSearch()} aria-label={t("Search")}>
               <Search size={17} />
-              <span className="search-label">Search everything</span>
+              <span className="search-label">{t("Search everything")}</span>
               <span className="kbd hint-only">/</span>
             </button>
             <NotificationBell />
@@ -132,7 +134,7 @@ function SiteHeader({ pathname }: { pathname: string }) {
           </>
         ) : pathname !== "/login" ? (
           <Link href="/login" className="btn btn-primary btn-sm">
-            Log in
+            {t("Log in")}
           </Link>
         ) : null}
       </div>

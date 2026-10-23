@@ -263,17 +263,18 @@ export function joinGroup(u: User, id: number): "joined" | "requested" {
   const g = groupRow(id);
   if (!g || !canSeeGroup(u, g)) throw new GroupError("That group is gone.");
   if (groupRole(id, u.id)) return "joined";
+  const vars = { name: u.name, group: g.name };
   const invited = db().prepare("select 1 from group_requests where group_id = ? and user_id = ? and kind = 'invite'").get(id, u.id);
   if (g.privacy === "open" || invited || u.isAdmin) {
     addMember(g, u.id);
     const admins = (db().prepare("select user_id from group_members where group_id = ? and role in ('owner','admin')").all(id) as { user_id: number }[]).map((r) => r.user_id);
-    notify(admins, { kind: "group", actorId: u.id, title: `${u.name} joined ${g.name}`, url: `/groups/${g.slug}` });
+    notify(admins, { kind: "group", actorId: u.id, title: "{name} joined {group}", vars, url: `/groups/${g.slug}` });
     return "joined";
   }
   if (g.privacy === "secret") throw new GroupError("This group is by invitation only.");
   db().prepare("insert or replace into group_requests (group_id, user_id, kind, by_id, created_at) values (?, ?, 'request', ?, ?)").run(id, u.id, u.id, now());
   const admins = (db().prepare("select user_id from group_members where group_id = ? and role in ('owner','admin')").all(id) as { user_id: number }[]).map((r) => r.user_id);
-  notify(admins, { kind: "group", actorId: u.id, title: `${u.name} wants to join ${g.name}`, body: "Let them in on the group's Members tab.", url: `/groups/${g.slug}/members` });
+  notify(admins, { kind: "group", actorId: u.id, title: "{name} wants to join {group}", body: "Let them in on the group's Members tab.", vars, url: `/groups/${g.slug}/members` });
   return "requested";
 }
 
@@ -308,13 +309,13 @@ export function inviteToGroup(u: User, id: number, userIds: number[]) {
     const asked = db().prepare("select 1 from group_requests where group_id = ? and user_id = ? and kind = 'request'").get(id, uid);
     if (asked) {
       addMember(g, uid);
-      notify([uid], { kind: "group", actorId: u.id, title: `You're in ${g.name}!`, url: `/groups/${g.slug}` });
+      notify([uid], { kind: "group", actorId: u.id, title: "You're in {group}!", vars: { group: g.name }, url: `/groups/${g.slug}` });
       continue;
     }
     db().prepare("insert or replace into group_requests (group_id, user_id, kind, by_id, created_at) values (?, ?, 'invite', ?, ?)").run(id, uid, u.id, t);
     fresh.push(uid);
   }
-  notify(fresh, { kind: "invite", actorId: u.id, title: `${u.name} invited you to the group ${g.name}`, body: g.tagline, url: `/groups/${g.slug}` });
+  notify(fresh, { kind: "invite", actorId: u.id, title: "{name} invited you to the group {group}", body: "{tagline}", vars: { name: u.name, group: g.name, tagline: g.tagline }, url: `/groups/${g.slug}` });
   return fresh.length;
 }
 
@@ -325,7 +326,7 @@ export function answerRequest(u: User, id: number, userId: number, yes: boolean)
   if (!req) return;
   if (yes && req.kind === "request") {
     addMember(g, userId);
-    notify([userId], { kind: "group", actorId: u.id, title: `You're in ${g.name}!`, url: `/groups/${g.slug}` });
+    notify([userId], { kind: "group", actorId: u.id, title: "You're in {group}!", vars: { group: g.name }, url: `/groups/${g.slug}` });
   } else db().prepare("delete from group_requests where group_id = ? and user_id = ?").run(id, userId);
 }
 

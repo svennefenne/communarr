@@ -3,14 +3,20 @@ import { db, now } from "./db";
 import { isLooking, sendTo } from "./hub";
 import { pushTo } from "./push";
 import { getSettings } from "./settings";
+import { userT } from "./t";
+import type { Vars } from "./i18n";
 import { summaries, toUser, type UserRow } from "./users";
 import type { NotificationItem, NotifyKind, NotifyPrefs } from "./types";
 
 export interface NotifyInput {
   kind: NotifyKind;
   actorId?: number | null;
+  /** English text, translated into each recipient's language: "{name} replied to your post" */
   title: string;
+  /** English text too: member content goes in through vars ("{text}") */
   body?: string;
+  /** the {placeholders} in title and body (names, excerpts) */
+  vars?: Vars;
   url: string;
   /** chat messages: no bell entry (the chat has its own unread counts), only a push */
   pushOnly?: boolean;
@@ -34,7 +40,8 @@ function inQuietHours(p: NotifyPrefs): boolean {
 /**
  * Tell people about something: an entry in their bell (live), and a push notification on their
  * devices unless they're looking at the site right now. Each member's settings decide which kinds
- * they get, and quiet hours hold pushes back. The one who did it is never notified.
+ * they get, and quiet hours hold pushes back. The one who did it is never notified. Title and body
+ * are English, written in each recipient's own language.
  */
 export function notify(userIds: Iterable<number>, n: NotifyInput) {
   const ids = [...new Set(userIds)].filter((id) => id && id !== n.actorId);
@@ -48,15 +55,18 @@ export function notify(userIds: Iterable<number>, n: NotifyInput) {
   for (const r of rows) {
     const u = toUser(r);
     const pref = u.notify[n.kind] ?? { app: true, push: true };
+    const tr = userT(u.id);
+    const title = tr(n.title, n.vars);
+    const body = n.body ? tr(n.body, n.vars) : "";
     let unread = 0;
     if (!n.pushOnly && pref.app) {
-      const id = Number(ins.run(u.id, n.kind, n.actorId ?? null, n.title, n.body ?? "", n.url, t).lastInsertRowid);
+      const id = Number(ins.run(u.id, n.kind, n.actorId ?? null, title, body, n.url, t).lastInsertRowid);
       unread = (db().prepare("select count(*) c from notifications where user_id = ? and read_at is null").get(u.id) as { c: number }).c;
-      const item: NotificationItem = { id, kind: n.kind, title: n.title, body: n.body ?? "", url: n.url, read: false, createdAt: t, actor };
+      const item: NotificationItem = { id, kind: n.kind, title, body, url: n.url, read: false, createdAt: t, actor };
       sendTo(u.id, "notify", { item, unread });
     }
     if (pref.push && !isLooking(u.id) && !inQuietHours(u.notify)) {
-      void pushTo(u.id, { title: n.title, body: n.body ?? "", url: n.url, tag: n.tag ?? n.kind, badge: unread || undefined }).catch(() => {});
+      void pushTo(u.id, { title, body, url: n.url, tag: n.tag ?? n.kind, badge: unread || undefined }).catch(() => {});
     }
   }
 }

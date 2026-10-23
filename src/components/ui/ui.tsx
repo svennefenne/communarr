@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
+import { clientT } from "@/lib/i18n";
 
 /** A dialog over the page (a sheet from the bottom on phones). Escape or a click outside closes it. */
 export function Modal({ title, onClose, children, footer, wide = false, label }: { title?: React.ReactNode; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; wide?: boolean; label?: string }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -26,7 +29,7 @@ export function Modal({ title, onClose, children, footer, wide = false, label }:
         {title !== undefined ? (
           <div className="modal-head">
             <h2 className="h2">{title}</h2>
-            <button type="button" className="icon-btn sm" onClick={onClose} aria-label="Close">
+            <button type="button" className="icon-btn sm" onClick={onClose} aria-label={t("Close")}>
               <X size={18} />
             </button>
           </div>
@@ -108,16 +111,17 @@ export function Empty({ icon, title, children }: { icon?: React.ReactNode; title
 
 /** Ask before doing something that can't be undone. */
 export function useConfirm() {
+  const t = useT();
   const [ask, setAsk] = useState<{ text: string; yes: string; run: () => void | Promise<unknown> } | null>(null);
   const [pending, start] = useTransition();
   const node = ask ? (
     <Modal
-      title="Are you sure?"
+      title={t("Are you sure?")}
       onClose={() => setAsk(null)}
       footer={
         <>
           <button type="button" className="btn btn-ghost" onClick={() => setAsk(null)}>
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="button"
@@ -147,7 +151,7 @@ export async function uploadFile(file: File, kind: "image" | "avatar" | "banner"
   fd.append("kind", kind);
   const res = await fetch("/api/upload", { method: "POST", body: fd });
   const data = (await res.json().catch(() => ({}))) as { url?: string; width?: number; height?: number; thumb?: string; error?: string };
-  if (!res.ok || !data.url) throw new Error(data.error || "The upload didn't work.");
+  if (!res.ok || !data.url) throw new Error(data.error || clientT()("The upload didn't work."));
   return { url: data.url, width: data.width ?? 0, height: data.height ?? 0, thumb: data.thumb };
 }
 

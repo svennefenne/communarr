@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ImagePlus, LoaderCircle, Trash2 } from "lucide-react";
 import { uploadFile } from "./ui";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 
 /** Pick a picture: shows it, uploads a new one, or takes it away. */
 export function ImagePick({
@@ -19,6 +19,7 @@ export function ImagePick({
   shape?: "round" | "square" | "wide" | "tall";
   label: string;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   return (
@@ -37,7 +38,7 @@ export function ImagePick({
             try {
               onChange((await uploadFile(f, kind)).url);
             } catch (err) {
-              toast(err instanceof Error ? err.message : "The upload didn't work.", { kind: "err" });
+              toast(err instanceof Error ? err.message : t("The upload didn't work."), { kind: "err" });
             } finally {
               setBusy(false);
             }
@@ -48,10 +49,10 @@ export function ImagePick({
         <span className="small">{label}</span>
         {value ? (
           <button type="button" className="btn btn-ghost btn-xs" onClick={() => onChange(null)} style={{ alignSelf: "flex-start" }}>
-            <Trash2 size={13} /> Remove
+            <Trash2 size={13} /> {t("Remove")}
           </button>
         ) : (
-          <span className="tiny muted">Tap to choose a picture</span>
+          <span className="tiny muted">{t("Tap to choose a picture")}</span>
         )}
       </div>
     </div>

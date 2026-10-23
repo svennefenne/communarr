@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMe } from "@/components/app/AppProvider";
+import { useMe, useT } from "@/components/app/AppProvider";
 
 export function openLightbox(images: { src: string; alt: string }[], index: number) {
   window.dispatchEvent(new CustomEvent("hd:lightbox", { detail: { images, index } }));
@@ -16,6 +16,7 @@ export function RichText({ html, className = "", fold = 0, foldBg }: { html: str
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const me = useMe();
+  const t = useT();
   const [folded, setFolded] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -60,7 +61,7 @@ export function RichText({ html, className = "", fold = 0, foldBg }: { html: str
       />
       {foldable && folded ? (
         <button type="button" className="btn btn-ghost btn-xs" style={{ marginTop: 6 }} onClick={() => setOpen((o) => !o)}>
-          {open ? "Show less" : "Read more"}
+          {t(open ? "Show less" : "Read more")}
         </button>
       ) : null}
     </>

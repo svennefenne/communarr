@@ -8,7 +8,7 @@ import { CATEGORY_LABEL, PALETTES, type PaletteCategory } from "@/lib/palettes";
 import { resolveTheme, type SiteLook } from "@/lib/theme";
 import type { ThemeInfo } from "@/lib/themes";
 import type { ThemePrefs } from "@/lib/types";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 import { ModeSwitch } from "@/components/shell/UserMenu";
 import { useConfirm } from "@/components/ui/ui";
 import { endPreview, previewTheme } from "./preview";
@@ -21,6 +21,7 @@ function systemDark() {
 }
 
 export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { prefs: ThemePrefs; site: SiteLook; mine: ThemeInfo[]; shared: ThemeInfo[]; allowCustom: boolean }) {
+  const t = useT();
   const router = useRouter();
   const toast = useToast();
   const [scheme, setScheme] = useState(prefs.scheme);
@@ -41,21 +42,21 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
     endPreview(true);
     router.refresh();
   };
-  const applyCustom = async (t: ThemeInfo) => {
-    setCustom(t.id);
-    previewTheme(resolveTheme(site, { scheme, mode: prefs.mode, textSize: prefs.textSize }, t.data));
-    await setPrefsAction({ custom: t.id });
+  const applyCustom = async (th: ThemeInfo) => {
+    setCustom(th.id);
+    previewTheme(resolveTheme(site, { scheme, mode: prefs.mode, textSize: prefs.textSize }, th.data));
+    await setPrefsAction({ custom: th.id });
     endPreview(true);
     router.refresh();
-    if (!t.mine) toast(`Using ${t.name} by ${t.owner?.name ?? "someone"}.`);
+    if (!th.mine) toast(t("Using {theme} by {name}.", { theme: th.name, name: th.owner?.name ?? t("someone") }));
   };
 
   return (
     <div className="stack loose">
       <section className="panel panel-pad row between wrap">
         <div>
-          <h2 className="h2">Light or dark</h2>
-          <div className="small muted">Every scheme has both. Auto follows your device.</div>
+          <h2 className="h2">{t("Light or dark")}</h2>
+          <div className="small muted">{t("Every scheme has both. Auto follows your device.")}</div>
         </div>
         <ModeSwitch mode={prefs.mode} />
       </section>
@@ -63,24 +64,24 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
       <section className="stack">
         <div className="row between wrap">
           <div>
-            <span className="eyebrow">Colour schemes · {PALETTES.length}</span>
-            <div className="small muted">Tap one to use it. The whole site changes at once.</div>
+            <span className="eyebrow">{t("Colour schemes · {n}", { n: PALETTES.length })}</span>
+            <div className="small muted">{t("Tap one to use it. The whole site changes at once.")}</div>
           </div>
           <button type="button" className="btn btn-sm" onClick={() => applyScheme(PALETTES[Math.floor(Math.random() * PALETTES.length)].slug)}>
-            <Shuffle size={15} /> Surprise me
+            <Shuffle size={15} /> {t("Surprise me")}
           </button>
         </div>
         <div className="row wrap" style={{ gap: 10 }}>
           <div className="pills scroll">
             {(["all", "hooden", "builtin", "gaming", "community"] as const).map((c) => (
               <button key={c} type="button" className={`pill ${cat === c ? "active" : ""}`} onClick={() => setCat(c)}>
-                {c === "all" ? "All" : CATEGORY_LABEL[c]}
+                {c === "all" ? t("All") : t(CATEGORY_LABEL[c])}
               </button>
             ))}
           </div>
           <div className="chat-search" style={{ margin: 0, flex: "1 1 200px", maxWidth: 320 }}>
             <Search size={15} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a scheme" aria-label="Find a scheme" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Find a scheme")} aria-label={t("Find a scheme")} />
           </div>
         </div>
         <div className="scheme-grid">
@@ -95,31 +96,31 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
           <section className="stack">
             <div className="row between wrap">
               <div>
-                <span className="eyebrow">Your own themes</span>
-                <div className="small muted">Your colours, fonts, corners, glass, and your own background picture.</div>
+                <span className="eyebrow">{t("Your own themes")}</span>
+                <div className="small muted">{t("Your colours, fonts, corners, glass, and your own background picture.")}</div>
               </div>
               <Link href="/settings/theme/new" className="btn btn-primary btn-sm">
-                <Plus size={15} /> Make a theme
+                <Plus size={15} /> {t("Make a theme")}
               </Link>
             </div>
             {mine.length ? (
               <div className="scheme-grid big">
-                {mine.map((t) => (
-                  <div key={t.id} className="theme-card">
-                    <SchemeTile name={t.name} colors={dark && t.data.modes !== "light" ? t.data.dark : t.data.light} active={custom === t.id} onClick={() => applyCustom(t)} sub={t.shared ? `Shared · used by ${t.uses}` : "Only you"} />
+                {mine.map((th) => (
+                  <div key={th.id} className="theme-card">
+                    <SchemeTile name={th.name} colors={dark && th.data.modes !== "light" ? th.data.dark : th.data.light} active={custom === th.id} onClick={() => applyCustom(th)} sub={th.shared ? t("Shared · used by {n}", { n: th.uses }) : t("Only you")} />
                     <div className="row" style={{ gap: 2 }}>
-                      <Link href={`/settings/theme/${t.id}`} className="icon-btn xs" aria-label="Edit" title="Edit">
+                      <Link href={`/settings/theme/${th.id}`} className="icon-btn xs" aria-label={t("Edit")} title={t("Edit")}>
                         <Pencil size={14} />
                       </Link>
                       <button
                         type="button"
                         className="icon-btn xs"
-                        title={t.shared ? "Stop sharing" : "Share with everyone"}
-                        aria-label="Share"
+                        title={th.shared ? t("Stop sharing") : t("Share with everyone")}
+                        aria-label={t("Share")}
                         onClick={async () => {
-                          const r = await saveThemeAction(t.id, t.name, t.data, !t.shared, false);
+                          const r = await saveThemeAction(th.id, th.name, th.data, !th.shared, false);
                           if (r.ok) {
-                            toast(t.shared ? "Not shared any more." : "Shared: others can use it now.");
+                            toast(th.shared ? t("Not shared any more.") : t("Shared: others can use it now."));
                             router.refresh();
                           }
                         }}
@@ -129,11 +130,11 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
                       <button
                         type="button"
                         className="icon-btn xs"
-                        title="Delete"
-                        aria-label="Delete"
+                        title={t("Delete")}
+                        aria-label={t("Delete")}
                         onClick={() =>
-                          confirm(`Delete the theme ${t.name}?`, "Delete", async () => {
-                            await deleteThemeAction(t.id);
+                          confirm(t("Delete the theme {name}?", { name: th.name }), t("Delete"), async () => {
+                            await deleteThemeAction(th.id);
                             router.refresh();
                           })
                         }
@@ -145,21 +146,27 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
                 ))}
               </div>
             ) : (
-              <div className="panel panel-pad small muted">You haven&apos;t made one yet. Start from any scheme and change what you like.</div>
+              <div className="panel panel-pad small muted">{t("You haven't made one yet. Start from any scheme and change what you like.")}</div>
             )}
           </section>
-          {shared.filter((t) => !t.mine).length ? (
+          {shared.filter((th) => !th.mine).length ? (
             <section className="stack">
               <span className="eyebrow row" style={{ gap: 6 }}>
-                <Users size={13} /> Shared by others
+                <Users size={13} /> {t("Shared by others")}
               </span>
               <div className="scheme-grid big">
                 {shared
-                  .filter((t) => !t.mine)
-                  .map((t) => (
-                    <div key={t.id} className="theme-card">
-                      <SchemeTile name={t.name} colors={dark && t.data.modes !== "light" ? t.data.dark : t.data.light} active={custom === t.id} onClick={() => applyCustom(t)} sub={`by ${t.owner?.name ?? "someone"} · ${t.uses} using it`} />
-                      <Link href={`/settings/theme/new?from=${t.id}`} className="icon-btn xs" title="Make a copy to change" aria-label="Copy">
+                  .filter((th) => !th.mine)
+                  .map((th) => (
+                    <div key={th.id} className="theme-card">
+                      <SchemeTile
+                        name={th.name}
+                        colors={dark && th.data.modes !== "light" ? th.data.dark : th.data.light}
+                        active={custom === th.id}
+                        onClick={() => applyCustom(th)}
+                        sub={t("by {name} · {n} using it", { name: th.owner?.name ?? t("someone"), n: th.uses })}
+                      />
+                      <Link href={`/settings/theme/new?from=${th.id}`} className="icon-btn xs" title={t("Make a copy to change")} aria-label={t("Copy")}>
                         <Copy size={14} />
                       </Link>
                     </div>

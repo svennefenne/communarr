@@ -48,6 +48,10 @@ or in a theme you make yourself.
   with the site closed; per kind, per device, quiet hours, and the unread count on the app icon. Installs
   as an app on the home screen.
 - **Search** everything you're allowed to see, as you type (`/` or `Ctrl+K`), with a full results page.
+- **English or Swedish** (svenska): picked on the setup page (from the browser's language) and changed under
+  Admin → Name & texts. Every page, notification, message and date follows it, and the emoji picker
+  searches Swedish names. Translations live in `src/i18n/<language>/`: English text is the key, so a
+  missing one just shows the English.
 - **Admin**: a status board with a 30-day activity chart; members (roles, suspensions, closed accounts,
   password reset links, setting passwords, adding members, approving sign-ups); invite links (uses,
   expiry, role, a group to join) and sign-up modes; reports; groups and chat rooms; announcement line and

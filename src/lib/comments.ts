@@ -11,6 +11,7 @@ import { canSeeEvent, eventRow } from "./events";
 import { groupScope } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
+import { serverT } from "./t";
 import type { CommentView } from "./contentTypes";
 
 export type CommentTarget = "post" | "poll" | "event";
@@ -92,25 +93,27 @@ export function addComment(u: User, type: CommentTarget, id: number, html: strin
       .prepare("insert into comments (target_type, target_id, author_id, parent_id, body_html, body_text, created_at) values (?, ?, ?, ?, ?, ?, ?)")
       .run(type, id, u.id, parent?.id ?? null, c.html, c.text, ts).lastInsertRowid,
   );
-  indexItem("comment", cid, t.scope, u.id, ts, `Comment on ${t.title}`, c.text);
+  // (the search index is the same for everyone: the site's language)
+  indexItem("comment", cid, t.scope, u.id, ts, serverT()("Comment on {title}", { title: t.title }), c.text);
   const url = `${t.url}#c-${cid}`;
   const body = c.text.slice(0, 160);
   // only people who can see the thing hear about it
   const sees = (x: User) => !!target(x, type, id);
   const mentioned = usersWho(c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), sees);
-  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a comment`, body, url });
+  const vars = { name: u.name, title: t.title, text: body };
+  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: "{name} mentioned you in a comment", body: "{text}", vars, url });
   const told = new Set([u.id, ...mentioned]);
   if (parent && !told.has(parent.author_id) && usersWho([parent.author_id], sees).length) {
-    notify([parent.author_id], { kind: "reply", actorId: u.id, title: `${u.name} answered your comment on “${t.title}”`, body, url });
+    notify([parent.author_id], { kind: "reply", actorId: u.id, title: "{name} answered your comment on “{title}”", body: "{text}", vars, url });
     told.add(parent.author_id);
   }
-  if (!told.has(t.authorId) && usersWho([t.authorId], sees).length) notify([t.authorId], { kind: "reply", actorId: u.id, title: `${u.name} commented on “${t.title}”`, body, url });
+  if (!told.has(t.authorId) && usersWho([t.authorId], sees).length) notify([t.authorId], { kind: "reply", actorId: u.id, title: "{name} commented on “{title}”", body: "{text}", vars, url });
   // others who commented hear about new comments too (not the ones told already)
   const others = usersWho(
     (db().prepare("select distinct author_id from comments where target_type = ? and target_id = ?").all(type, id) as { author_id: number }[]).map((r) => r.author_id).filter((x) => !told.has(x) && x !== t.authorId),
     sees,
   );
-  if (others.length) notify(others, { kind: "reply", actorId: u.id, title: `${u.name} also commented on “${t.title}”`, body, url });
+  if (others.length) notify(others, { kind: "reply", actorId: u.id, title: "{name} also commented on “{title}”", body: "{text}", vars, url });
   broadcast("comment", { type, id, comment: cid, by: u.id });
   return listComments(u, type, id).flatMap((x) => [x, ...x.replies]).find((x) => x.id === cid)!;
 }
@@ -123,7 +126,7 @@ export function editComment(u: User, cid: number, html: string) {
   if (c.empty) throw new CommentError("Write something first.");
   db().prepare("update comments set body_html = ?, body_text = ?, edited_at = ? where id = ?").run(c.html, c.text, now(), cid);
   const t = target(u, r.target_type, r.target_id);
-  if (t) indexItem("comment", cid, t.scope, u.id, r.created_at, `Comment on ${t.title}`, c.text);
+  if (t) indexItem("comment", cid, t.scope, u.id, r.created_at, serverT()("Comment on {title}", { title: t.title }), c.text);
 }
 
 export function deleteComment(u: User, cid: number) {

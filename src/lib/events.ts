@@ -11,6 +11,8 @@ import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { commentCounts, groupRefs } from "./posts";
 import { getMeta, getSettings, setMeta } from "./settings";
+import { serverT } from "./t";
+import type { T } from "./i18n";
 import type { EventView, RsvpStatus } from "./contentTypes";
 
 export interface EventRow {
@@ -206,17 +208,18 @@ export function createEvent(u: User, o: EventInput): number {
   });
   const url = `/events/${id}`;
   const row = eventRow(id)!;
+  const vars = { name: u.name, title: v.title, when: when(v.start, !!v.allDay, serverT().locale) };
   const mentioned = usersWho(v.c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeEvent(x, row));
-  if (mentioned.length) notify(mentioned, { kind: "invite", actorId: u.id, title: `${u.name} invited you to ${v.title}`, body: when(v.start, !!v.allDay), url });
-  if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: `New event in ${groupRow(groupId)!.name}: ${v.title}`, body: when(v.start, !!v.allDay), url });
+  if (mentioned.length) notify(mentioned, { kind: "invite", actorId: u.id, title: "{name} invited you to {title}", body: "{when}", vars, url });
+  if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: "New event in {group}: {title}", body: "{when}", vars: { ...vars, group: groupRow(groupId)!.name }, url });
   broadcast("feed", { type: "event", id, by: u.id, group: groupId });
   return id;
 }
 
-function when(t: number, allDay: boolean) {
+function when(t: number, allDay: boolean, locale: string | undefined) {
   const tz = getSettings().timezone;
   try {
-    return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", ...(allDay ? {} : { hour: "2-digit", minute: "2-digit" }), timeZone: tz }).format(new Date(t));
+    return new Intl.DateTimeFormat(locale ?? "en-GB", { weekday: "short", day: "numeric", month: "short", ...(allDay ? {} : { hour: "2-digit", minute: "2-digit" }), timeZone: tz }).format(new Date(t));
   } catch {
     return new Date(t).toUTCString();
   }
@@ -239,11 +242,15 @@ export function updateEvent(u: User, id: number, o: EventInput) {
   const moved = v.start !== e.start_at || v.end !== e.end_at;
   if (moved) db().prepare("delete from event_reminders where event_id = ?").run(id);
   if (moved || v.location !== e.location) {
+    // the body is one whole text, so it can be translated for each person
+    const place = v.location !== e.location ? (v.location ? "at {place}" : "at a place to be decided") : "";
+    const body = moved ? (place ? `Now {when}, ${place}` : "Now {when}") : place;
     notify(attendees(id), {
       kind: "event",
       actorId: u.id,
-      title: `${v.title} changed`,
-      body: [moved ? `Now ${when(v.start, !!v.allDay)}` : "", v.location !== e.location ? `at ${v.location || "a place to be decided"}` : ""].filter(Boolean).join(", "),
+      title: "{title} changed",
+      body,
+      vars: { title: v.title, when: when(v.start, !!v.allDay, serverT().locale), place: v.location },
       url: `/events/${id}`,
     });
   }
@@ -254,7 +261,7 @@ export function cancelEvent(u: User, id: number, cancelled: boolean) {
   if (!e) return;
   if (e.author_id !== u.id && !u.isMod) throw new EventError("Only the one who planned it can cancel the event.");
   db().prepare("update events set cancelled = ? where id = ?").run(cancelled ? 1 : 0, id);
-  notify(attendees(id), { kind: "event", actorId: u.id, title: cancelled ? `Cancelled: ${e.title}` : `Back on: ${e.title}`, body: when(e.start_at, !!e.all_day), url: `/events/${id}` });
+  notify(attendees(id), { kind: "event", actorId: u.id, title: cancelled ? "Cancelled: {title}" : "Back on: {title}", body: "{when}", vars: { title: e.title, when: when(e.start_at, !!e.all_day, serverT().locale) }, url: `/events/${id}` });
 }
 
 export function deleteEvent(u: User, id: number) {
@@ -279,15 +286,16 @@ export function rsvp(u: User, id: number, status: RsvpStatus | null) {
   }
   if (status === "going" && e.capacity && before?.status !== "going") {
     const n = (db().prepare("select count(*) n from event_rsvps where event_id = ? and status = 'going'").get(id) as { n: number }).n;
-    if (n >= e.capacity) throw new EventError(`It's full (${e.capacity} places). Say maybe and keep an eye on it.`);
+    if (n >= e.capacity) throw new EventError("It's full ({n} places). Say maybe and keep an eye on it.", { n: e.capacity });
   }
   db().prepare("insert into event_rsvps (event_id, user_id, status, updated_at) values (?, ?, ?, ?) on conflict(event_id, user_id) do update set status = excluded.status, updated_at = excluded.updated_at").run(id, u.id, status, now());
-  if (status === "going" && before?.status !== "going" && e.author_id !== u.id) notify([e.author_id], { kind: "event", actorId: u.id, title: `${u.name} is going to ${e.title}`, url: `/events/${id}` });
+  if (status === "going" && before?.status !== "going" && e.author_id !== u.id) notify([e.author_id], { kind: "event", actorId: u.id, title: "{name} is going to {title}", vars: { name: u.name, title: e.title }, url: `/events/${id}` });
 }
 
 /** A day and an hour before: a reminder for everyone going (or maybe going). Run every minute. */
 export function sendReminders() {
   const t = now();
+  const locale = serverT().locale;
   const rows = db()
     .prepare("select * from events where cancelled = 0 and start_at < ? and ((repeat = 'none' and start_at > ?) or (repeat != 'none' and (repeat_until is null or repeat_until >= ?)))")
     .all(t + 25 * 3600_000, t, t) as EventRow[];
@@ -305,8 +313,9 @@ export function sendReminders() {
         const who = [...new Set([...attendees(e.id), e.author_id])];
         notify(who, {
           kind: "event",
-          title: kind === "1h" ? `Soon: ${e.title}` : `Tomorrow: ${e.title}`,
-          body: [when(occ, !!e.all_day), e.location].filter(Boolean).join(" · "),
+          title: kind === "1h" ? "Soon: {title}" : "Tomorrow: {title}",
+          body: e.location ? "{when} · {place}" : "{when}",
+          vars: { title: e.title, when: when(occ, !!e.all_day, locale), place: e.location },
           url: `/events/${e.id}`,
           tag: `event-${e.id}`,
         });
@@ -362,7 +371,7 @@ function fold(line: string) {
   return out.join("\r\n");
 }
 
-export function icsFor(rows: EventRow[], name: string, baseUrl: string): string {
+export function icsFor(rows: EventRow[], name: string, baseUrl: string, t: T): string {
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Hooden//Calendar//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-CALNAME:${icsEsc(name)}`];
   for (const e of rows) {
     lines.push("BEGIN:VEVENT", `UID:hooden-event-${e.id}@hooden`, `DTSTAMP:${icsTime(e.edited_at ?? e.created_at)}`);
@@ -370,7 +379,7 @@ export function icsFor(rows: EventRow[], name: string, baseUrl: string): string 
       lines.push(`DTSTART;VALUE=DATE:${icsDate(e.start_at)}`, `DTEND;VALUE=DATE:${icsDate(e.end_at + 1)}`);
     } else lines.push(`DTSTART:${icsTime(e.start_at)}`, `DTEND:${icsTime(e.end_at)}`);
     if (e.repeat !== "none") lines.push(`RRULE:FREQ=${e.repeat.toUpperCase()}${e.repeat_until ? `;UNTIL=${icsTime(e.repeat_until)}` : ""}`);
-    lines.push(fold(`SUMMARY:${icsEsc((e.cancelled ? "CANCELLED: " : "") + e.title)}`));
+    lines.push(fold(`SUMMARY:${icsEsc(e.cancelled ? t("CANCELLED: {title}", { title: e.title }) : e.title)}`));
     if (e.location) lines.push(fold(`LOCATION:${icsEsc(e.location)}`));
     lines.push(fold(`DESCRIPTION:${icsEsc(e.description_text.slice(0, 2000))}`));
     if (baseUrl) lines.push(fold(`URL:${baseUrl}/events/${e.id}`));

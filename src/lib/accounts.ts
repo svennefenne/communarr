@@ -5,7 +5,9 @@ import { USERNAME_RE, type UserRow } from "./users";
 import type { Role } from "./types";
 import { indexItem } from "./search";
 import { getSettings } from "./settings";
+import { serverT } from "./t";
 
+/** What's wrong with a new account, as English text (translate it where it's shown: t(err)), or null. */
 export function validateNewUser(username: string, name: string, password: string, password2?: string): string | null {
   if (!USERNAME_RE.test(username)) return "Usernames are 2–24 letters, numbers, dots, dashes or underscores.";
   if (["admin", "system", "ghost", "me", "new", "settings", "hooden"].includes(username.toLowerCase()) && hasUsers()) return "That username is taken.";
@@ -52,6 +54,7 @@ export interface InviteRow {
   created_at: number;
 }
 
+/** Whether an invite link still works; `error` is English text to translate where it's shown. */
 export function inviteState(code: string): { ok: true; invite: InviteRow } | { ok: false; error: string } {
   const inv = db().prepare("select * from invites where code = ?").get(code) as InviteRow | undefined;
   if (!inv || inv.revoked) return { ok: false, error: "This invite link doesn't work any more. Ask for a new one." };
@@ -77,6 +80,7 @@ export function createInvite(by: number, o: { note?: string; maxUses?: number | 
 /** The first visit: the admin's account, and a site that isn't empty. */
 export function seedSite(adminId: number) {
   const t = now();
+  const tr = serverT();
   tx(() => {
     const cats: [string, string, string, string, string][] = [
       ["general", "General", "Anything and everything.", "💬", "#d65a2b"],
@@ -86,25 +90,30 @@ export function seedSite(adminId: number) {
       ["site", "About the site", "Ideas, wishes and bugs for this place.", "🛠️", "#9c5bb5"],
     ];
     cats.forEach(([slug, name, desc, icon, color], i) =>
-      db().prepare("insert into forum_categories (slug, name, description, icon, color, position, created_at) values (?, ?, ?, ?, ?, ?, ?)").run(slug, name, desc, icon, color, i, t),
+      db().prepare("insert into forum_categories (slug, name, description, icon, color, position, created_at) values (?, ?, ?, ?, ?, ?, ?)").run(slug, tr(name), tr(desc), icon, color, i, t),
     );
     const rooms: [string, string, string][] = [
-      ["Lounge", "Hang out, say hi, talk about whatever.", "🛋️"],
-      ["Gaming", "Who's up for a game?", "🎮"],
+      [tr("Lounge"), tr("Hang out, say hi, talk about whatever."), "🛋️"],
+      [tr("Gaming"), tr("Who's up for a game?"), "🎮"],
     ];
     for (const [name, topic, emoji] of rooms) {
       const id = Number(db().prepare("insert into rooms (name, topic, emoji, kind, visibility, owner_id, created_at, last_message_at) values (?, ?, ?, 'room', 'open', ?, ?, ?)").run(name, topic, emoji, adminId, t, t).lastInsertRowid);
       db().prepare("insert into room_members (room_id, user_id, role, joined_at) values (?, ?, 'owner', ?)").run(id, adminId, t);
-      db().prepare("insert into messages (room_id, author_id, kind, body_html, body_text, created_at) values (?, null, 'system', ?, ?, ?)").run(id, `<p>${name} is open. ${topic}</p>`, `${name} is open.`, t);
+      const open = tr("{name} is open.", { name });
+      db().prepare("insert into messages (room_id, author_id, kind, body_html, body_text, created_at) values (?, null, 'system', ?, ?, ?)").run(id, `<p>${open} ${topic}</p>`, open, t);
     }
     const s = getSettings();
-    const html = `<p>This is <strong>${s.siteName}</strong>: our own place to hang around, chat, plan and argue about films. A few things to try:</p><ul><li><p>Write a post right here on the front page (pictures and links welcome).</p></li><li><p>Jump into the <strong>Lounge</strong> under Chat, and press the headphones to talk.</p></li><li><p>Plan something in the <strong>Calendar</strong>, ask something in <strong>Polls</strong>, start a thread in the <strong>Forum</strong>.</p></li><li><p>Make the place yours under <strong>Theme</strong>: 98 colour schemes, or build your own with your own background.</p></li></ul><p>On your phone? Add the site to your home screen and turn on notifications under Settings.</p>`;
+    const html = tr(
+      "<p>This is <strong>{site}</strong>: our own place to hang around, chat, plan and argue about films. A few things to try:</p><ul><li><p>Write a post right here on the front page (pictures and links welcome).</p></li><li><p>Jump into the <strong>{lounge}</strong> under Chat, and press the headphones to talk.</p></li><li><p>Plan something in the <strong>Calendar</strong>, ask something in <strong>Polls</strong>, start a thread in the <strong>Forum</strong>.</p></li><li><p>Make the place yours under <strong>Theme</strong>: 98 colour schemes, or build your own with your own background.</p></li></ul><p>On your phone? Add the site to your home screen and turn on notifications under Settings.</p>",
+      { site: s.siteName, lounge: rooms[0][0] },
+    );
+    const title = tr("Welcome to {site}", { site: s.siteName });
     const id = Number(
       db()
         .prepare("insert into posts (author_id, kind, title, body_html, body_text, visibility, pinned, created_at) values (?, 'news', ?, ?, ?, 'members', 1, ?)")
-        .run(adminId, `Welcome to ${s.siteName}`, html, html.replace(/<[^>]+>/g, " "), t).lastInsertRowid,
+        .run(adminId, title, html, html.replace(/<[^>]+>/g, " "), t).lastInsertRowid,
     );
-    indexItem("news", id, "members", adminId, t, `Welcome to ${s.siteName}`, html.replace(/<[^>]+>/g, " "));
+    indexItem("news", id, "members", adminId, t, title, html.replace(/<[^>]+>/g, " "));
   });
 }
 

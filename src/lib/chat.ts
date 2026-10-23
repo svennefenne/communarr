@@ -7,6 +7,7 @@ import { notify } from "./notify";
 import { reactionsFor, reactionsRaw, clearReactions, toggleReaction } from "./reactions";
 import { cleanHtml, cleanLine, textToHtml } from "./sanitize";
 import { indexItem, unindex } from "./search";
+import { serverT } from "./t";
 import { GHOST, summaries, userByName, type User } from "./users";
 import type { ChatMessage, MemberRole, RoomInfo, RoomKind, RoomMember, RoomVisibility } from "./chatTypes";
 import type { UserSummary } from "./types";
@@ -179,7 +180,7 @@ export function createRoom(u: User, o: { name: string; topic?: string; emoji?: s
     return id;
   });
   const r = room(id)!;
-  systemMessage(r, `${u.name} made the room.`);
+  systemMessage(r, serverT()("{name} made the room.", { name: u.name }));
   if (o.invite?.length) inviteToRoom(u, id, o.invite);
   if (isOpenRoom(r)) broadcast("rooms", { changed: id });
   return id;
@@ -194,10 +195,11 @@ export function updateRoom(u: User, id: number, o: { name?: string; topic?: stri
   const vis = r.kind === "room" && (o.visibility === "open" || o.visibility === "private") ? o.visibility : r.visibility;
   db().prepare("update rooms set name = ?, topic = ?, emoji = ?, visibility = ? where id = ?").run(name, topic, emoji, vis, id);
   indexItem("room", id, vis === "private" ? `r:${id}` : "members", r.owner_id, r.created_at, name, topic);
+  const tr = serverT();
   const changes: string[] = [];
-  if (name !== r.name) changes.push(`renamed the room to ${name}`);
-  if (topic !== r.topic) changes.push(topic ? `set the topic: ${topic}` : "cleared the topic");
-  if (vis !== r.visibility) changes.push(vis === "private" ? "made the room private (invite only)" : "opened the room to everyone");
+  if (name !== r.name) changes.push(tr("renamed the room to {name}", { name }));
+  if (topic !== r.topic) changes.push(topic ? tr("set the topic: {topic}", { topic }) : tr("cleared the topic"));
+  if (vis !== r.visibility) changes.push(vis === "private" ? tr("made the room private (invite only)") : tr("opened the room to everyone"));
   if (changes.length) systemMessage(room(id)!, `${u.name} ${changes.join(", ")}.`);
   broadcast("rooms", { changed: id });
 }
@@ -233,7 +235,7 @@ export function joinRoom(u: User, id: number) {
   const last = (db().prepare("select coalesce(max(id), 0) m from messages where room_id = ?").get(id) as { m: number }).m;
   db().prepare("insert into room_members (room_id, user_id, role, joined_at, last_read_id) values (?, ?, 'member', ?, ?)").run(id, u.id, now(), last);
   db().prepare("delete from room_invites where room_id = ? and user_id = ?").run(id, u.id);
-  systemMessage(r, `${u.name} joined.`);
+  systemMessage(r, serverT()("{name} joined.", { name: u.name }));
   sendTo(u.id, "rooms", { changed: id });
 }
 
@@ -249,7 +251,7 @@ export function leaveRoom(u: User, id: number) {
     const next = db().prepare("select user_id from room_members where room_id = ? order by case role when 'admin' then 0 else 1 end, joined_at limit 1").get(id) as { user_id: number } | undefined;
     if (next) db().prepare("update room_members set role = 'owner' where room_id = ? and user_id = ?").run(id, next.user_id);
   }
-  systemMessage(r, `${u.name} left.`);
+  systemMessage(r, serverT()("{name} left.", { name: u.name }));
   sendTo(u.id, "rooms", { changed: id });
 }
 
@@ -268,10 +270,10 @@ export function inviteToRoom(u: User, id: number, userIds: number[]) {
     invited.push(uid);
   }
   if (!invited.length) return 0;
-  notify(invited, { kind: "invite", actorId: u.id, title: `${u.name} invited you to ${r.emoji ? r.emoji + " " : ""}${r.name}`, body: r.topic, url: `/chat/${id}` });
+  notify(invited, { kind: "invite", actorId: u.id, title: "{name} invited you to {room}", body: r.topic ? "{topic}" : "", vars: { name: u.name, room: `${r.emoji ? r.emoji + " " : ""}${r.name}`, topic: r.topic }, url: `/chat/${id}` });
   sendToMany(invited, "rooms", { changed: id });
   const names = [...summaries(invited).values()].map((s) => s.name);
-  systemMessage(r, `${u.name} invited ${names.join(", ")}.`);
+  systemMessage(r, serverT()("{name} invited {names}.", { name: u.name, names: names.join(", ") }));
   return invited.length;
 }
 
@@ -288,7 +290,8 @@ export function removeMember(u: User, id: number, userId: number) {
   db().prepare("delete from room_members where room_id = ? and user_id = ?").run(id, userId);
   kickFromVoice(id, userId);
   const who = summaries([userId]).get(userId);
-  systemMessage(r, `${u.name} removed ${who?.name ?? "someone"}.`);
+  const tr = serverT();
+  systemMessage(r, tr("{name} removed {who}.", { name: u.name, who: who?.name ?? tr("someone") }));
   sendTo(userId, "rooms", { changed: id, removed: true });
 }
 
@@ -335,7 +338,7 @@ export function dmRoom(u: User, otherId: number): number {
 /** A group's own room: made with the group, its members kept in step with the group's. */
 export function groupRoom(groupId: number, name: string, ownerId: number): number {
   const t = now();
-  const id = Number(db().prepare("insert into rooms (name, topic, kind, visibility, owner_id, group_id, created_at, last_message_at) values (?, ?, 'group', 'private', ?, ?, ?, ?)").run(name, "The group's own chat", ownerId, groupId, t, t).lastInsertRowid);
+  const id = Number(db().prepare("insert into rooms (name, topic, kind, visibility, owner_id, group_id, created_at, last_message_at) values (?, ?, 'group', 'private', ?, ?, ?, ?)").run(name, serverT()("The group's own chat"), ownerId, groupId, t, t).lastInsertRowid);
   db().prepare("insert or ignore into room_members (room_id, user_id, role, joined_at) values (?, ?, 'owner', ?)").run(id, ownerId, t);
   return id;
 }
@@ -357,12 +360,12 @@ export function syncGroupMember(roomId: number | null, userId: number, inGroup: 
 function toMessages(rows: MessageRow[], me: number): ChatMessage[] {
   const authors = summaries(rows.map((r) => r.author_id!).filter(Boolean));
   const replyIds = rows.map((r) => r.reply_to!).filter(Boolean);
-  const replies = new Map<number, { id: number; author: string; text: string }>();
+  const replies = new Map<number, { id: number; author: string; text: string; deleted: boolean }>();
   if (replyIds.length) {
     const rr = db()
       .prepare(`select m.id, m.body_text, m.deleted, u.display_name from messages m left join users u on u.id = m.author_id where m.id in (${replyIds.map(() => "?").join(",")})`)
       .all(...replyIds) as { id: number; body_text: string; deleted: number; display_name: string | null }[];
-    for (const r of rr) replies.set(r.id, { id: r.id, author: r.display_name ?? "Someone", text: r.deleted ? "(deleted)" : r.body_text.slice(0, 140) });
+    for (const r of rr) replies.set(r.id, { id: r.id, author: r.display_name ?? "", text: r.deleted ? "" : r.body_text.slice(0, 140), deleted: !!r.deleted });
   }
   const reacts = reactionsFor("message", rows.map((r) => r.id), me);
   return rows.map((r) => ({
@@ -420,27 +423,30 @@ export function sendMessage(u: User, roomId: number, html: string, replyTo?: num
   const id = Number(db().prepare("insert into messages (room_id, author_id, kind, body_html, body_text, reply_to, created_at) values (?, ?, 'text', ?, ?, ?, ?)").run(roomId, u.id, c.html, c.text, reply, t).lastInsertRowid);
   db().prepare("update rooms set last_message_at = ? where id = ?").run(t, roomId);
   db().prepare("update room_members set last_read_id = ? where room_id = ? and user_id = ?").run(id, roomId, u.id);
-  indexItem("message", id, scopeOf(r), u.id, t, r.kind === "dm" ? "Direct message" : r.name, c.text);
+  indexItem("message", id, scopeOf(r), u.id, t, r.kind === "dm" ? serverT()("Direct message") : r.name, c.text);
   const msg = toMessages([db().prepare("select * from messages where id = ? ").get(id) as MessageRow], u.id)[0];
   emit(r, "msg", { room: roomId, message: { ...msg, reactions: [] } });
 
   // unread counts and pings for the others
   const ms = db().prepare("select * from room_members where room_id = ? and user_id != ?").all(roomId, u.id) as MemberRow[];
   const mentioned = new Set(c.mentions.map((name) => userByName(name)?.id).filter((x): x is number => !!x));
-  const title = r.kind === "dm" ? u.name : `${u.name} in ${r.emoji ? r.emoji + " " : ""}${r.name}`;
-  const body = c.text.slice(0, 180) || "📷 Picture";
+  // (English, with the member's words in vars: notify() writes it in each one's language)
+  const title = r.kind === "dm" ? "{name}" : "{name} in {room}";
+  const excerpt = c.text.slice(0, 180);
+  const body = excerpt ? "{text}" : "📷 Picture";
+  const vars = { name: u.name, room: `${r.emoji ? r.emoji + " " : ""}${r.name}`, text: excerpt };
   const url = `/chat/${roomId}`;
   for (const m of ms) {
     if (isInRoom(m.user_id, roomId)) continue;
     sendTo(m.user_id, "unread", { room: roomId, n: unreadFor(roomId, m.user_id) });
     if (mentioned.has(m.user_id)) continue;
     if (m.notify === "none" || m.notify === "mentions") continue;
-    notify([m.user_id], { kind: r.kind === "dm" ? "dm" : "room", actorId: u.id, title, body, url, pushOnly: true, tag: `room-${roomId}` });
+    notify([m.user_id], { kind: r.kind === "dm" ? "dm" : "room", actorId: u.id, title, body, vars, url, pushOnly: true, tag: `room-${roomId}` });
   }
   // mentions: in the bell too (people who can see the room)
   const canRead = new Set(isOpenRoom(r) ? [...mentioned] : ms.map((m) => m.user_id).filter((id) => mentioned.has(id)));
   const pingable = [...canRead].filter((id) => !isInRoom(id, roomId) && ms.find((m) => m.user_id === id)?.notify !== "none");
-  if (pingable.length) notify(pingable, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in ${r.kind === "dm" ? "a message" : r.name}`, body, url: `${url}?m=${id}`, tag: `room-${roomId}` });
+  if (pingable.length) notify(pingable, { kind: "mention", actorId: u.id, title: r.kind === "dm" ? "{name} mentioned you in a message" : "{name} mentioned you in {room}", body, vars: { ...vars, room: r.name }, url: `${url}?m=${id}`, tag: `room-${roomId}` });
   return msg;
 }
 
@@ -458,7 +464,7 @@ export function editMessage(u: User, id: number, html: string): ChatMessage {
   const c = cleanHtml(html, { maxLength: 60_000 });
   if (c.empty) throw new ChatError("Write something first (or delete the message).");
   db().prepare("update messages set body_html = ?, body_text = ?, edited_at = ? where id = ?").run(c.html, c.text, now(), id);
-  indexItem("message", id, scopeOf(r), u.id, m.created_at, r.kind === "dm" ? "Direct message" : r.name, c.text);
+  indexItem("message", id, scopeOf(r), u.id, m.created_at, r.kind === "dm" ? serverT()("Direct message") : r.name, c.text);
   const msg = toMessages([db().prepare("select * from messages where id = ?").get(id) as MessageRow], u.id)[0];
   emit(r, "msgEdit", { room: r.id, message: { ...msg, reactions: undefined } });
   return msg;
@@ -478,7 +484,7 @@ export function pinMessage(u: User, id: number, on: boolean) {
   if (!member(r.id, u.id) && !u.isMod) throw new ChatError("Join the room first.");
   db().prepare("update messages set pinned = ? where id = ?").run(on ? 1 : 0, id);
   emit(r, "msgPin", { room: r.id, id, pinned: on });
-  if (on) systemMessage(r, `${u.name} pinned a message.`);
+  if (on) systemMessage(r, serverT()("{name} pinned a message.", { name: u.name }));
 }
 
 export function reactToMessage(u: User, id: number, emoji: string) {
@@ -488,7 +494,7 @@ export function reactToMessage(u: User, id: number, emoji: string) {
   // a reaction to your message: a quiet ping (only the bell)
   const m = db().prepare("select author_id from messages where id = ?").get(id) as { author_id: number | null };
   if (res.added && m.author_id && m.author_id !== u.id && r.kind !== "room") {
-    notify([m.author_id], { kind: "reaction", actorId: u.id, title: `${u.name} reacted ${emoji} to your message`, url: `/chat/${r.id}?m=${id}` });
+    notify([m.author_id], { kind: "reaction", actorId: u.id, title: "{name} reacted {emoji} to your message", vars: { name: u.name, emoji }, url: `/chat/${r.id}?m=${id}` });
   }
   return res.reactions;
 }

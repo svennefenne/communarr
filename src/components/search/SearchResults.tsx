@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CalendarDays, FileText, Hash, MessageCircle, MessagesSquare, Newspaper, UserRound, UsersRound, Vote, MessageSquareText } from "lucide-react";
 import type { SearchHit, SearchKind } from "@/lib/search";
 import { Time } from "@/components/ui/Time";
+import { useT } from "@/components/app/AppProvider";
 
 export const KIND_ICON: Record<SearchKind, React.ComponentType<{ size?: number }>> = {
   post: FileText,
@@ -33,6 +34,21 @@ export const KIND_NAMES: Record<SearchKind, string> = {
   room: "Chat rooms",
 };
 
+/** One of a kind, for a hit's line ("News" alone would read as the whole section). */
+const KIND_ONE: Record<SearchKind, string> = {
+  post: "Post",
+  news: "News post",
+  comment: "Comment",
+  thread: "Forum thread",
+  reply: "Forum reply",
+  poll: "Poll",
+  event: "Event",
+  message: "Chat",
+  group: "Group",
+  user: "Member",
+  room: "Chat room",
+};
+
 /** Text with the search words marked (\u0001…\u0002 from the server). */
 export function Marked({ text }: { text: string }) {
   const parts = text.split(/(\u0001[^\u0002]*\u0002)/g);
@@ -44,6 +60,7 @@ export function Marked({ text }: { text: string }) {
 }
 
 export function HitRow({ h, onPick }: { h: SearchHit; onPick?: () => void }) {
+  const t = useT();
   const Icon = KIND_ICON[h.kind] || FileText;
   return (
     <Link href={h.url} className="list-row search-hit" onClick={onPick}>
@@ -60,7 +77,7 @@ export function HitRow({ h, onPick }: { h: SearchHit; onPick?: () => void }) {
           </span>
         ) : null}
         <span className="tiny faint">
-          {KIND_NAMES[h.kind].replace(/s$/, "")}
+          {t(KIND_ONE[h.kind])}
           {h.author && h.kind !== "user" ? ` · ${h.author.name}` : ""} · <Time t={h.createdAt} />
         </span>
       </span>

@@ -36,7 +36,8 @@ export interface ChatMessage {
   editedAt: number | null;
   deleted: boolean;
   pinned: boolean;
-  replyTo: { id: number; author: string; text: string } | null;
+  /** what's replied to (author "": gone; the browser says "Someone" and "(deleted)") */
+  replyTo: { id: number; author: string; text: string; deleted?: boolean } | null;
   reactions: Reaction[];
 }
 

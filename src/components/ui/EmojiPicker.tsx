@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
+import type { Lang } from "@/lib/i18n";
 
 type Emoji = [string, string, number, string];
 
@@ -21,10 +23,15 @@ const GROUPS: { id: number; icon: string; label: string }[] = [
 
 export const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🎉", "🔥", "👀"];
 
-let cache: Emoji[] | null = null;
-async function loadEmoji(): Promise<Emoji[]> {
-  if (!cache) cache = ((await import("@/lib/emoji.json")).default as unknown) as Emoji[];
-  return cache;
+// names and search words in the reader's language (scripts/emoji.mjs)
+const cache = new Map<Lang, Emoji[]>();
+async function loadEmoji(lang: Lang): Promise<Emoji[]> {
+  let list = cache.get(lang);
+  if (!list) {
+    list = ((lang === "sv" ? await import("@/lib/emoji.sv.json") : await import("@/lib/emoji.json")).default as unknown) as Emoji[];
+    cache.set(lang, list);
+  }
+  return list;
 }
 
 const RECENT_KEY = "hd.recentEmoji";
@@ -45,17 +52,18 @@ function remember(e: string) {
 
 /** The emoji picker's panel. */
 export function EmojiPanel({ onPick, onClose, autoFocus = true }: { onPick: (e: string) => void; onClose?: () => void; autoFocus?: boolean }) {
-  const [all, setAll] = useState<Emoji[] | null>(cache);
+  const t = useT();
+  const [all, setAll] = useState<Emoji[] | null>(() => cache.get(t.lang) ?? null);
   const [q, setQ] = useState("");
   const [group, setGroup] = useState(() => (typeof window !== "undefined" && recent().length ? -1 : 0));
   const [recents, setRecents] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     setRecents(recent());
-    loadEmoji().then(setAll);
+    loadEmoji(t.lang).then(setAll);
     // phones: don't pop the keyboard up over the picker
     if (autoFocus && window.matchMedia("(hover: hover)").matches) input.current?.focus();
-  }, [autoFocus]);
+  }, [autoFocus, t.lang]);
   const list = useMemo(() => {
     if (!all) return [];
     const s = q.trim().toLowerCase();
@@ -71,9 +79,9 @@ export function EmojiPanel({ onPick, onClose, autoFocus = true }: { onPick: (e: 
     <div className="emoji-panel" onMouseDown={(e) => e.target instanceof HTMLInputElement || e.preventDefault()}>
       <div className="emoji-search">
         <Search size={15} />
-        <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search emoji" aria-label="Search emoji" onKeyDown={(e) => e.key === "Escape" && onClose?.()} />
+        <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Search emoji")} aria-label={t("Search emoji")} onKeyDown={(e) => e.key === "Escape" && onClose?.()} />
         {onClose ? (
-          <button type="button" className="icon-btn xs" onClick={onClose} aria-label="Close">
+          <button type="button" className="icon-btn xs" onClick={onClose} aria-label={t("Close")}>
             <X size={15} />
           </button>
         ) : null}
@@ -81,15 +89,15 @@ export function EmojiPanel({ onPick, onClose, autoFocus = true }: { onPick: (e: 
       {!q ? (
         <div className="emoji-groups" role="tablist">
           {GROUPS.filter((g) => g.id !== -1 || recents.length).map((g) => (
-            <button key={g.id} type="button" role="tab" aria-selected={group === g.id} className={group === g.id ? "on" : ""} title={g.label} onClick={() => setGroup(g.id)}>
+            <button key={g.id} type="button" role="tab" aria-selected={group === g.id} className={group === g.id ? "on" : ""} title={t(g.label)} onClick={() => setGroup(g.id)}>
               {g.icon}
             </button>
           ))}
         </div>
       ) : null}
       <div className="emoji-grid">
-        {!all ? <div className="muted small" style={{ gridColumn: "1/-1", padding: 12 }}>Loading…</div> : null}
-        {all && !list.length ? <div className="muted small" style={{ gridColumn: "1/-1", padding: 12 }}>No emoji found.</div> : null}
+        {!all ? <div className="muted small" style={{ gridColumn: "1/-1", padding: 12 }}>{t("Loading…")}</div> : null}
+        {all && !list.length ? <div className="muted small" style={{ gridColumn: "1/-1", padding: 12 }}>{t("No emoji found.")}</div> : null}
         {list.map((e) => (
           <button key={e[0]} type="button" title={e[1]} onClick={() => pick(e[0])}>
             {e[0]}
