@@ -6,7 +6,8 @@
 - **Emoji names and groups**: [emojibase-data](https://github.com/milesj/emojibase) (MIT).
 - **Editor**: [Tiptap](https://tiptap.dev) and [ProseMirror](https://prosemirror.net) (MIT).
 - **Icons**: [Lucide](https://lucide.dev) (ISC).
-- **Fonts** (SIL Open Font License, served through next/font): Saira, Share Tech Mono, Inter, Lora, JetBrains Mono,
+- **Fonts** (SIL Open Font License, served through next/font; Saira, Share Tech Mono and JetBrains Mono are also
+  in `docs/install-guide/fonts` for the install guide): Saira, Share Tech Mono, Inter, Lora, JetBrains Mono,
   Caveat, Special Elite, Comic Neue, Press Start 2P, Playfair Display, Comfortaa, Orbitron, Bebas Neue, Righteous,
   Space Grotesk, Nunito, Atkinson Hyperlegible.
 - **Libraries**: Next.js and React (MIT), better-sqlite3 (MIT), sharp (Apache-2.0), sanitize-html (MIT), web-push (MPL-2.0).

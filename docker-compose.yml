@@ -6,7 +6,8 @@
 #   docker compose --profile tunnel up -d     # + Cloudflare Tunnel: HTTPS without opening ports
 #   docker compose --profile turn up -d       # + coturn: voice chat for phones on mobile data
 #
-# Profiles can be combined (--profile https --profile turn). Phones need HTTPS for push
+# Profiles can be combined (--profile https --profile turn), or set once in .env with
+# COMPOSE_PROFILES=https,turn so a plain `docker compose up -d` uses them. Phones need HTTPS for push
 # notifications and voice chat, so use one of the two HTTPS profiles (or your own reverse proxy).
 
 services:
@@ -74,15 +75,25 @@ services:
     container_name: hooden-turn
     restart: unless-stopped
     network_mode: host
+    environment:
+      # your public IP; empty = look it up when coturn starts (restart it if your IP changes)
+      REAL_EXTERNAL_IP: ${VOICE_TURN_PUBLIC_IP:-}
     command:
       - -n
+      - --log-file=stdout
       - --listening-port=3478
+      # behind a home router: relay on the server's LAN address and tell callers the public one
+      - --relay-ip=${VOICE_TURN_LAN_IP:-}
+      - --external-ip=$$(detect-external-ip)/${VOICE_TURN_LAN_IP:-}
       - --fingerprint
       - --lt-cred-mech
       - --realm=hooden
       - --user=${VOICE_TURN_USER:-hooden}:${VOICE_TURN_PASS:-change-me}
       - --min-port=49160
       - --max-port=49200
+      # voice only needs UDP relays
+      - --no-tcp-relay
+      - --no-multicast-peers
       - --no-cli
       - --no-tlsv1
       - --no-tlsv1_1
