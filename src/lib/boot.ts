@@ -17,6 +17,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
   const a = s.announcement;
   return {
     lang: lang ?? s.language,
+    texts: s.texts[lang ?? s.language] ?? {},
     name: s.siteName,
     tagline: defaultTextIn("tagline", s.tagline, lang ?? s.language),
     footer: defaultTextIn("footer", s.footer, lang ?? s.language),

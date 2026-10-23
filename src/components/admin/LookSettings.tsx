@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { SiteSettings } from "@/lib/settings";
 import { CATEGORY_LABEL, PALETTES, type PaletteCategory } from "@/lib/palettes";
-import { BACKDROPS } from "@/lib/theme";
+import { BackdropPicker } from "@/components/theme/BackdropPicker";
+import { BackdropLibrary } from "./BackdropLibrary";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { LANGS, type Lang } from "@/lib/i18n";
 import { ImagePick } from "@/components/ui/ImagePick";
@@ -150,14 +151,9 @@ export function LookSettings({ s }: { s: SiteSettings }) {
       </label>
       <div className="field">
         <span className="label">{t("Backdrop")}</span>
-        <div className="pills">
-          {BACKDROPS.map((b) => (
-            <button key={b.id} type="button" className={`pill ${backdrop === b.id ? "active" : ""}`} onClick={() => setBackdrop(b.id)}>
-              {t(b.label)}
-            </button>
-          ))}
-        </div>
+        <BackdropPicker value={backdrop} onChange={setBackdrop} library={s.backdrops} />
       </div>
+      <BackdropLibrary library={s.backdrops} onRemoved={(id) => backdrop === `pic:${id}` && setBackdrop("orbits")} />
       <div className="stack tight">
         <span className="label">{t("Site background picture (instead of the backdrop)")}</span>
         <div className="grid-2">
