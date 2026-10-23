@@ -24,6 +24,8 @@ services:
       PGID: ${PGID:-1000}
       # the address people use, e.g. https://hooden.example.com (invite links, calendar feeds)
       PUBLIC_URL: ${PUBLIC_URL:-}
+      # behind a Cloudflare Tunnel: cf-connecting-ip (slows down password guessing per visitor)
+      TRUSTED_IP_HEADER: ${TRUSTED_IP_HEADER:-}
       # voice chat through the TURN server below (or one of your own)
       VOICE_TURN_URL: ${VOICE_TURN_URL:-}
       VOICE_TURN_USER: ${VOICE_TURN_USER:-}
