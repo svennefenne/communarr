@@ -68,12 +68,15 @@ On Android, Chrome offers *Install app*. Hooden asks on the front page once per 
 The image is built by GitHub Actions and published as `ghcr.io/svennefenne/hooden:latest` on every
 push to `main` (and `:<version>` for `v*` tags). It's `linux/amd64`, which is what the NUC7i5BNK runs.
 
+**New to servers?** The [install guide (PDF)](docs/Hooden-install-guide.pdf) walks through it all
+from a bare NUC: Ubuntu Server 26.04 LTS, SSH, Docker, Hooden, HTTPS, phones, updates and backups.
+
 ```sh
-sudo mkdir -p /opt/hooden && cd /opt/hooden
+sudo mkdir -p /opt/hooden && sudo chown $USER: /opt/hooden && cd /opt/hooden
 curl -LO https://raw.githubusercontent.com/svennefenne/hooden/main/docker-compose.yml
 curl -LO https://raw.githubusercontent.com/svennefenne/hooden/main/.env.example && cp .env.example .env
 mkdir -p deploy && curl -Lo deploy/Caddyfile https://raw.githubusercontent.com/svennefenne/hooden/main/deploy/Caddyfile
-nano .env                      # time zone, PUID/PGID (run `id`), PUBLIC_URL, …
+nano .env                      # time zone, PUID/PGID (run `id`), …
 docker compose up -d           # http://<nuc>:3000
 ```
 
@@ -83,10 +86,12 @@ Then add HTTPS with one of the optional profiles in [`docker-compose.yml`](docke
 | --- | --- | --- |
 | `--profile https` | Caddy in front, with a certificate it renews itself | a domain pointing at your home IP, ports 80 and 443 forwarded to the NUC |
 | `--profile tunnel` | a Cloudflare Tunnel: HTTPS without opening any ports | a domain on Cloudflare and a tunnel token (Zero Trust → Networks → Tunnels; public hostname → `http://hooden:3000`) |
-| `--profile turn` | coturn, so voice works for phones on mobile data | ports 3478 (UDP/TCP) and 49160–49200 (UDP) forwarded, and the `VOICE_TURN_*` values in `.env` |
+| `--profile turn` | coturn, so voice works for phones on mobile data | ports 3478 (UDP/TCP) and 49160–49200 (UDP) forwarded, and the `VOICE_TURN_*` values in `.env`, including the NUC's LAN address (`VOICE_TURN_LAN_IP`) |
 
-For example `docker compose --profile tunnel --profile turn up -d`. Set `PUBLIC_URL` to the HTTPS
-address so invite links and calendar feeds use it.
+For example `docker compose --profile tunnel --profile turn up -d`, or put `COMPOSE_PROFILES=tunnel,turn`
+in `.env` and just run `docker compose up -d`. Set `PUBLIC_URL` to the HTTPS address so invite links
+and calendar feeds use it. Behind a Cloudflare Tunnel, `VOICE_TURN_URL` needs a DNS-only (grey cloud)
+name or your public IP, since TURN can't go through the tunnel.
 
 **Updating:** `docker compose pull && docker compose up -d`. **Backups:** everything lives in the
 data folder (`./data` by default): the database, uploaded pictures and backups. Admin → System also

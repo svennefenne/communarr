@@ -1,0 +1,654 @@
+<!doctype html>
+<!--
+  The Hooden install guide. docs/Hooden-install-guide.pdf is printed from this page:
+    chromium --headless --no-pdf-header-footer --print-to-pdf=docs/Hooden-install-guide.pdf docs/install-guide/index.html
+  Fonts (SIL Open Font License): Saira, Share Tech Mono, JetBrains Mono.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hooden Install Guide</title>
+<style>
+@font-face { font-family: "Saira"; src: url(fonts/saira-latin.woff2) format("woff2"); font-weight: 100 900; font-stretch: 50% 125%; }
+@font-face { font-family: "Share Tech Mono"; src: url(fonts/share-tech-mono-latin.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; src: url(fonts/jetbrains-mono-latin.woff2) format("woff2"); font-weight: 100 800; }
+
+:root {
+  --night: #070b10;
+  --night-2: #121b23;
+  --cream: #efe3c8;
+  --paper: #fffcf5;
+  --card: #f6eedd;
+  --line: #ddd0b5;
+  --ink: #1c242c;
+  --ink-2: #4a535b;
+  --muted: #7c776a;
+  --rust: #c9531f;
+  --amber: #a26d12;
+  --amber-hi: #e2a634;
+  --teal: #2a6a82;
+  --green: #2c7436;
+  --red: #b3421c;
+  --s1: #efe3c8; --s2: #e2a634; --s3: #cc4a30; --s4: #4f8f50; --s5: #2f74a0; --s6: #2d2833;
+  --display: "Saira", "Arial Narrow", sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, monospace;
+  --code: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@page {
+  size: A4;
+  margin: 17mm 16mm 19mm;
+  @bottom-left { content: "HOODEN · INSTALL GUIDE"; font-family: "Share Tech Mono", monospace; font-size: 7.5pt; letter-spacing: .14em; color: #8a7f6a; }
+  @bottom-right { content: counter(page) " / " counter(pages); font-family: "Share Tech Mono", monospace; font-size: 7.5pt; letter-spacing: .1em; color: #8a7f6a; }
+}
+@page cover {
+  margin: 0;
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: var(--paper); }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--display); font-stretch: 100%; font-size: 9.7pt; line-height: 1.47; }
+
+/* ── cover ── */
+.cover { page: cover; height: 296.6mm; overflow: hidden; background: var(--night); color: var(--cream); position: relative; padding: 26mm 20mm 0; }
+.cover::before { content: ""; position: absolute; inset: 0; background:
+  radial-gradient(circle at 78% 30%, rgba(214, 90, 43, .22), transparent 42%),
+  radial-gradient(circle at 15% 85%, rgba(47, 112, 136, .25), transparent 45%); }
+.cover > * { position: relative; }
+.cover .orbit { position: absolute; right: -40mm; top: 30mm; width: 170mm; height: 170mm; border: 1px solid rgba(239, 227, 200, .14); border-radius: 50%; }
+.cover .orbit.o2 { right: -10mm; top: 60mm; width: 110mm; height: 110mm; border-color: rgba(226, 166, 52, .22); }
+.cover .orbit.o3 { right: 14mm; top: 84mm; width: 62mm; height: 62mm; border-color: rgba(214, 90, 43, .4); background: radial-gradient(circle, rgba(214, 90, 43, .35), rgba(214, 90, 43, 0) 70%); }
+.cover .eyebrow { font-family: var(--mono); font-size: 9pt; letter-spacing: .3em; color: var(--amber-hi); }
+.cover h1 { font-family: var(--display); font-stretch: 125%; font-weight: 800; font-size: 76pt; line-height: .9; letter-spacing: .02em; margin: 9mm 0 0; color: #fff6e6; }
+.cover .sub { font-stretch: 125%; font-weight: 600; font-size: 19pt; letter-spacing: .08em; text-transform: uppercase; margin: 5mm 0 0; color: var(--cream); }
+.cover .lede { max-width: 118mm; margin-top: 10mm; font-size: 11.5pt; line-height: 1.55; color: #c9bda3; }
+.stripes { display: flex; height: 7mm; margin: 14mm -20mm 0; }
+.stripes span { flex: 1; }
+.stripes span:nth-child(1) { background: var(--s1); } .stripes span:nth-child(2) { background: var(--s2); }
+.stripes span:nth-child(3) { background: var(--s3); } .stripes span:nth-child(4) { background: var(--s4); }
+.stripes span:nth-child(5) { background: var(--s5); } .stripes span:nth-child(6) { background: var(--s6); }
+.cover .specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 12mm; border-top: 1px solid rgba(239, 227, 200, .2); }
+.cover .specs div { padding: 5mm 4mm 0 0; }
+.cover .specs b { display: block; font-family: var(--mono); font-weight: 400; font-size: 7.5pt; letter-spacing: .22em; color: var(--amber-hi); margin-bottom: 1.5mm; }
+.cover .specs span { font-size: 10pt; color: var(--cream); }
+.cover .foot { position: absolute; left: 20mm; right: 20mm; bottom: 14mm; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8pt; letter-spacing: .2em; color: #8f9aa1; }
+
+/* ── parts and headings ── */
+.part { break-before: page; }
+.part-head { border-bottom: 2px solid var(--ink); padding-bottom: 3mm; margin-bottom: 5mm; display: flex; align-items: flex-end; gap: 5mm; }
+.part-head .num { font-family: var(--display); font-stretch: 125%; font-weight: 800; font-size: 34pt; line-height: .85; color: var(--rust); }
+.part-head .eyebrow { font-family: var(--mono); font-size: 8pt; letter-spacing: .24em; color: var(--muted); text-transform: uppercase; }
+.part-head h2 { margin: 1mm 0 0; font-stretch: 125%; font-weight: 750; font-size: 19pt; line-height: 1.05; text-transform: uppercase; letter-spacing: .03em; }
+h3 { font-stretch: 112%; font-weight: 700; font-size: 12pt; margin: 5mm 0 1.8mm; letter-spacing: .01em; break-after: avoid; }
+h3 .step { font-family: var(--mono); font-weight: 400; font-size: 8.5pt; letter-spacing: .16em; color: var(--rust); margin-right: 2.5mm; }
+h4 { font-weight: 700; font-size: 10pt; margin: 4mm 0 1mm; break-after: avoid; }
+p { margin: 0 0 2.5mm; }
+p.intro { font-size: 11pt; color: var(--ink-2); margin-bottom: 4mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; }
+li { margin-bottom: 1mm; }
+li::marker { color: var(--rust); }
+a { color: var(--teal); text-decoration: none; }
+code { font-family: var(--code); font-size: 8.6pt; background: var(--card); border: 1px solid var(--line); border-radius: 3px; padding: 0 1.2mm; white-space: nowrap; }
+kbd { font-family: var(--code); font-size: 8pt; border: 1px solid var(--ink-2); border-bottom-width: 2px; border-radius: 3px; padding: 0 1mm; background: #fff; }
+.ui { font-weight: 700; }
+.ui::before { content: "‹"; color: var(--muted); font-weight: 400; margin-right: .3mm; }
+.ui::after { content: "›"; color: var(--muted); font-weight: 400; margin-left: .3mm; }
+
+/* ── command blocks ── */
+.cmd { break-inside: avoid; margin: 1.6mm 0 3mm; border-radius: 4px; overflow: hidden; background: var(--night-2); border: 1px solid #0b1117; }
+.cmd .where { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 7.3pt; letter-spacing: .2em; padding: 1.3mm 3mm; color: #0d1117; }
+.cmd .where i { font-style: normal; opacity: .75; letter-spacing: .08em; }
+.cmd.pc .where { background: #6fb3cc; }
+.cmd.nuc .where { background: #e98a5e; }
+.cmd.env .where { background: var(--amber-hi); }
+.cmd.out .where { background: #9aa39a; }
+.cmd pre { margin: 0; padding: 2.6mm 3.2mm 2.8mm; font-family: var(--code); font-size: 8.4pt; line-height: 1.55; color: var(--cream); white-space: pre-wrap; word-break: break-word; }
+.cmd pre .c { color: #8f9aa1; }
+.cmd pre .v { color: var(--amber-hi); }
+
+/* ── callouts ── */
+.note { break-inside: avoid; border-left: 3px solid var(--teal); background: #eaf1f1; padding: 2.4mm 3.5mm; margin: 2.5mm 0 3.5mm; border-radius: 0 4px 4px 0; }
+.note.warn { border-color: var(--rust); background: #f8e8dc; }
+.note.ok { border-color: var(--green); background: #e7f0e3; }
+.note b.t { display: block; font-family: var(--mono); font-weight: 400; font-size: 7.5pt; letter-spacing: .2em; text-transform: uppercase; color: var(--teal); margin-bottom: .8mm; }
+.note.warn b.t { color: var(--rust); }
+.note.ok b.t { color: var(--green); }
+.note p:last-child, .note ul:last-child { margin-bottom: 0; }
+
+/* ── tables ── */
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9pt; break-inside: auto; }
+th { text-align: left; font-family: var(--mono); font-weight: 400; font-size: 7.5pt; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--ink); padding: 1.2mm 2mm 1.2mm 0; }
+td { border-bottom: 1px solid var(--line); padding: 1.6mm 2.5mm 1.6mm 0; vertical-align: top; }
+tr { break-inside: avoid; }
+td code { white-space: normal; }
+
+/* ── overview diagram ── */
+.flow { display: grid; grid-template-columns: 1fr 9mm 1.05fr 9mm 1.5fr; align-items: center; margin: 4mm 0 5mm; break-inside: avoid; }
+.box { border: 1.5px solid var(--ink); border-radius: 5px; padding: 3mm; background: #fff; min-height: 30mm; }
+.box b { display: block; font-family: var(--mono); font-weight: 400; font-size: 7.3pt; letter-spacing: .2em; color: var(--rust); margin-bottom: 1.2mm; }
+.box .big { font-stretch: 112%; font-weight: 700; font-size: 10.5pt; line-height: 1.2; }
+.box small { display: block; color: var(--ink-2); font-size: 8.5pt; margin-top: 1mm; line-height: 1.35; }
+.box.nucbox { background: var(--night-2); color: var(--cream); border-color: var(--night); }
+.box.nucbox b { color: var(--amber-hi); }
+.box.nucbox small { color: #c9bda3; }
+.layers { margin-top: 2mm; display: grid; gap: 1.2mm; }
+.layers div { border: 1px solid rgba(239, 227, 200, .25); border-radius: 3px; padding: 1mm 2mm; font-size: 8.5pt; }
+.layers div.hl { border-color: var(--rust); background: rgba(214, 90, 43, .18); }
+.arrow { text-align: center; font-size: 15pt; color: var(--rust); }
+.ssh-line { display: flex; align-items: center; gap: 3mm; margin: -2mm 0 5mm; font-size: 9pt; color: var(--ink-2); }
+.ssh-line .pill { font-family: var(--mono); font-size: 7.5pt; letter-spacing: .16em; border: 1px solid var(--teal); color: var(--teal); padding: .6mm 2mm; border-radius: 99px; }
+
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.cols3 .cmd { margin: 0 0 3mm; }
+.check { list-style: none; padding-left: 0; }
+.check li { padding-left: 6mm; position: relative; }
+.check li::before { content: ""; position: absolute; left: 0; top: 1.3mm; width: 3mm; height: 3mm; border: 1.3px solid var(--ink); border-radius: 1px; }
+.toc { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 8mm; }
+.toc li { display: flex; gap: 3mm; padding: 1.4mm 0; border-bottom: 1px solid var(--line); break-inside: avoid; }
+.toc li span { font-family: var(--mono); color: var(--rust); width: 7mm; }
+.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 3mm 0 4mm; }
+.choice > div { border: 1.5px solid var(--ink); border-radius: 5px; padding: 3mm 3.5mm; background: #fff; break-inside: avoid; }
+.choice h4 { margin-top: 0; font-stretch: 112%; font-size: 11pt; }
+.choice .tag { font-family: var(--mono); font-size: 7.3pt; letter-spacing: .18em; color: var(--rust); }
+.choice ul { margin-bottom: 0; font-size: 9pt; }
+.keep { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ═════════════ COVER ═════════════ -->
+<section class="cover">
+  <div class="orbit"></div><div class="orbit o2"></div><div class="orbit o3"></div>
+  <div class="eyebrow">INSTALL GUIDE · SELF-HOSTED · v1</div>
+  <h1>HOODEN</h1>
+  <div class="sub">On an Intel NUC,<br>run over SSH</div>
+  <p class="lede">From a bare NUC to a private community site your friends can open on their phones: Ubuntu Server, SSH, Docker, Hooden itself, HTTPS, notifications and voice chat. Plus how to keep it running, updated and backed up. There's an Unraid section at the end too.</p>
+  <div class="stripes"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="specs">
+    <div><b>HARDWARE</b><span>Intel NUC7i5BNK<br>(any amd64 PC works)</span></div>
+    <div><b>SYSTEM</b><span>Ubuntu Server<br>26.04.1 LTS</span></div>
+    <div><b>RUNS AS</b><span>Docker container<br>ghcr.io/svennefenne/hooden</span></div>
+  </div>
+  <div class="foot"><span>GITHUB.COM/SVENNEFENNE/HOODEN</span><span>OCTOBER 2026</span></div>
+</section>
+
+<!-- ═════════════ OVERVIEW ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">00</div><div><div class="eyebrow">Before you start</div><h2>What you're building</h2></div></div>
+
+  <p class="intro">The NUC sits at home without a screen. You set it up once with a keyboard and monitor, and after that you control it from your own computer over SSH. Hooden runs inside Docker, and a small HTTPS front door lets your friends reach it from anywhere.</p>
+
+  <div class="flow">
+    <div class="box"><b>YOUR FRIENDS</b><div class="big">Phones, tablets, computers</div><small>Open the site in a browser, or install it as an app on their home screen.</small></div>
+    <div class="arrow">→</div>
+    <div class="box"><b>HTTPS</b><div class="big">Cloudflare Tunnel or Caddy</div><small>Needed on phones for notifications, voice chat and installing the app. Part 07.</small></div>
+    <div class="arrow">→</div>
+    <div class="box nucbox"><b>THE NUC · /opt/hooden</b>
+      <div class="layers">
+        <div>Ubuntu Server 26.04.1 LTS</div>
+        <div>Docker + Docker Compose</div>
+        <div class="hl">hooden container · port 3000</div>
+        <div>data/ · database, pictures, backups</div>
+      </div>
+    </div>
+  </div>
+  <div class="ssh-line"><span class="pill">SSH</span> You manage everything from your own computer: <code>ssh nuc</code></div>
+
+  <div class="cols">
+    <div>
+      <h3>You need</h3>
+      <ul class="check">
+        <li>The NUC with RAM and an SSD (8 GB RAM and a 120 GB SSD is plenty)</li>
+        <li>A USB stick of 4 GB or more (it will be wiped)</li>
+        <li>A keyboard and a monitor (HDMI), for the install only</li>
+        <li>A network cable to your router (a server should be wired)</li>
+        <li>Your own computer (Windows, Mac or Linux) to SSH from</li>
+        <li>For HTTPS: a domain name (about €10 a year) and access to your router's settings</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Contents</h3>
+      <ul class="toc">
+        <li><span>01</span>Prepare the NUC</li>
+        <li><span>02</span>Install Ubuntu Server</li>
+        <li><span>03</span>First boot</li>
+        <li><span>04</span>SSH from your computer</li>
+        <li><span>05</span>Install Docker</li>
+        <li><span>06</span>Install Hooden</li>
+        <li><span>07</span>HTTPS</li>
+        <li><span>08</span>Phones and voice</li>
+        <li><span>09</span>Day to day</li>
+        <li><span>10</span>Backups</li>
+        <li><span>11</span>Troubleshooting</li>
+        <li><span>12</span>Unraid</li>
+        <li><span>13</span>Reference</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>How to read the commands</h3>
+  <p>Every command box says where to type it: a terminal on the computer you sit at, the NUC after you've connected with <code>ssh</code>, or the settings file <code>/opt/hooden/.env</code>. Copy the lines one at a time and press <kbd>Enter</kbd> after each.</p>
+  <div class="cols3">
+    <div class="cmd pc"><div class="where">YOUR COMPUTER</div><pre>ssh nuc</pre></div>
+    <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>docker compose ps</pre></div>
+    <div class="cmd env"><div class="where">IN THE .env FILE</div><pre>TZ=Europe/Stockholm</pre></div>
+  </div>
+
+  <div class="note"><b class="t">Swap in your own values</b>
+    <p>The examples use <code>192.168.1.50</code> for the NUC's address, <code>fenne</code> for your username on the NUC, and <code>hooden.example.com</code> for your domain. Replace them with yours everywhere you see them.</p>
+  </div>
+</section>
+
+<!-- ═════════════ 01 PREPARE ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">01</div><div><div class="eyebrow">Keyboard and monitor plugged in</div><h2>Prepare the NUC</h2></div></div>
+
+  <h3><span class="step">STEP 1.1</span>Make the install stick</h3>
+  <ol>
+    <li>Download <b>Ubuntu Server 26.04.1 LTS</b> from <a href="https://ubuntu.com/download/server">ubuntu.com/download/server</a>. The file is called something like <code>ubuntu-26.04.1-live-server-amd64.iso</code>.</li>
+    <li>Write it to the USB stick with <b>balenaEtcher</b> (Windows, Mac, Linux) or <b>Rufus</b> (Windows). Pick the ISO, pick the stick, and click Flash or Start.</li>
+  </ol>
+  <p>On Linux you can also use <code>dd</code>. Check the stick's name with <code>lsblk</code> first, because <code>dd</code> overwrites whatever disk you give it:</p>
+  <div class="cmd pc"><div class="where">YOUR COMPUTER <i>Linux · /dev/sdX is the USB stick</i></div><pre>lsblk
+sudo dd if=ubuntu-26.04.1-live-server-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync</pre></div>
+
+  <h3><span class="step">STEP 1.2</span>Set the NUC to switch itself back on</h3>
+  <p>A server should come back by itself after a power cut. Plug the keyboard, monitor and network cable into the NUC, switch it on, and press <kbd>F2</kbd> straight away to open the BIOS.</p>
+  <ol>
+    <li>Go to <span class="ui">Power</span> → <span class="ui">Secondary Power Settings</span> (on some versions it's under <span class="ui">Advanced</span> → <span class="ui">Power</span>).</li>
+    <li>Set <span class="ui">After Power Failure</span> to <b>Power On</b>.</li>
+    <li>Press <kbd>F10</kbd> to save and exit.</li>
+  </ol>
+  <div class="note"><b class="t">Good to know</b><p>Leave Secure Boot as it is; Ubuntu works with it. The menus on the NUC7 are Intel's "Visual BIOS", so the names may differ a little from the ones above.</p></div>
+
+  <h3><span class="step">STEP 1.3</span>Start the installer</h3>
+  <ol>
+    <li>Put the USB stick in and switch the NUC on.</li>
+    <li>Press <kbd>F10</kbd> during start-up to get the boot menu, and pick the USB stick.</li>
+    <li>In the menu that appears, choose <span class="ui">Try or Install Ubuntu Server</span>.</li>
+  </ol>
+</section>
+
+<!-- ═════════════ 02 INSTALL UBUNTU ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">02</div><div><div class="eyebrow">About 15 minutes</div><h2>Install Ubuntu Server</h2></div></div>
+
+  <p class="intro">The installer is text-only. Move with the arrow keys and <kbd>Tab</kbd>, tick boxes with <kbd>Space</kbd>, and continue with <kbd>Enter</kbd> on <span class="ui">Done</span>. The screens come in roughly this order:</p>
+
+  <table>
+    <tr><th style="width:30%">Screen</th><th>What to choose</th></tr>
+    <tr><td>Language, keyboard</td><td>Yours. If it offers an <b>installer update</b>, take it.</td></tr>
+    <tr><td>Type of installation</td><td><b>Ubuntu Server</b> (not the "minimized" one, which leaves out tools you'll want).</td></tr>
+    <tr><td>Network</td><td>The wired connection should already have an address, such as <code>192.168.1.50/24</code>. <b>Write it down.</b> If it says "disabled", check the cable.</td></tr>
+    <tr><td>Proxy, mirror</td><td>Leave as they are.</td></tr>
+    <tr><td>Storage</td><td><b>Use an entire disk</b>, pick the NUC's SSD, and keep <b>Set up this disk as an LVM group</b> ticked. On the summary, choose <span class="ui">Done</span>, then <span class="ui">Continue</span> to confirm. This wipes the disk.</td></tr>
+    <tr><td>Profile</td><td>Your name, a server name such as <code>nuc</code>, a username (lowercase, such as <code>fenne</code>) and a good password. You'll use the password for <code>sudo</code>.</td></tr>
+    <tr><td>Ubuntu Pro</td><td>Skip for now.</td></tr>
+    <tr><td>SSH</td><td><b>Tick Install OpenSSH server.</b> This is what lets you control the NUC from your computer. If your SSH key is on GitHub, you can import it here (<span class="ui">Import SSH key</span> → from GitHub → your GitHub username) and skip step 4.2.</td></tr>
+    <tr><td>Featured server snaps</td><td><b>Pick nothing</b>, and especially not <code>docker</code>. Part 05 installs Docker's own packages, which work better with Hooden's setup.</td></tr>
+    <tr><td>Installing</td><td>Wait until it says <span class="ui">Reboot Now</span>, choose it, and pull out the USB stick when it asks.</td></tr>
+  </table>
+
+  <div class="note ok"><b class="t">Done when</b><p>The NUC restarts into a black screen with a login prompt such as <code>nuc login:</code>. Log in with your username and password to check that it works.</p></div>
+</section>
+
+<!-- ═════════════ 03 FIRST BOOT ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">03</div><div><div class="eyebrow">Still at the NUC's keyboard</div><h2>First boot</h2></div></div>
+
+  <h3><span class="step">STEP 3.1</span>Find and fix the NUC's address</h3>
+  <p>This shows the NUC's network address (the number before the <code>/</code>):</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>at the keyboard</i></div><pre>ip -br -4 addr</pre></div>
+  <div class="cmd out"><div class="where">EXAMPLE OUTPUT</div><pre>lo               UNKNOWN        127.0.0.1/8
+eno1             UP             192.168.1.50/24</pre></div>
+  <p>Your router hands out addresses and may give the NUC a different one later. To stop that, open your router's settings page, find the list of connected devices (look for <code>nuc</code>), and add a <b>DHCP reservation</b> (also called a <i>static lease</i> or <i>fixed IP</i>) for it with the address it has now. Every router names this differently.</p>
+
+  <h3><span class="step">STEP 3.2</span>Bring Ubuntu up to date</h3>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>sudo apt update &amp;&amp; sudo apt full-upgrade -y
+sudo reboot</pre></div>
+  <p>Ubuntu installs security updates by itself after this (the <code>unattended-upgrades</code> service is on by default).</p>
+
+  <h3><span class="step">STEP 3.3</span>Give the system the whole disk</h3>
+  <p>The installer may give the system only part of the SSD. Check for unused space:</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>sudo vgs</pre></div>
+  <p>If the <code>VFree</code> column shows more than a few GB, give it to the system, then check that <code>/</code> is now the size of the SSD:</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+df -h /</pre></div>
+
+  <h3><span class="step">STEP 3.4</span>Optional: reach it by name</h3>
+  <p>After <code>sudo apt install -y avahi-daemon</code> on the NUC, <code>nuc.local</code> works as well as <code>192.168.1.50</code> on most home networks.</p>
+
+  <div class="note ok"><b class="t">Done when</b><p>You know the NUC's address, it's reserved in the router, and Ubuntu is up to date. From now on the NUC needs no keyboard or monitor; you can unplug them.</p></div>
+</section>
+
+<!-- ═════════════ 04 SSH ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">04</div><div><div class="eyebrow">Back at your own computer</div><h2>SSH from your computer</h2></div></div>
+
+  <p class="intro">SSH gives you the NUC's command line from your own computer. Windows 10/11 (PowerShell), macOS (Terminal) and Linux all have it built in.</p>
+
+  <h3><span class="step">STEP 4.1</span>Connect for the first time</h3>
+  <div class="cmd pc"><div class="where">YOUR COMPUTER</div><pre>ssh fenne@192.168.1.50</pre></div>
+  <p>The first time, it asks whether you trust the NUC's key. Type <code>yes</code>, then your password. To leave the NUC again, type <code>exit</code>.</p>
+
+  <h3><span class="step">STEP 4.2</span>Log in with a key instead of a password</h3>
+  <p>A key is safer than a password and saves typing. Skip this if you imported your key from GitHub during the install. Make a key (press <kbd>Enter</kbd> for the defaults; a passphrase is optional) and copy it to the NUC:</p>
+  <div class="cmd pc"><div class="where">YOUR COMPUTER <i>Linux and Mac</i></div><pre>ssh-keygen -t ed25519
+ssh-copy-id fenne@192.168.1.50</pre></div>
+  <div class="cmd pc"><div class="where">YOUR COMPUTER <i>Windows PowerShell</i></div><pre>ssh-keygen -t ed25519
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh fenne@192.168.1.50 "mkdir -p ~/.ssh &amp;&amp; cat &gt;&gt; ~/.ssh/authorized_keys"</pre></div>
+
+  <h3><span class="step">STEP 4.3</span>A short name: <code style="font-size:10pt">ssh nuc</code></h3>
+  <p>Add this to the file <code>.ssh/config</code> in your home folder (create it if it isn't there; on Windows it's <code>C:\Users\&lt;you&gt;\.ssh\config</code>):</p>
+  <div class="cmd pc"><div class="where">YOUR COMPUTER <i>~/.ssh/config</i></div><pre>Host nuc
+    HostName 192.168.1.50
+    User fenne</pre></div>
+  <p>Now <code>ssh nuc</code> logs you straight in, and file copies work with the same name, such as <code>scp nuc:backups/file.tgz .</code></p>
+
+  <div class="keep">
+  <h3><span class="step">STEP 4.4</span>Turn off password logins</h3>
+  <p>Once the key works (<code>ssh nuc</code> logs in without asking for the NUC password), stop SSH from accepting passwords at all:</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/10-keys-only.conf
+sudo sshd -t &amp;&amp; sudo systemctl restart ssh</pre></div>
+  </div>
+  <p>Test it from a <b>new</b> terminal window, keeping your current session open in case something went wrong. The first command should still log in; the second should be refused with <code>Permission denied (publickey)</code>.</p>
+  <div class="cmd pc"><div class="where">YOUR COMPUTER</div><pre>ssh nuc
+ssh -o PubkeyAuthentication=no nuc</pre></div>
+
+  <div class="note warn"><b class="t">Don't open SSH to the internet</b>
+    <p>Never forward port 22 in your router. To manage the NUC when you're away from home, use a private VPN such as <b>Tailscale</b> instead: install it on the NUC with <code>curl -fsSL https://tailscale.com/install.sh | sh</code> and then <code>sudo tailscale up</code>, install it on your laptop too, and <code>ssh</code> to the NUC's Tailscale name.</p>
+  </div>
+</section>
+
+<!-- ═════════════ 05 DOCKER ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">05</div><div><div class="eyebrow">Over SSH from here on</div><h2>Install Docker</h2></div></div>
+
+  <h3><span class="step">STEP 5.1</span>Install Docker Engine and Compose</h3>
+  <p>Docker's own install script sets up its official packages, including <code>docker compose</code>, and starts Docker at every boot:</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>curl -fsSL https://get.docker.com | sudo sh</pre></div>
+
+  <h3><span class="step">STEP 5.2</span>Use Docker without sudo</h3>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>sudo usermod -aG docker $USER
+exit</pre></div>
+  <p>Log in again (<code>ssh nuc</code>) so the change takes effect, then test it:</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>docker run --rm hello-world
+docker compose version</pre></div>
+  <p>You should see <code>Hello from Docker!</code> and a version number.</p>
+
+  <h3><span class="step">STEP 5.3</span>Keep container logs from filling the disk</h3>
+  <p>By default Docker keeps container logs forever. This keeps at most 3 × 10 MB per container. Do it now, because it only applies to containers created afterwards:</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>printf '{\n  "log-driver": "json-file",\n  "log-opts": { "max-size": "10m", "max-file": "3" }\n}\n' | sudo tee /etc/docker/daemon.json
+sudo systemctl restart docker</pre></div>
+
+  <div class="note"><b class="t">About the firewall</b>
+    <p>Ubuntu's firewall (<code>ufw</code>) is off by default, which is fine behind a home router. If you turn it on, allow SSH first (<code>sudo ufw allow OpenSSH</code>, then <code>sudo ufw enable</code>), and for voice (part 08) also <code>sudo ufw allow 3478</code> and <code>sudo ufw allow 49160:49200/udp</code>. Note that ports Docker publishes (3000, 80, 443) <b>bypass ufw</b>. To keep port 3000 off your network, use <code>HOODEN_PORT=127.0.0.1:3000</code> as described in part 07.</p>
+  </div>
+</section>
+
+<!-- ═════════════ 06 HOODEN ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">06</div><div><div class="eyebrow">The main event</div><h2>Install Hooden</h2></div></div>
+
+  <h3><span class="step">STEP 6.1</span>Make a home for it and download the files</h3>
+  <p>Everything lives in <code>/opt/hooden</code>: the Compose file that describes the containers, your settings in <code>.env</code>, and later the <code>data</code> folder.</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>sudo mkdir -p /opt/hooden
+sudo chown $USER: /opt/hooden
+cd /opt/hooden
+B=https://raw.githubusercontent.com/svennefenne/hooden/main
+curl -fLO $B/docker-compose.yml
+curl -fLo .env $B/.env.example
+mkdir -p deploy &amp;&amp; curl -fLo deploy/Caddyfile $B/deploy/Caddyfile
+id</pre></div>
+  <p>The last command shows your user and group numbers, such as <code>uid=1000(fenne) gid=1000(fenne)</code>. You need them next.</p>
+
+  <h3><span class="step">STEP 6.2</span>Fill in the settings</h3>
+  <div class="cmd nuc"><div class="where">ON THE NUC</div><pre>nano .env</pre></div>
+  <p>For the first start, only these three matter. Set them to your time zone and the numbers <code>id</code> showed:</p>
+  <div class="cmd env"><div class="where">IN THE .env FILE</div><pre>TZ=Europe/Stockholm
+PUID=1000
+PGID=1000</pre></div>
+  <p>Leave the lines starting with <code>#</code> for now; parts 07 and 08 turn them on. Save with <kbd>Ctrl</kbd>+<kbd>O</kbd> then <kbd>Enter</kbd>, and leave nano with <kbd>Ctrl</kbd>+<kbd>X</kbd>.</p>
+
+  <h3><span class="step">STEP 6.3</span>Start it</h3>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>in /opt/hooden</i></div><pre>docker compose up -d
+docker compose logs -f hooden</pre></div>
+  <p>The first start downloads the image (a few hundred MB). When the log shows <code>[hooden] ready</code>, press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop watching; Hooden keeps running. <code>docker compose ps</code> should then show the container as <code>Up … (healthy)</code>.</p>
+
+  <h3><span class="step">STEP 6.4</span>Create the admin account</h3>
+  <ol>
+    <li>On your computer, open <b>http://192.168.1.50:3000</b> in a browser.</li>
+    <li>A fresh Hooden opens on the setup page. Pick the site's name and create your own account; it becomes the admin.</li>
+    <li>Look around: <span class="ui">Admin</span> has the site's settings, members, invites, features and the look.</li>
+  </ol>
+  <div class="note"><b class="t">Invite your friends after HTTPS</b>
+    <p>Hooden is invite-only by default. You make invite links under <span class="ui">Admin</span> → <span class="ui">Invites &amp; sign-up</span>. Set up HTTPS (part 07) first, so the links use your real address and work on phones.</p>
+  </div>
+
+  <div class="note ok"><b class="t">Done when</b><p>You're logged in to your own Hooden at <code>http://192.168.1.50:3000</code>. It starts by itself after a reboot or a power cut.</p></div>
+</section>
+
+<!-- ═════════════ 07 HTTPS ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">07</div><div><div class="eyebrow">So it works on phones, from anywhere</div><h2>HTTPS</h2></div></div>
+
+  <p class="intro">Phones only allow notifications, the microphone (voice chat) and installing a site as an app on secure <b>https://</b> addresses. You need a domain name; then pick one of two ways. Both are already in Hooden's Compose file.</p>
+
+  <div class="choice">
+    <div><span class="tag">OPTION A · EASIEST</span><h4>Cloudflare Tunnel</h4>
+      <ul><li>No router changes and no open ports</li><li>Works even if your internet provider shares your public IP (CGNAT)</li><li>Your domain must use Cloudflare's (free) DNS</li><li>Traffic goes through Cloudflare</li></ul></div>
+    <div><span class="tag">OPTION B · DIRECT</span><h4>Caddy</h4>
+      <ul><li>Traffic goes straight to your home</li><li>Caddy gets and renews the certificate itself</li><li>Needs ports 80 and 443 forwarded in your router</li><li>Doesn't work behind CGNAT</li></ul></div>
+  </div>
+
+  <h3><span class="step">OPTION A</span>Cloudflare Tunnel</h3>
+  <ol>
+    <li>Add your domain to a free Cloudflare account and change its nameservers at the registrar to the two Cloudflare gives you (or buy the domain from Cloudflare).</li>
+    <li>In the Cloudflare dashboard, go to <span class="ui">Zero Trust</span> → <span class="ui">Networks</span> → <span class="ui">Tunnels</span> → <span class="ui">Create a tunnel</span>. Choose <b>Cloudflared</b> and name it <code>hooden</code>.</li>
+    <li>On the connector page, choose <b>Docker</b>. The command it shows ends in <code>--token eyJ…</code>. <b>Copy only the long token</b>; don't run the command, because Hooden's Compose file runs the tunnel for you.</li>
+    <li>Next, add a public hostname: subdomain <code>hooden</code>, your domain, service type <b>HTTP</b>, URL <code>hooden:3000</code>. Save. Cloudflare creates the DNS record itself.</li>
+  </ol>
+  <p>Cloudflare moves and renames these menus now and then; a "public hostname" may be called a "published application route". Look for the same ideas.</p>
+  <div class="cmd env"><div class="where">IN THE .env FILE <i>remove the # in front of these lines and fill them in</i></div><pre>COMPOSE_PROFILES=tunnel
+PUBLIC_URL=https://hooden.example.com
+CLOUDFLARE_TUNNEL_TOKEN=eyJhIjoi…the whole token…
+TRUSTED_IP_HEADER=cf-connecting-ip
+HOODEN_PORT=127.0.0.1:3000   <span class="c"># optional: only reachable through the tunnel (and SSH)</span></pre></div>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>in /opt/hooden</i></div><pre>docker compose up -d
+docker compose logs cloudflared</pre></div>
+  <p>Look for <code>Registered tunnel connection</code>, then open <b>https://hooden.example.com</b>.</p>
+
+  <h3 class="keep"><span class="step">OPTION B</span>Caddy</h3>
+  <ol>
+    <li>Find your home's public IP on the NUC with <code>curl -4 ifconfig.me</code>. In your domain's DNS, add an <b>A record</b> for <code>hooden.example.com</code> pointing at it. If your home IP changes now and then, use your router's dynamic DNS feature (or a service such as DuckDNS) and point a CNAME record at that name instead.</li>
+    <li>In your router, forward <b>TCP 80</b> and <b>TCP + UDP 443</b> to <code>192.168.1.50</code>.</li>
+  </ol>
+  <div class="cmd env"><div class="where">IN THE .env FILE</div><pre>COMPOSE_PROFILES=https
+HOODEN_DOMAIN=hooden.example.com
+PUBLIC_URL=https://hooden.example.com
+HOODEN_PORT=127.0.0.1:3000   <span class="c"># optional: only reachable through Caddy (and SSH)</span></pre></div>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>in /opt/hooden</i></div><pre>docker compose up -d
+docker compose logs -f caddy</pre></div>
+  <p>Wait for <code>certificate obtained successfully</code>, press <kbd>Ctrl</kbd>+<kbd>C</kbd>, and open <b>https://hooden.example.com</b>.</p>
+
+  <div class="note warn"><b class="t">Is your IP shared? (CGNAT)</b>
+    <p>Compare the "WAN" or "internet" address on your router's status page with <code>curl -4 ifconfig.me</code>. If they differ, or the router's starts with <code>100.</code>, your provider shares your IP, and incoming connections never reach you. Use option A.</p>
+  </div>
+  <div class="note"><b class="t">Changed .env? Use up, not restart</b>
+    <p>Settings in <code>.env</code> only apply when the containers are re-created, so always run <code>docker compose up -d</code> after editing it. <code>docker compose restart</code> keeps the old settings.</p>
+  </div>
+</section>
+
+<!-- ═════════════ 08 PHONES & VOICE ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">08</div><div><div class="eyebrow">Once HTTPS works</div><h2>Phones and voice</h2></div></div>
+
+  <h3><span class="step">STEP 8.1</span>Install Hooden on a phone</h3>
+  <table>
+    <tr><th style="width:22%">Phone</th><th>How</th></tr>
+    <tr><td><b>Android</b><br>Chrome</td><td>Open <code>https://hooden.example.com</code> and log in. Menu (⋮) → <span class="ui">Add to home screen</span> → <span class="ui">Install</span>.</td></tr>
+    <tr><td><b>iPhone, iPad</b><br>Safari</td><td>Open the address in <b>Safari</b> and log in. Share button → <span class="ui">Add to Home Screen</span>. From then on, <b>open Hooden from the home-screen icon</b>: iOS only allows notifications for sites added this way (iOS 16.4 or newer).</td></tr>
+  </table>
+  <p>Then turn notifications on when Hooden asks, or in Hooden under <span class="ui">Settings</span> → <span class="ui">Notifications</span>. There you can also pick what to be notified about and set quiet hours.</p>
+
+  <h3><span class="step">STEP 8.2</span>Voice chat on mobile data: a TURN server</h3>
+  <p>Voice works out of the box on the same network and through most home routers. Phones on mobile data and strict networks need a relay, called a <b>TURN</b> server. Hooden's Compose file includes one (coturn). To set it up:</p>
+  <ol>
+    <li><b>Router:</b> forward <b>UDP + TCP 3478</b> and <b>UDP 49160–49200</b> to <code>192.168.1.50</code>.</li>
+    <li><b>A name that reaches your home directly.</b> With Caddy, use the same domain. With a Cloudflare Tunnel, add a DNS record <code>turn</code> (type A, your public IP) and set its proxy status to <b>DNS only</b> (grey cloud), because TURN can't go through the tunnel.</li>
+    <li><b>A password:</b> make one with <code>openssl rand -hex 24</code> on the NUC.</li>
+  </ol>
+  <div class="cmd env"><div class="where">IN THE .env FILE <i>add turn to the profiles you already have</i></div><pre>COMPOSE_PROFILES=tunnel,turn
+VOICE_TURN_URL=turn:turn.example.com:3478
+VOICE_TURN_USER=hooden
+VOICE_TURN_PASS=<span class="v">the password you just made</span>
+VOICE_TURN_LAN_IP=192.168.1.50</pre></div>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>in /opt/hooden</i></div><pre>docker compose up -d
+docker compose logs coturn | grep -iE "relay address|external-ip|failed"</pre></div>
+  <p>You should see <code>Relay address to use: 192.168.1.50</code> and <code>Whitelisting external-ip private part: 192.168.1.50</code>. coturn looks up your public IP each time it starts. If the log says <code>All providers failed</code>, put your public IP in <code>VOICE_TURN_PUBLIC_IP=</code> and run <code>docker compose up -d</code> again.</p>
+  <div class="note"><b class="t">If your home IP changes</b><p>Run <code>docker compose restart coturn</code> so it picks up the new address. To test, start a voice chat between someone on Wi-Fi at home and a phone on mobile data.</p></div>
+</section>
+
+<!-- ═════════════ 09 DAY TO DAY ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">09</div><div><div class="eyebrow">Running it over SSH</div><h2>Day to day</h2></div></div>
+
+  <p class="intro">Connect with <code>ssh nuc</code> and go to the Hooden folder with <code>cd /opt/hooden</code>. Every command below runs there.</p>
+
+  <table>
+    <tr><th style="width:34%">To…</th><th>Run</th></tr>
+    <tr><td>See if it's running</td><td><code>docker compose ps</code></td></tr>
+    <tr><td>Watch the log</td><td><code>docker compose logs -f hooden</code> (stop watching with <kbd>Ctrl</kbd>+<kbd>C</kbd>), or <code>--tail 100</code> instead of <code>-f</code> for the last lines</td></tr>
+    <tr><td>Update Hooden to the newest version</td><td><code>docker compose pull &amp;&amp; docker compose up -d &amp;&amp; docker image prune -f</code></td></tr>
+    <tr><td>Apply a change to <code>.env</code></td><td><code>docker compose up -d</code></td></tr>
+    <tr><td>Restart Hooden</td><td><code>docker compose restart hooden</code></td></tr>
+    <tr><td>Stop everything</td><td><code>docker compose down</code> (your data stays)</td></tr>
+    <tr><td>Start everything</td><td><code>docker compose up -d</code></td></tr>
+    <tr><td>Check disk space</td><td><code>df -h /</code> and <code>du -sh data</code></td></tr>
+    <tr><td>Update Ubuntu</td><td><code>sudo apt update &amp;&amp; sudo apt full-upgrade -y</code></td></tr>
+    <tr><td>Restart the NUC</td><td><code>sudo reboot</code> (Hooden comes back by itself)</td></tr>
+    <tr><td>Switch the NUC off</td><td><code>sudo poweroff</code></td></tr>
+  </table>
+
+  <h3>A good routine</h3>
+  <ul>
+    <li><b>Monthly:</b> update Ubuntu and Hooden with the two commands above. If the login message says <code>*** System restart required ***</code>, run <code>sudo reboot</code>.</li>
+    <li><b>Now and then:</b> check <span class="ui">Admin</span> → <span class="ui">Overview</span> in Hooden for activity and disk use, and <span class="ui">Reports</span> for anything members flagged.</li>
+    <li><b>Before big changes:</b> take a backup (part 10).</li>
+  </ul>
+
+  <div class="note"><b class="t">Where things are</b>
+    <p><code>/opt/hooden/docker-compose.yml</code> describes the containers; <code>/opt/hooden/.env</code> holds your settings; <code>/opt/hooden/data</code> holds everything Hooden stores: the database, uploaded pictures and its own backups. Those three are all you need to move Hooden to another machine.</p>
+  </div>
+</section>
+
+<!-- ═════════════ 10 BACKUPS ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">10</div><div><div class="eyebrow">Your friends' posts and pictures</div><h2>Backups</h2></div></div>
+
+  <p class="intro">Everything Hooden stores is in <code>/opt/hooden/data</code>. Stop Hooden for the few seconds it takes to pack it up, so the database is copied in a consistent state.</p>
+
+  <h3><span class="step">STEP 10.1</span>A backup by hand</h3>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>in /opt/hooden</i></div><pre>mkdir -p ~/backups
+docker compose stop hooden
+tar czf ~/backups/hooden-$(date +%F).tgz data
+docker compose start hooden</pre></div>
+  <p>The quickest alternative: <span class="ui">Admin</span> → <span class="ui">System &amp; backup</span> in Hooden downloads a consistent copy of the database to your computer without stopping anything. It doesn't include the uploaded pictures.</p>
+
+  <h3><span class="step">STEP 10.2</span>Every night, by itself</h3>
+  <p>Open your scheduled tasks with <code>crontab -e</code> (choose <code>nano</code> if it asks) and add this as <b>one line</b>. It backs up at 04:30 and keeps two weeks of backups:</p>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>crontab -e · one line</i></div><pre>30 4 * * * cd /opt/hooden &amp;&amp; docker compose stop hooden &amp;&amp; tar czf $HOME/backups/hooden-$(date +\%F).tgz data; docker compose start hooden; find $HOME/backups -name 'hooden-*.tgz' -mtime +14 -delete</pre></div>
+
+  <h3><span class="step">STEP 10.3</span>Keep a copy somewhere else</h3>
+  <p>A backup on the same NUC won't survive a broken SSD. Copy the backups to your computer, or a NAS, now and then:</p>
+  <div class="cmd pc"><div class="where">YOUR COMPUTER</div><pre>scp 'nuc:backups/hooden-*.tgz' .</pre></div>
+
+  <h3><span class="step">STEP 10.4</span>Restore a backup</h3>
+  <div class="cmd nuc"><div class="where">ON THE NUC <i>in /opt/hooden</i></div><pre>docker compose down
+mv data data.old
+tar xzf ~/backups/hooden-2026-10-23.tgz
+docker compose up -d</pre></div>
+  <p>Once everything looks right, delete the old copy with <code>rm -rf data.old</code>. On a new machine, follow parts 02–06, then copy <code>.env</code> and a backup over and restore it this way.</p>
+</section>
+
+<!-- ═════════════ 11 TROUBLESHOOTING ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">11</div><div><div class="eyebrow">When something's off</div><h2>Troubleshooting</h2></div></div>
+
+  <p class="intro">Start with <code>docker compose ps</code> and <code>docker compose logs --tail 100 hooden</code> in <code>/opt/hooden</code>. The log usually says what's wrong.</p>
+
+  <table>
+    <tr><th style="width:36%">What you see</th><th>What to do</th></tr>
+    <tr><td><code>ssh</code>: connection refused or timed out</td><td>Is the NUC on, and is the address right? (Check <code>ip -br -4 addr</code> at the NUC.) If OpenSSH wasn't ticked during the install: <code>sudo apt install openssh-server</code> at the NUC's keyboard.</td></tr>
+    <tr><td><code>permission denied</code> … <code>docker.sock</code></td><td>Log out and back in after step 5.2, so your user's new Docker group applies.</td></tr>
+    <tr><td><code>curl: (23) Failure writing output</code></td><td>You don't own <code>/opt/hooden</code>: <code>sudo chown $USER: /opt/hooden</code>.</td></tr>
+    <tr><td>The page at <code>:3000</code> doesn't load</td><td><code>docker compose ps</code> should say <code>Up … (healthy)</code>. With <code>HOODEN_PORT=127.0.0.1:3000</code>, port 3000 is only open on the NUC itself, so use your https address, or <code>ssh -L 3000:localhost:3000 nuc</code> and <code>http://localhost:3000</code>.</td></tr>
+    <tr><td><code>port is already allocated</code></td><td>Another program uses port 3000. Set <code>HOODEN_PORT=3001</code> (for example) and run <code>docker compose up -d</code>.</td></tr>
+    <tr><td>Cloudflare shows <b>502 Bad Gateway</b></td><td>The tunnel's hostname must point at service type HTTP and <code>hooden:3000</code> (not <code>localhost</code>). Check <code>docker compose logs cloudflared</code> and the token in <code>.env</code>.</td></tr>
+    <tr><td>Caddy gets no certificate</td><td>The A record must point at your public IP, and ports 80 and 443 must be forwarded to the NUC. Check for CGNAT (part 07). <code>docker compose logs caddy</code> says which step fails.</td></tr>
+    <tr><td>Invite links or calendar feeds use the wrong address</td><td>Set <code>PUBLIC_URL</code> in <code>.env</code> to your https address and run <code>docker compose up -d</code>.</td></tr>
+    <tr><td>No notifications on an iPhone</td><td>It needs https, iOS 16.4 or newer, and Hooden opened from the home-screen icon (step 8.1), not from Safari. Then turn notifications on in Hooden's settings.</td></tr>
+    <tr><td>Voice works at home but not on mobile data</td><td>Set up TURN (step 8.2). Check the port forwards and the <code>docker compose logs coturn</code> lines.</td></tr>
+    <tr><td>Files in <code>data</code> belong to the wrong user</td><td>Set <code>PUID</code> and <code>PGID</code> to what <code>id</code> shows, then <code>docker compose up -d</code>. Hooden fixes the owners as it starts.</td></tr>
+    <tr><td>The disk is filling up</td><td><code>du -sh data ~/backups</code>. Remove old backups and unused images with <code>docker image prune -f</code>. <span class="ui">Admin</span> → <span class="ui">System &amp; backup</span> → <span class="ui">Remove pictures nothing uses</span> frees space too.</td></tr>
+  </table>
+</section>
+
+<!-- ═════════════ 12 UNRAID ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">12</div><div><div class="eyebrow">If you'd rather use your Unraid server</div><h2>Unraid</h2></div></div>
+
+  <p class="intro">Hooden comes with an Unraid template, so there's nothing to install on the command line.</p>
+  <ol>
+    <li>In Unraid, go to <span class="ui">Docker</span> → <span class="ui">Add Container</span>. Under <span class="ui">Template repositories</span>, add <code>https://github.com/svennefenne/hooden</code> and save.</li>
+    <li>Pick <b>Hooden</b> from the template list.</li>
+    <li>Check the values: the port (<code>3000</code>), <b>Appdata</b> (<code>/mnt/user/appdata/hooden</code>) and your time zone. It runs as <code>99:100</code> (nobody:users), Unraid's default.</li>
+    <li>Apply, then open <code>http://&lt;your-unraid&gt;:3000</code> and create the admin account.</li>
+  </ol>
+  <p>For HTTPS, use what you already run on Unraid: SWAG, Nginx Proxy Manager (turn on <i>Websockets Support</i>) or the Cloudflare Tunnel container, pointing at <code>http://&lt;your-unraid&gt;:3000</code>. Then fill in <b>Public URL</b> in the template. A TURN server for voice can be set in the template's advanced view or in Hooden under <span class="ui">Admin</span> → <span class="ui">Notifications &amp; voice</span>. The <b>Appdata Backup</b> plugin covers the data.</p>
+  <p>Updates: Unraid shows an update for the container when a new version is out. Apply it from the Docker tab.</p>
+</section>
+
+<!-- ═════════════ 13 REFERENCE ═════════════ -->
+<section class="part">
+  <div class="part-head"><div class="num">13</div><div><div class="eyebrow">At a glance</div><h2>Reference</h2></div></div>
+
+  <h3>Settings in <code style="font-size:10.5pt">.env</code></h3>
+  <table>
+    <tr><th style="width:33%">Setting</th><th>What it does</th></tr>
+    <tr><td><code>TZ</code></td><td>Your time zone, such as <code>Europe/Stockholm</code> (reminders, birthdays, calendar files)</td></tr>
+    <tr><td><code>PUID</code>, <code>PGID</code></td><td>Who owns the files in <code>data</code>; what <code>id</code> shows</td></tr>
+    <tr><td><code>HOODEN_DATA</code></td><td>Where the data folder is (<code>./data</code>)</td></tr>
+    <tr><td><code>HOODEN_PORT</code></td><td>The port on the NUC (<code>3000</code>); <code>127.0.0.1:3000</code> keeps it off your network</td></tr>
+    <tr><td><code>COMPOSE_PROFILES</code></td><td>The extras to run: <code>tunnel</code>, <code>https</code>, <code>turn</code>, comma-separated</td></tr>
+    <tr><td><code>PUBLIC_URL</code></td><td>Your https address (invite links, calendar feeds, push)</td></tr>
+    <tr><td><code>CLOUDFLARE_TUNNEL_TOKEN</code></td><td>The tunnel's token (option A)</td></tr>
+    <tr><td><code>TRUSTED_IP_HEADER</code></td><td><code>cf-connecting-ip</code> behind a Cloudflare Tunnel, so login protection sees each visitor's own address</td></tr>
+    <tr><td><code>HOODEN_DOMAIN</code></td><td>Your domain, for Caddy (option B)</td></tr>
+    <tr><td><code>VOICE_TURN_URL</code>, <code>_USER</code>, <code>_PASS</code></td><td>The TURN server for voice chat</td></tr>
+    <tr><td><code>VOICE_TURN_LAN_IP</code></td><td>The NUC's own address on your network</td></tr>
+    <tr><td><code>VOICE_TURN_PUBLIC_IP</code></td><td>Your public IP, only if coturn can't look it up</td></tr>
+  </table>
+
+  <h3>Ports</h3>
+  <table>
+    <tr><th style="width:33%">Port</th><th style="width:22%">Used by</th><th>Open to</th></tr>
+    <tr><td><code>22</code> TCP</td><td>SSH</td><td>Your home network only. Never forward it in the router.</td></tr>
+    <tr><td><code>3000</code> TCP</td><td>Hooden</td><td>Your home network, or only the NUC itself (<code>127.0.0.1:3000</code>)</td></tr>
+    <tr><td><code>80</code> TCP, <code>443</code> TCP + UDP</td><td>Caddy</td><td>The internet: forward them (option B only)</td></tr>
+    <tr><td><code>3478</code> UDP + TCP, <code>49160–49200</code> UDP</td><td>coturn</td><td>The internet: forward them (voice on mobile data)</td></tr>
+  </table>
+
+  <h3>More</h3>
+  <ul>
+    <li>Source, issues and the newest version of this guide: <a href="https://github.com/svennefenne/hooden">github.com/svennefenne/hooden</a></li>
+    <li>The Docker image: <code>ghcr.io/svennefenne/hooden:latest</code> (built from <code>main</code>)</li>
+  </ul>
+</section>
+
+</body>
+</html>
