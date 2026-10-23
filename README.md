@@ -1,6 +1,6 @@
 # Hooden
 
-A closed community place for friends to hang around, chat, discuss, plan and more. Self-hosted in one
+A closed community space for friends to hang around, chat, discuss, plan and more. Self-hosted in one
 Docker container, made for a headless Intel NUC or an Unraid server, and just as much at home on a phone
 as on a big screen. It wears the retro sci-fi poster look of Deck Force (wide display type, mono eyebrows,
 glass header, a frame round the site, film grain and scene-change wipes), in any of 98 colour schemes,

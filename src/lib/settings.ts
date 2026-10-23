@@ -45,7 +45,7 @@ export interface SiteSettings {
 
 export const DEFAULTS: SiteSettings = {
   siteName: "Hooden",
-  tagline: "A closed community place for friends to hang around, chat, discuss, plan and more.",
+  tagline: "A closed community space for friends to hang around, chat, discuss, plan and more.",
   welcome: "Welcome home. Log in to see what everyone's up to.",
   footer: "HOODEN · A PLACE FOR FRIENDS",
   registration: "invite",
