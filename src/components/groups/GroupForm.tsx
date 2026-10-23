@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Send } from "lucide-react";
 import { PRIVACY } from "./privacy";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { ImagePick } from "@/components/ui/ImagePick";
 import type { GroupInfo, Privacy } from "@/lib/groups";
@@ -16,6 +16,7 @@ const COLORS = ["#2f7088", "#d65a2b", "#e2a634", "#4f8f50", "#9c5bb5", "#d4689a"
 export function GroupForm({ group }: { group?: GroupInfo }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const ed = useRef<EditorHandle>(null);
   const [name, setName] = useState(group?.name ?? "");
   const [tagline, setTagline] = useState(group?.tagline ?? "");
@@ -33,7 +34,7 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
         toast(r.error, { kind: "err" });
         return;
       }
-      toast(group ? "Saved." : "Your group is ready!");
+      toast(group ? t("Saved.") : t("Your group is ready!"));
       router.push(`/groups/${r.data}`);
       router.refresh();
     });
@@ -41,16 +42,16 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
     <div className="stack loose">
       <div className="grid-2">
         <div className="field">
-          <label htmlFor="gf-name">Name</label>
-          <input id="gf-name" className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={50} placeholder="The Board Gamers" autoFocus={!group} />
+          <label htmlFor="gf-name">{t("Name")}</label>
+          <input id="gf-name" className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={50} placeholder={t("The Board Gamers")} autoFocus={!group} />
         </div>
         <div className="field">
-          <label htmlFor="gf-tag">In a few words</label>
-          <input id="gf-tag" className="input" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={120} placeholder="Dice, cards and snacks every other Friday" />
+          <label htmlFor="gf-tag">{t("In a few words")}</label>
+          <input id="gf-tag" className="input" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={120} placeholder={t("Dice, cards and snacks every other Friday")} />
         </div>
       </div>
       <div className="field">
-        <span className="label">Who can get in</span>
+        <span className="label">{t("Who can get in")}</span>
         <div className="privacy-pick">
           {(Object.keys(PRIVACY) as Privacy[]).map((p) => {
             const P = PRIVACY[p];
@@ -58,41 +59,41 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
             return (
               <button key={p} type="button" className={`privacy-opt ${privacy === p ? "on" : ""}`} onClick={() => setPrivacy(p)} aria-pressed={privacy === p}>
                 <Icon size={20} />
-                <b>{P.label}</b>
-                <span className="tiny muted">{P.text}</span>
+                <b>{t(P.label)}</b>
+                <span className="tiny muted">{t(P.text)}</span>
               </button>
             );
           })}
         </div>
       </div>
       <div className="grid-2">
-        <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="square" label="Group picture" />
-        <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label="Banner across the top" />
+        <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="square" label={t("Group picture")} />
+        <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label={t("Banner across the top")} />
       </div>
       <div className="field">
-        <span className="label">Colour</span>
+        <span className="label">{t("Colour")}</span>
         <div className="swatches">
           {COLORS.map((c) => (
             <button key={c} type="button" className={`swatch ${color === c ? "on" : ""}`} style={{ background: c, width: 32, height: 32 }} onClick={() => setColor(c)} aria-label={c} />
           ))}
-          <input type="color" className="swatch-input" value={color} onChange={(e) => setColor(e.target.value)} aria-label="Any colour" />
+          <input type="color" className="swatch-input" value={color} onChange={(e) => setColor(e.target.value)} aria-label={t("Any colour")} />
         </div>
       </div>
       <div className="field">
-        <span className="label">About the group</span>
-        <RichEditor ref={ed} initial={group?.descriptionHtml} placeholder="What's it for? Any house rules?" minHeight={120} />
+        <span className="label">{t("About the group")}</span>
+        <RichEditor ref={ed} initial={group?.descriptionHtml} placeholder={t("What's it for? Any house rules?")} minHeight={120} />
       </div>
       {!group ? (
         <label className="check">
-          <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} /> Give the group its own chat room (with voice)
+          <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} /> {t("Give the group its own chat room (with voice)")}
         </label>
       ) : null}
       <div className="row" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-ghost" onClick={() => router.back()}>
-          Cancel
+          {t("Cancel")}
         </button>
         <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={submit}>
-          <Send size={16} /> {group ? "Save" : "Start the group"}
+          <Send size={16} /> {group ? t("Save") : t("Start the group")}
         </button>
       </div>
     </div>

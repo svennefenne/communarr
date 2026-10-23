@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, Plus, Send, Trash2 } from "lucide-react";
-import { useToast } from "@/components/app/AppProvider";
+import { useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import type { PollView } from "@/lib/contentTypes";
 import { createPollAction, updatePollAction } from "@/app/actions/content";
@@ -17,14 +17,15 @@ export function toLocalInput(t: number | null | undefined) {
 }
 
 const QUICK_CLOSE: [string, number][] = [
-  ["1 hour", 3600_000],
-  ["1 day", 86_400_000],
-  ["3 days", 3 * 86_400_000],
-  ["1 week", 7 * 86_400_000],
+  ["in 1 hour", 3600_000],
+  ["in 1 day", 86_400_000],
+  ["in 3 days", 3 * 86_400_000],
+  ["in 1 week", 7 * 86_400_000],
 ];
 
 export function PollForm({ groups, poll, groupId }: { groups: { id: number; name: string }[]; poll?: PollView; groupId?: number }) {
   const router = useRouter();
+  const t = useT();
   const toast = useToast();
   const ed = useRef<EditorHandle>(null);
   const [question, setQuestion] = useState(poll?.question ?? "");
@@ -78,15 +79,15 @@ export function PollForm({ groups, poll, groupId }: { groups: { id: number; name
   return (
     <div className="stack loose">
       <div className="field">
-        <label htmlFor="pf-q">Question</label>
-        <input id="pf-q" className="input" value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={200} placeholder="Pizza or tacos on Friday?" autoFocus={!poll} style={{ fontSize: "1.1rem", fontWeight: 700 }} />
+        <label htmlFor="pf-q">{t("Question")}</label>
+        <input id="pf-q" className="input" value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={200} placeholder={t("Pizza or tacos on Friday?")} autoFocus={!poll} style={{ fontSize: "1.1rem", fontWeight: 700 }} />
       </div>
       <div className="field">
-        <span className="label">More about it (optional)</span>
-        <RichEditor ref={ed} variant="compact" showToolbar initial={poll?.html} placeholder="Details, links, pictures…" minHeight={70} draftKey={poll ? undefined : "poll"} />
+        <span className="label">{t("More about it (optional)")}</span>
+        <RichEditor ref={ed} variant="compact" showToolbar initial={poll?.html} placeholder={t("Details, links, pictures…")} minHeight={70} draftKey={poll ? undefined : "poll"} />
       </div>
       <div className="field">
-        <span className="label">Choices</span>
+        <span className="label">{t("Choices")}</span>
         <div className="stack tight">
           {options.map((o, i) => (
             <div key={i} className="poll-edit-row">
@@ -96,7 +97,7 @@ export function PollForm({ groups, poll, groupId }: { groups: { id: number; name
                 value={o}
                 onChange={(e) => setOpt(i, e.target.value)}
                 maxLength={120}
-                placeholder={`Choice ${i + 1}`}
+                placeholder={t("Choice {n}", { n: i + 1 })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -105,10 +106,10 @@ export function PollForm({ groups, poll, groupId }: { groups: { id: number; name
                   }
                 }}
               />
-              <button type="button" className="icon-btn sm" onClick={() => move(i, -1)} disabled={!i} aria-label="Up">
+              <button type="button" className="icon-btn sm" onClick={() => move(i, -1)} disabled={!i} aria-label={t("Up")}>
                 <ArrowUp size={15} />
               </button>
-              <button type="button" className="icon-btn sm" onClick={() => move(i, 1)} disabled={i === options.length - 1} aria-label="Down">
+              <button type="button" className="icon-btn sm" onClick={() => move(i, 1)} disabled={i === options.length - 1} aria-label={t("Down")}>
                 <ArrowDown size={15} />
               </button>
               <button
@@ -116,8 +117,8 @@ export function PollForm({ groups, poll, groupId }: { groups: { id: number; name
                 className="icon-btn sm"
                 onClick={() => setOptions((x) => x.filter((_, j) => j !== i))}
                 disabled={options.length <= 2 || lockedOptions.has(o)}
-                aria-label="Remove"
-                title={lockedOptions.has(o) ? "People voted for this one" : "Remove"}
+                aria-label={t("Remove")}
+                title={t(lockedOptions.has(o) ? "People voted for this one" : "Remove")}
               >
                 <Trash2 size={15} />
               </button>
@@ -125,63 +126,63 @@ export function PollForm({ groups, poll, groupId }: { groups: { id: number; name
           ))}
           {options.length < 30 ? (
             <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setOptions((x) => [...x, ""])}>
-              <Plus size={15} /> Add a choice
+              <Plus size={15} /> {t("Add a choice")}
             </button>
           ) : null}
         </div>
       </div>
       <div className="grid-2">
         <div className="stack tight">
-          <span className="label">Voting</span>
+          <span className="label">{t("Voting")}</span>
           <label className="check">
-            <input type="checkbox" checked={multiple} onChange={(e) => setMultiple(e.target.checked)} /> People can pick more than one
+            <input type="checkbox" checked={multiple} onChange={(e) => setMultiple(e.target.checked)} /> {t("People can pick more than one")}
           </label>
           {multiple ? (
             <label className="row small" style={{ paddingLeft: 27 }}>
-              At most
-              <input type="number" className="input sm" style={{ width: 80 }} min={0} max={30} value={max || ""} onChange={(e) => setMax(Number(e.target.value))} placeholder="any" />
+              {t("At most")}
+              <input type="number" className="input sm" style={{ width: 80 }} min={0} max={30} value={max || ""} onChange={(e) => setMax(Number(e.target.value))} placeholder={t("any")} />
             </label>
           ) : null}
           <label className="check">
-            <input type="checkbox" checked={allowChange} onChange={(e) => setAllowChange(e.target.checked)} /> People can change their vote
+            <input type="checkbox" checked={allowChange} onChange={(e) => setAllowChange(e.target.checked)} /> {t("People can change their vote")}
           </label>
           <label className="check">
-            <input type="checkbox" checked={allowAdd} onChange={(e) => setAllowAdd(e.target.checked)} /> Anyone can add choices
+            <input type="checkbox" checked={allowAdd} onChange={(e) => setAllowAdd(e.target.checked)} /> {t("Anyone can add choices")}
           </label>
           <label className="check">
-            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} disabled={poll?.anonymous} /> Anonymous: nobody sees who voted for what
+            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} disabled={poll?.anonymous} /> {t("Anonymous: nobody sees who voted for what")}
           </label>
         </div>
         <div className="stack tight">
           <div className="field">
-            <label htmlFor="pf-results">Show the results</label>
+            <label htmlFor="pf-results">{t("Show the results")}</label>
             <select id="pf-results" className="select" value={results} onChange={(e) => setResults(e.target.value as PollView["results"])}>
-              <option value="always">All the time</option>
-              <option value="after_vote">Once you&apos;ve voted</option>
-              <option value="after_close">When the poll closes</option>
+              <option value="always">{t("All the time")}</option>
+              <option value="after_vote">{t("Once you've voted")}</option>
+              <option value="after_close">{t("When the poll closes")}</option>
             </select>
           </div>
           <div className="field">
-            <label htmlFor="pf-close">Closes (optional)</label>
+            <label htmlFor="pf-close">{t("Closes (optional)")}</label>
             <input id="pf-close" type="datetime-local" className="input" value={closes} onChange={(e) => setCloses(e.target.value)} />
             <div className="chip-row">
               {QUICK_CLOSE.map(([l, ms]) => (
                 <button key={l} type="button" className="pill soft" onClick={() => setCloses(toLocalInput(Date.now() + ms))}>
-                  in {l}
+                  {t(l)}
                 </button>
               ))}
               {closes ? (
                 <button type="button" className="pill soft" onClick={() => setCloses("")}>
-                  never
+                  {t("never")}
                 </button>
               ) : null}
             </div>
           </div>
           {!poll && groups.length ? (
             <div className="field">
-              <label htmlFor="pf-group">Where</label>
+              <label htmlFor="pf-group">{t("Where")}</label>
               <select id="pf-group" className="select" value={group} onChange={(e) => setGroup(e.target.value ? Number(e.target.value) : "")}>
-                <option value="">Everyone</option>
+                <option value="">{t("Everyone")}</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.name}
@@ -194,10 +195,10 @@ export function PollForm({ groups, poll, groupId }: { groups: { id: number; name
       </div>
       <div className="row" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-ghost" onClick={() => router.back()}>
-          Cancel
+          {t("Cancel")}
         </button>
         <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={submit}>
-          <Send size={16} /> {poll ? "Save" : "Ask"}
+          <Send size={16} /> {t(poll ? "Save" : "Ask")}
         </button>
       </div>
     </div>

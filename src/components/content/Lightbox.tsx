@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
 
 /** Pictures big, one at a time: arrows or swipes for the next, Escape or a tap outside to close. */
 export function Lightbox() {
+  const t = useT();
   const [state, setState] = useState<{ images: { src: string; alt: string }[]; index: number } | null>(null);
   const touch = useRef<number | null>(null);
   useEffect(() => {
@@ -38,7 +40,7 @@ export function Lightbox() {
       className="lightbox"
       role="dialog"
       aria-modal="true"
-      aria-label="Picture"
+      aria-label={t("Picture")}
       onClick={(e) => e.target === e.currentTarget && setState(null)}
       onTouchStart={(e) => (touch.current = e.touches.length === 1 ? e.touches[0].clientX : null)}
       onTouchEnd={(e) => {
@@ -50,19 +52,19 @@ export function Lightbox() {
     >
       <img src={img.src} alt={img.alt} />
       <div className="lb-bar">
-        <a className="icon-btn" href={img.src} target="_blank" rel="noopener" aria-label="Open the picture on its own">
+        <a className="icon-btn" href={img.src} target="_blank" rel="noopener" aria-label={t("Open the picture on its own")}>
           <ExternalLink size={18} />
         </a>
-        <button type="button" className="icon-btn" onClick={() => setState(null)} aria-label="Close">
+        <button type="button" className="icon-btn" onClick={() => setState(null)} aria-label={t("Close")}>
           <X size={20} />
         </button>
       </div>
       {n > 1 ? (
         <>
-          <button type="button" className="icon-btn" style={{ position: "absolute", left: 10, top: "50%", background: "rgb(255 255 255 / .12)", color: "#fff" }} onClick={() => step(-1)} aria-label="Previous">
+          <button type="button" className="icon-btn" style={{ position: "absolute", left: 10, top: "50%", background: "rgb(255 255 255 / .12)", color: "#fff" }} onClick={() => step(-1)} aria-label={t("Previous")}>
             <ChevronLeft size={22} />
           </button>
-          <button type="button" className="icon-btn" style={{ position: "absolute", right: 10, top: "50%", background: "rgb(255 255 255 / .12)", color: "#fff" }} onClick={() => step(1)} aria-label="Next">
+          <button type="button" className="icon-btn" style={{ position: "absolute", right: 10, top: "50%", background: "rgb(255 255 255 / .12)", color: "#fff" }} onClick={() => step(1)} aria-label={t("Next")}>
             <ChevronRight size={22} />
           </button>
         </>

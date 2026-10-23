@@ -179,13 +179,13 @@ export function createPost(u: User, o: PostInput): number {
   const row = postRow(id)!;
   const mentioned = usersWho(mentionPeople(c.mentions, [u.id]), (x) => canSeePost(x, row));
   const preview = title || c.text.slice(0, 140);
-  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a post`, body: preview, url });
+  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: "{name} mentioned you in a post", body: "{text}", vars: { name: u.name, text: preview }, url });
   if (kind === "news" && o.notifyAll !== false) {
     const all = (db().prepare("select id from users where banned = 0").all() as { id: number }[]).map((r) => r.id);
-    notify(all.filter((x) => !mentioned.includes(x)), { kind: "news", actorId: u.id, title: `📣 ${title}`, body: c.text.slice(0, 160), url });
+    notify(all.filter((x) => !mentioned.includes(x)), { kind: "news", actorId: u.id, title: "📣 {title}", body: "{text}", vars: { title, text: c.text.slice(0, 160) }, url });
   } else if (groupId) {
     const g = groupRow(groupId)!;
-    notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: `${u.name} posted in ${g.name}`, body: preview, url });
+    notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: "{name} posted in {group}", body: "{text}", vars: { name: u.name, group: g.name, text: preview }, url });
   }
   broadcast("feed", { type: kind, id, by: u.id, group: groupId });
   return id;
@@ -207,7 +207,7 @@ export function updatePost(u: User, id: number, o: PostInput) {
   const before = new Set([...r.body_html.matchAll(/data-type="mention"[^>]*data-id="([^"]+)"/g)].map((m) => m[1]));
   const after = postRow(id)!;
   const fresh = usersWho(mentionPeople(c.mentions.filter((m) => !before.has(m)), [u.id]), (x) => canSeePost(x, after));
-  if (fresh.length && visibility !== "private") notify(fresh, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in a post`, body: title || c.text.slice(0, 140), url: `/posts/${id}` });
+  if (fresh.length && visibility !== "private") notify(fresh, { kind: "mention", actorId: u.id, title: "{name} mentioned you in a post", body: "{text}", vars: { name: u.name, text: title || c.text.slice(0, 140) }, url: `/posts/${id}` });
 }
 
 export function deletePost(u: User, id: number) {

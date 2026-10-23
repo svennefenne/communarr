@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Check, Clock, EyeOff, Lock, MessageSquare, Plus, RotateCcw, Vote } from "lucide-react";
 import type { PollView } from "@/lib/contentTypes";
-import { useLive, useMe, useToast } from "@/components/app/AppProvider";
+import { useLive, useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserLink } from "@/components/ui/Avatar";
 import { relative, Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
@@ -19,6 +19,7 @@ import { addOptionAction, closePollAction, deletePollAction, pollAction, saveAct
 /** A poll: vote right here, see how it's going, and talk about it. */
 export function PollCard({ poll, full = false }: { poll: PollView; full?: boolean }) {
   const me = useMe();
+  const t = useT();
   const toast = useToast();
   const router = useRouter();
   const [p, setP] = useState(poll);
@@ -67,7 +68,7 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
         </span>
         <div className="grow" style={{ minWidth: 0 }}>
           <div className="row wrap" style={{ gap: "2px 8px" }}>
-            <span className="small muted">Poll by</span> <UserLink user={p.author} />
+            <span className="small muted">{t("Poll by")}</span> <UserLink user={p.author} />
             {p.group ? <GroupChip g={p.group} /> : null}
           </div>
           <div className="tiny muted">
@@ -78,7 +79,7 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
           url={`/polls/${p.id}`}
           onSave={async () => {
             const r = await saveAction("poll", p.id);
-            if (r.ok) toast(r.data ? "Saved." : "Taken out of Saved.");
+            if (r.ok) toast(t(r.data ? "Saved." : "Taken out of Saved."));
           }}
           onEdit={p.canEdit ? () => router.push(`/polls/${p.id}/edit`) : undefined}
           extra={
@@ -92,14 +93,14 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
                   if (r.ok && r.data) setP(r.data);
                 }}
               >
-                {p.closed ? <RotateCcw size={16} /> : <Lock size={16} />} {p.closed ? "Open the poll again" : "Close the poll now"}
+                {p.closed ? <RotateCcw size={16} /> : <Lock size={16} />} {t(p.closed ? "Open the poll again" : "Close the poll now")}
               </button>
             ) : null
           }
           onDelete={
             p.canEdit
               ? () =>
-                  confirm("Delete this poll with its votes and comments?", "Delete", async () => {
+                  confirm(t("Delete this poll with its votes and comments?"), t("Delete"), async () => {
                     const r = await deletePollAction(p.id);
                     if (r.ok) {
                       setGone(true);
@@ -123,7 +124,7 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
           <RichText html={p.html} fold={full ? 0 : 220} />
         </div>
       ) : null}
-      <div className="poll-options" role={voting ? "group" : undefined} aria-label="Choices">
+      <div className="poll-options" role={voting ? "group" : undefined} aria-label={t("Choices")}>
         {p.options.map((o) => {
           const pct = total ? Math.round((o.votes / total) * 100) : 0;
           const sel = voting ? picked.includes(o.id) : o.mine;
@@ -158,9 +159,9 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
       {voting && p.multiple ? (
         <div className="row" style={{ marginTop: 10 }}>
           <button type="button" className={`btn btn-primary btn-sm ${pending ? "loading" : ""}`} disabled={!picked.length} onClick={() => submit(picked)}>
-            <Check size={15} /> Vote
+            <Check size={15} /> {t("Vote")}
           </button>
-          <span className="small muted">{p.maxChoices ? `Pick up to ${p.maxChoices}` : "Pick as many as you like"}</span>
+          <span className="small muted">{p.maxChoices ? t("Pick up to {n}", { n: p.maxChoices }) : t("Pick as many as you like")}</span>
         </div>
       ) : null}
       {p.allowAdd && !p.closed ? (
@@ -178,39 +179,37 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
             });
           }}
         >
-          <input className="input sm" value={adding} onChange={(e) => setAdding(e.target.value)} placeholder="Add a choice…" maxLength={120} />
+          <input className="input sm" value={adding} onChange={(e) => setAdding(e.target.value)} placeholder={t("Add a choice…")} maxLength={120} />
           <button type="submit" className="btn btn-sm" disabled={!adding.trim()}>
-            <Plus size={15} /> Add
+            <Plus size={15} /> {t("Add")}
           </button>
         </form>
       ) : null}
       <div className="poll-meta small muted">
-        <span>
-          {p.totalVoters} {p.totalVoters === 1 ? "vote" : "votes"}
-        </span>
+        <span>{t.n(p.totalVoters, "{n} vote", "{n} votes")}</span>
         {p.closed ? (
           <span className="pill danger">
-            <Lock size={11} /> Closed
+            <Lock size={11} /> {t("Closed")}
           </span>
         ) : p.closesAt ? (
           <span className="row" style={{ gap: 4 }} suppressHydrationWarning>
-            <Clock size={13} /> closes {relative(p.closesAt)}
+            <Clock size={13} /> {t("closes {when}", { when: relative(p.closesAt) })}
           </span>
         ) : null}
         {p.anonymous ? (
           <span className="row" style={{ gap: 4 }}>
-            <EyeOff size={13} /> anonymous
+            <EyeOff size={13} /> {t("anonymous")}
           </span>
         ) : null}
-        {!p.showResults ? <span>Results show {p.results === "after_vote" ? "once you've voted" : "when it closes"}</span> : null}
+        {!p.showResults ? <span>{t(p.results === "after_vote" ? "Results show once you've voted" : "Results show when it closes")}</span> : null}
         {p.voted && !p.closed && p.allowChange && !changing ? (
           <button type="button" className="btn btn-ghost btn-xs" onClick={() => setChanging(true)}>
-            Change my vote
+            {t("Change my vote")}
           </button>
         ) : null}
         {changing ? (
           <button type="button" className="btn btn-ghost btn-xs" onClick={() => setChanging(false)}>
-            Keep my vote
+            {t("Keep my vote")}
           </button>
         ) : null}
       </div>
@@ -218,7 +217,7 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
         <Reactions type="poll" id={p.id} initial={p.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => !o)}>
-          <MessageSquare size={16} /> {count ? `${count} ${count === 1 ? "comment" : "comments"}` : "Comment"}
+          <MessageSquare size={16} /> {count ? t.n(count, "{n} comment", "{n} comments") : t("Comment{verb}", { verb: "" })}
         </button>
       </footer>
       {open ? <Comments type="poll" id={p.id} onCount={setCount} /> : null}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Bell, CalendarDays, Database, Flag, Mail, MessageCircle, FileText, UserCheck, Users, UsersRound } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
 
 export interface OverviewData {
   members: number;
@@ -43,6 +44,7 @@ function Tile({ icon, label, value, sub, href, alert }: { icon: React.ReactNode;
 
 /** Activity per day: one bar per day (everything people wrote), the parts in its tooltip. */
 function ActivityChart({ days }: { days: DayActivity[] }) {
+  const t = useT();
   const [hover, setHover] = useState<number | null>(null);
   const [table, setTable] = useState(false);
   const totals = days.map((d) => d.posts + d.forum + d.messages + d.comments);
@@ -55,17 +57,17 @@ function ActivityChart({ days }: { days: DayActivity[] }) {
   const pad = { l: 30, r: 6, t: 8, b: 22 };
   const bw = (W - pad.l - pad.r) / days.length;
   const y = (v: number) => pad.t + (H - pad.t - pad.b) * (1 - v / top);
-  const label = (d: string) => new Date(`${d}T12:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const label = (d: string) => new Date(`${d}T12:00`).toLocaleDateString(t.locale, { day: "numeric", month: "short" });
   const h = hover != null ? days[hover] : null;
   return (
     <div className="panel panel-pad activity">
       <div className="row between wrap">
         <div>
-          <b>Activity, last 30 days</b>
-          <div className="tiny muted">Posts, forum posts, chat messages and comments per day</div>
+          <b>{t("Activity, last 30 days")}</b>
+          <div className="tiny muted">{t("Posts, forum posts, chat messages and comments per day")}</div>
         </div>
-        <button type="button" className="btn btn-ghost btn-xs" onClick={() => setTable((t) => !t)}>
-          {table ? "Show the chart" : "Show as a table"}
+        <button type="button" className="btn btn-ghost btn-xs" onClick={() => setTable((v) => !v)}>
+          {table ? t("Show the chart") : t("Show as a table")}
         </button>
       </div>
       {table ? (
@@ -73,11 +75,11 @@ function ActivityChart({ days }: { days: DayActivity[] }) {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Day</th>
-                <th>Posts</th>
-                <th>Forum</th>
-                <th>Chat</th>
-                <th>Comments</th>
+                <th>{t("Day")}</th>
+                <th>{t("Posts")}</th>
+                <th>{t("Forum")}</th>
+                <th>{t("Chat")}</th>
+                <th>{t("Comments")}</th>
               </tr>
             </thead>
             <tbody>
@@ -95,7 +97,7 @@ function ActivityChart({ days }: { days: DayActivity[] }) {
         </div>
       ) : (
         <div className="activity-plot" onMouseLeave={() => setHover(null)}>
-          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Activity per day for the last 30 days">
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={t("Activity per day for the last 30 days")}>
             {[0, 1, 2, 3, 4].map((i) => (
               <g key={i}>
                 <line x1={pad.l} x2={W - pad.r} y1={y(i * step)} y2={y(i * step)} className="grid" />
@@ -127,9 +129,9 @@ function ActivityChart({ days }: { days: DayActivity[] }) {
           {h && hover != null ? (
             <div className="chart-tip" style={{ left: `${((pad.l + (hover + 0.5) * bw) / W) * 100}%` }}>
               <b>{label(h.day)}</b>
-              <span>{totals[hover]} in all</span>
+              <span>{t("{n} in all", { n: totals[hover] })}</span>
               <span className="muted">
-                {h.posts} posts · {h.forum} forum · {h.messages} chat · {h.comments} comments
+                {t("{posts} posts · {forum} forum · {chat} chat · {comments} comments", { posts: h.posts, forum: h.forum, chat: h.messages, comments: h.comments })}
               </span>
             </div>
           ) : null}
@@ -140,19 +142,20 @@ function ActivityChart({ days }: { days: DayActivity[] }) {
 }
 
 export function Overview({ o, days, isAdmin }: { o: OverviewData; days: DayActivity[]; isAdmin: boolean }) {
+  const t = useT();
   return (
     <div className="stack">
       <div className="stat-grid">
-        <Tile icon={<Users size={18} />} label="Members" value={o.members} sub={`${o.online} here now`} href="#members" />
-        <Tile icon={<UserCheck size={18} />} label="Waiting to get in" value={o.pending} href="#members" alert={o.pending > 0} />
-        <Tile icon={<Flag size={18} />} label="Open reports" value={o.reports} href="#reports" alert={o.reports > 0} />
-        <Tile icon={<FileText size={18} />} label="Posts this week" value={o.postsWeek} sub="posts, threads and replies" href="#content" />
-        <Tile icon={<MessageCircle size={18} />} label="Chat this week" value={o.messagesWeek} sub={`${o.rooms} rooms`} href="#rooms" />
-        <Tile icon={<CalendarDays size={18} />} label="Coming up" value={o.upcoming} sub={`${o.openPolls} open polls`} href="/calendar" />
-        {isAdmin ? <Tile icon={<Mail size={18} />} label="Invite links" value={o.invites} sub="that still work" href="#invites" /> : null}
-        {isAdmin ? <Tile icon={<Bell size={18} />} label="Push devices" value={o.devices} href="#notifications" /> : null}
-        {isAdmin ? <Tile icon={<Database size={18} />} label="Storage" value={bytes(o.dbBytes + o.uploadBytes)} sub={`${bytes(o.uploadBytes)} pictures`} href="#system" /> : null}
-        <Tile icon={<UsersRound size={18} />} label="Groups" value={o.groups} href="#rooms" />
+        <Tile icon={<Users size={18} />} label={t("Members")} value={o.members} sub={t("{n} here now", { n: o.online })} href="#members" />
+        <Tile icon={<UserCheck size={18} />} label={t("Waiting to get in")} value={o.pending} href="#members" alert={o.pending > 0} />
+        <Tile icon={<Flag size={18} />} label={t("Open reports")} value={o.reports} href="#reports" alert={o.reports > 0} />
+        <Tile icon={<FileText size={18} />} label={t("Posts this week")} value={o.postsWeek} sub={t("posts, threads and replies")} href="#content" />
+        <Tile icon={<MessageCircle size={18} />} label={t("Chat this week")} value={o.messagesWeek} sub={t.n(o.rooms, "{n} room", "{n} rooms")} href="#rooms" />
+        <Tile icon={<CalendarDays size={18} />} label={t("Coming up")} value={o.upcoming} sub={t.n(o.openPolls, "{n} open poll", "{n} open polls")} href="/calendar" />
+        {isAdmin ? <Tile icon={<Mail size={18} />} label={t("Invite links")} value={o.invites} sub={t("that still work")} href="#invites" /> : null}
+        {isAdmin ? <Tile icon={<Bell size={18} />} label={t("Push devices")} value={o.devices} href="#notifications" /> : null}
+        {isAdmin ? <Tile icon={<Database size={18} />} label={t("Storage")} value={bytes(o.dbBytes + o.uploadBytes)} sub={t("{size} pictures", { size: bytes(o.uploadBytes) })} href="#system" /> : null}
+        <Tile icon={<UsersRound size={18} />} label={t("Groups")} value={o.groups} href="#rooms" />
       </div>
       <ActivityChart days={days} />
     </div>

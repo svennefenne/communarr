@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Info, Megaphone, PartyPopper, TriangleAlert, X } from "lucide-react";
-import { useApp } from "@/components/app/AppProvider";
+import { useApp, useT } from "@/components/app/AppProvider";
 import { isBare } from "./nav";
 
 /** The admin's announcement under the header (Admin → Look). Each one can be closed once. */
 export function Announcement() {
   const { site, me } = useApp();
+  const t = useT();
   const pathname = usePathname();
   const a = site.announcement;
   const [hidden, setHidden] = useState(true);
@@ -32,7 +33,7 @@ export function Announcement() {
         <button
           type="button"
           className="icon-btn xs"
-          aria-label="Hide"
+          aria-label={t("Hide")}
           onClick={() => {
             setHidden(true);
             try {

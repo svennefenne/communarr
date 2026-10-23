@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
 
 /** "Back" above a page's title (Deck Force's Back pill): one step back in the site, or to `href`. */
-export function BackPill({ href, label = "Back" }: { href: string; label?: string }) {
+export function BackPill({ href, label }: { href: string; label?: string }) {
+  const t = useT();
   const router = useRouter();
   return (
     <div className="back-row">
@@ -17,7 +19,7 @@ export function BackPill({ href, label = "Back" }: { href: string; label?: strin
           else router.push(href);
         }}
       >
-        <ChevronLeft size={15} /> {label}
+        <ChevronLeft size={15} /> {label ?? t("Back")}
       </button>
     </div>
   );

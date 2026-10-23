@@ -26,7 +26,7 @@ export function birthdayPings() {
   for (const p of people) {
     notify(
       everyone.filter((id) => id !== p.id),
-      { kind: "event", title: `🎂 It's ${p.display_name}'s birthday today!`, body: "Say happy birthday!", url: `/u/${encodeURIComponent(p.username)}`, tag: `bday-${p.id}` },
+      { kind: "event", title: "🎂 It's {name}'s birthday today!", body: "Say happy birthday!", vars: { name: p.display_name }, url: `/u/${encodeURIComponent(p.username)}`, tag: `bday-${p.id}` },
     );
   }
 }

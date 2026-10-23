@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { dmRoom } from "@/lib/chat";
+import { requestT } from "@/lib/t";
 import { Empty } from "@/components/ui/ui";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +20,11 @@ export default async function ChatIndex({ searchParams }: { searchParams: Promis
     }
     if (id) redirect(`/chat/${id}`);
   }
+  const t = await requestT();
   return (
     <section className="panel chat-room chat-empty">
-      <Empty icon={<MessageCircle size={26} />} title="Pick a chat">
-        Choose a room or a person on the left, or start something new with the buttons at the top. Every room has a voice channel: press the headphones to talk.
+      <Empty icon={<MessageCircle size={26} />} title={t("Pick a chat")}>
+        {t("Choose a room or a person on the left, or start something new with the buttons at the top. Every room has a voice channel: press the headphones to talk.")}
       </Empty>
     </section>
   );

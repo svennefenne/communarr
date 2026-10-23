@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
 
 const KEY = "hd.adminFolded";
 
@@ -54,10 +55,11 @@ export function Section({ id, title, icon, hint, children, badge }: { id: string
 
 /** Save a group of settings: a button that says when it's done. */
 export function SaveBar({ onSave, pending }: { onSave: () => void; pending: boolean }) {
+  const t = useT();
   return (
     <div className="row" style={{ justifyContent: "flex-end", marginTop: 6 }}>
       <button type="button" className={`btn btn-primary btn-sm ${pending ? "loading" : ""}`} onClick={onSave}>
-        Save
+        {t("Save")}
       </button>
     </div>
   );

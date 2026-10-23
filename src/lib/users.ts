@@ -2,7 +2,8 @@ import "server-only";
 import { db } from "./db";
 import type { NotifyKind, NotifyPrefs, Presence, Role, ThemePrefs, UserSummary } from "./types";
 import { NOTIFY_KINDS } from "./types";
-import { getSettings } from "./settings";
+import { getSetting, getSettings } from "./settings";
+import { makeT } from "./i18n";
 
 export interface UserRow {
   id: number;
@@ -155,7 +156,19 @@ export function usersWho(ids: Iterable<number>, check: (u: User) => boolean): nu
   });
 }
 
-export const GHOST: UserSummary = { id: 0, username: "ghost", name: "Former member", avatar: null, accent: "#6b7280", role: "member", statusText: "", statusEmoji: "" };
+export const GHOST: UserSummary = {
+  id: 0,
+  username: "ghost",
+  // read when it's shown, in the site's language (not via ./t: that imports auth, which imports this)
+  get name() {
+    return makeT(getSetting("language"))("Former member");
+  },
+  avatar: null,
+  accent: "#6b7280",
+  role: "member",
+  statusText: "",
+  statusEmoji: "",
+};
 
 export function allMembers(): UserSummary[] {
   const rows = db().prepare("select * from users where banned = 0 order by display_name collate nocase").all() as UserRow[];

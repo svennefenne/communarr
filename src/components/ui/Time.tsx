@@ -1,21 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { clientT } from "@/lib/i18n";
 
 /** Dates in the reader's own time zone and words ("5 min ago"), formatted in the browser. */
 
 export function relative(t: number, nowMs = Date.now()): string {
+  const tr = clientT();
   const s = Math.round((nowMs - t) / 1000);
   const future = s < 0;
   const a = Math.abs(s);
-  const fmt = (n: number, unit: string) => (future ? `in ${n} ${unit}` : `${n} ${unit} ago`);
-  if (a < 45) return future ? "in a moment" : "just now";
-  if (a < 3600) return fmt(Math.round(a / 60), "min");
-  if (a < 86400) return fmt(Math.round(a / 3600), Math.round(a / 3600) === 1 ? "hour" : "hours");
+  if (a < 45) return future ? tr("in a moment") : tr("just now");
+  if (a < 3600) {
+    const n = Math.round(a / 60);
+    return future ? tr("in {n} min", { n }) : tr("{n} min ago", { n });
+  }
+  if (a < 86400) {
+    const n = Math.round(a / 3600);
+    return future ? tr.n(n, "in {n} hour", "in {n} hours") : tr.n(n, "{n} hour ago", "{n} hours ago");
+  }
   if (a < 7 * 86400) {
-    const d = Math.round(a / 86400);
-    if (d === 1) return future ? "tomorrow" : "yesterday";
-    return fmt(d, "days");
+    const n = Math.round(a / 86400);
+    if (n === 1) return future ? tr("tomorrow") : tr("yesterday");
+    return future ? tr("in {n} days", { n }) : tr("{n} days ago", { n });
   }
   return dateLabel(t);
 }
@@ -23,19 +30,19 @@ export function relative(t: number, nowMs = Date.now()): string {
 export function dateLabel(t: number) {
   const d = new Date(t);
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
+  return d.toLocaleDateString(clientT().locale, { day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
 export function timeLabel(t: number) {
-  return new Date(t).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return new Date(t).toLocaleTimeString(clientT().locale, { hour: "2-digit", minute: "2-digit" });
 }
 
 export function dateTimeLabel(t: number) {
-  return new Date(t).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(t).toLocaleString(clientT().locale, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 export function fullLabel(t: number) {
-  return new Date(t).toLocaleString(undefined, { dateStyle: "full", timeStyle: "short" });
+  return new Date(t).toLocaleString(clientT().locale, { dateStyle: "full", timeStyle: "short" });
 }
 
 type Mode = "relative" | "date" | "time" | "datetime" | "full" | "day";
@@ -51,7 +58,7 @@ function format(t: number, mode: Mode) {
     case "full":
       return fullLabel(t);
     case "day":
-      return new Date(t).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+      return new Date(t).toLocaleDateString(clientT().locale, { weekday: "long", day: "numeric", month: "long" });
     default:
       return relative(t);
   }

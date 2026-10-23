@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, KeyRound, MonitorSmartphone, Palette, UserRound } from "lucide-react";
+import { useT } from "@/components/app/AppProvider";
 
 const TABS = [
   ["/settings", "Profile", UserRound],
@@ -13,12 +14,13 @@ const TABS = [
 ] as const;
 
 export function SettingsTabs() {
+  const t = useT();
   const pathname = usePathname();
   return (
     <nav className="tabs">
       {TABS.map(([href, label, Icon]) => (
         <Link key={href} href={href} className={pathname === href || (href !== "/settings" && pathname.startsWith(href)) ? "active" : ""}>
-          <Icon size={15} /> {label}
+          <Icon size={15} /> {t(label)}
         </Link>
       ))}
     </nav>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, CalendarDays, FileText, Layers, MessagesSquare, Newspaper, Vote } from "lucide-react";
 import type { FeedFilter, FeedItem } from "@/lib/contentTypes";
-import { useApp, useLive } from "@/components/app/AppProvider";
+import { useApp, useLive, useT } from "@/components/app/AppProvider";
 import { Empty } from "@/components/ui/ui";
 import { PostCard } from "./PostCard";
 import { PollCard } from "./PollCard";
@@ -56,6 +56,7 @@ export function Feed({
   authorId?: number;
 }) {
   const { site, me } = useApp();
+  const t = useT();
   const [filter, setFilter] = useState<FeedFilter>(initialFilter);
   const [items, setItems] = useState(initial.items);
   const [next, setNext] = useState(initial.next);
@@ -118,12 +119,12 @@ export function Feed({
         />
       ) : null}
       {showFilters ? (
-        <div className="pills scroll feed-filters" role="tablist" aria-label="Show">
+        <div className="pills scroll feed-filters" role="tablist" aria-label={t("Show")}>
           {filters.map((f) => {
             const Icon = f.icon;
             return (
               <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} className={`pill ${filter === f.id ? "active" : ""}`} onClick={() => choose(f.id)}>
-                <Icon size={14} /> {f.label}
+                <Icon size={14} /> {t(f.label)}
               </button>
             );
           })}
@@ -139,7 +140,7 @@ export function Feed({
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         >
-          <ArrowUp size={15} /> {fresh} new {fresh === 1 ? "thing" : "things"}
+          <ArrowUp size={15} /> {t.n(fresh, "{n} new thing", "{n} new things")}
         </button>
       ) : null}
       <div className={`stack feed-list ${loading && !items.length ? "loading" : ""}`}>
@@ -147,8 +148,8 @@ export function Feed({
           <FeedItemView key={keyOf(i)} item={i} />
         ))}
         {!items.length && !loading ? (
-          <Empty icon={<Layers size={24} />} title="Nothing here yet">
-            {filter === "all" ? "Say something! Everything people post, plan and ask shows up here." : "Nothing of this kind yet."}
+          <Empty icon={<Layers size={24} />} title={t("Nothing here yet")}>
+            {t(filter === "all" ? "Say something! Everything people post, plan and ask shows up here." : "Nothing of this kind yet.")}
           </Empty>
         ) : null}
         {loading ? (
@@ -158,7 +159,7 @@ export function Feed({
           </div>
         ) : null}
         <div ref={sentinel} />
-        {!next && items.length > 4 ? <div className="feed-end mono small faint">· THAT&apos;S EVERYTHING ·</div> : null}
+        {!next && items.length > 4 ? <div className="feed-end mono small faint">· {t("THAT'S EVERYTHING")} ·</div> : null}
       </div>
     </div>
   );

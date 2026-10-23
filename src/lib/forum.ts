@@ -9,6 +9,7 @@ import { canPostInGroup, canReadGroup, groupRow, groupScope, readableGroupIds } 
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { groupRefs } from "./posts";
+import { userT } from "./t";
 import type { CategoryView, ThreadCard } from "./contentTypes";
 import type { Reaction, UserSummary } from "./types";
 
@@ -290,7 +291,7 @@ export function createThread(u: User, o: { categoryId: number; title: string; ht
     return id;
   });
   const mentioned = usersWho(b.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeCategory(x, c));
-  notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in the forum`, body: title, url: `/forum/t/${id}` });
+  notify(mentioned, { kind: "mention", actorId: u.id, title: "{name} mentioned you in the forum", body: "{title}", vars: { name: u.name, title }, url: `/forum/t/${id}` });
   broadcast("feed", { type: "thread", id, by: u.id, group: c.group_id });
   return id;
 }
@@ -316,14 +317,15 @@ export function reply(u: User, threadId: number, html: string): number {
     return id;
   });
   const url = `/go/reply/${id}`;
+  const vars = { name: u.name, title: t.title, excerpt: b.text.slice(0, 160) };
   const mentioned = usersWho(b.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeThread(x, t));
-  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: `${u.name} mentioned you in “${t.title}”`, body: b.text.slice(0, 160), url });
+  if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: "{name} mentioned you in “{title}”", body: "{excerpt}", vars, url });
   // (followers who left the group, or never could see it, hear nothing)
   const subs = usersWho(
     (db().prepare("select user_id from forum_subs where thread_id = ?").all(threadId) as { user_id: number }[]).map((r) => r.user_id).filter((x) => !mentioned.includes(x)),
     (x) => canSeeThread(x, t),
   );
-  notify(subs, { kind: "forum", actorId: u.id, title: `${u.name} replied to “${t.title}”`, body: b.text.slice(0, 160), url });
+  notify(subs, { kind: "forum", actorId: u.id, title: "{name} replied to “{title}”", body: "{excerpt}", vars, url });
   broadcast("thread", { id: threadId, reply: id, by: u.id });
   return id;
 }
@@ -404,10 +406,13 @@ export function follow(u: User, id: number, on: boolean) {
 export function quoteFor(u: User, threadId: number, replyId: number): string | null {
   const t = threadRow(threadId);
   if (!t || !canSeeThread(u, t)) return null;
-  if (replyId === 0) return `<blockquote><p><strong>${esc(summaries([t.author_id]).get(t.author_id)?.name ?? "Someone")} wrote:</strong></p>${t.body_html}</blockquote><p></p>`;
+  // the quote goes into their own reply box: their language
+  const tr = userT(u.id);
+  const wrote =(id: number) => esc(tr("{name} wrote:", { name: summaries([id]).get(id)?.name ?? tr("Someone") }));
+  if (replyId === 0) return `<blockquote><p><strong>${wrote(t.author_id)}</strong></p>${t.body_html}</blockquote><p></p>`;
   const r = db().prepare("select * from forum_posts where id = ? and thread_id = ?").get(replyId, threadId) as ReplyRow | undefined;
   if (!r) return null;
-  return `<blockquote><p><strong>${esc(summaries([r.author_id]).get(r.author_id)?.name ?? "Someone")} wrote:</strong></p>${r.body_html}</blockquote><p></p>`;
+  return `<blockquote><p><strong>${wrote(r.author_id)}</strong></p>${r.body_html}</blockquote><p></p>`;
 }
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

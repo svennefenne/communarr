@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Search, X } from "lucide-react";
-import { useApp } from "@/components/app/AppProvider";
+import { useApp, useT } from "@/components/app/AppProvider";
 import type { SearchHit, SearchKind } from "@/lib/search";
 import { HitRow, KIND_NAMES } from "./SearchResults";
 
@@ -13,6 +13,7 @@ const ORDER: SearchKind[] = ["user", "group", "room", "news", "post", "thread", 
 /** Search everything, as you type (the header's search, "/" or Ctrl+K). */
 export function SearchOverlay() {
   const { search, closeSearch } = useApp();
+  const t = useT();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [counts, setCounts] = useState<Partial<Record<SearchKind, number>>>({});
@@ -44,7 +45,7 @@ export function SearchOverlay() {
     }
     setBusy(true);
     const ctl = new AbortController();
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       fetch(`/api/search?q=${encodeURIComponent(term)}&limit=30`, { signal: ctl.signal })
         .then((r) => r.json())
         .then((d) => {
@@ -55,7 +56,7 @@ export function SearchOverlay() {
         .finally(() => setBusy(false));
     }, 180);
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       ctl.abort();
     };
   }, [q, search.open]);
@@ -67,7 +68,7 @@ export function SearchOverlay() {
 
   return createPortal(
     <div className="modal-back search-back" onMouseDown={(e) => e.target === e.currentTarget && closeSearch()}>
-      <div className="panel search-panel" role="dialog" aria-modal="true" aria-label="Search">
+      <div className="panel search-panel" role="dialog" aria-modal="true" aria-label={t("Search")}>
         <form
           className="search-bar"
           onSubmit={(e) => {
@@ -76,23 +77,23 @@ export function SearchOverlay() {
           }}
         >
           <Search size={20} className={busy ? "pulse" : ""} />
-          <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search posts, forum, chat, events, people…" aria-label="Search" enterKeyHint="search" />
-          <button type="button" className="icon-btn sm" onClick={closeSearch} aria-label="Close">
+          <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Search posts, forum, chat, events, people…")} aria-label={t("Search")} enterKeyHint="search" />
+          <button type="button" className="icon-btn sm" onClick={closeSearch} aria-label={t("Close")}>
             <X size={18} />
           </button>
         </form>
         <div className="search-scroll">
           {hits === null ? (
             <div className="empty small">
-              Type at least two letters. Everything you can see is searched: posts, news, comments, the forum, polls, events, chat rooms you&apos;re in, groups and members.
+              {t("Type at least two letters. Everything you can see is searched: posts, news, comments, the forum, polls, events, chat rooms you're in, groups and members.")}
             </div>
           ) : !hits.length ? (
-            <div className="empty small">Nothing found for &ldquo;{q}&rdquo;.</div>
+            <div className="empty small">{t("Nothing found for “{q}”.", { q })}</div>
           ) : (
             grouped.map(([k, list]) => (
               <div key={k}>
                 <div className="menu-label" style={{ padding: "12px 16px 4px" }}>
-                  {KIND_NAMES[k]} <span className="faint">· {counts[k]}</span>
+                  {t(KIND_NAMES[k])} <span className="faint">· {counts[k]}</span>
                 </div>
                 <div className="list">
                   {list.slice(0, 5).map((h) => (
@@ -105,7 +106,7 @@ export function SearchOverlay() {
         </div>
         {hits?.length ? (
           <button type="button" className="search-all" onClick={all}>
-            See all {total} results <ArrowRight size={16} />
+            {t.n(total, "See {n} result", "See all {n} results")} <ArrowRight size={16} />
           </button>
         ) : null}
       </div>

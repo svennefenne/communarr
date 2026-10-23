@@ -4,16 +4,18 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { CalendarCheck, CalendarDays, Check, HelpCircle, MapPin, Repeat, X } from "lucide-react";
 import type { EventView, RsvpStatus } from "@/lib/contentTypes";
-import { useMe, useToast } from "@/components/app/AppProvider";
+import { useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { rsvpAction } from "@/app/actions/content";
 import { GroupChip } from "./PostCard";
 
+/** English: translate where shown, t(REPEAT_LABEL[e.repeat]). */
 export const REPEAT_LABEL = { none: "", daily: "Every day", weekly: "Every week", monthly: "Every month", yearly: "Every year" } as const;
 
 /** The date as a little calendar page. */
 export function DateTile({ t, color, small = false }: { t: number; color?: string; small?: boolean }) {
+  const tr = useT();
   // drawn again once in the browser, in the reader's own time zone
   const [, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -21,14 +23,14 @@ export function DateTile({ t, color, small = false }: { t: number; color?: strin
   return (
     <span className={`date-tile ${small ? "small" : ""}`} style={color ? ({ ["--dt" as string]: color } as React.CSSProperties) : undefined} suppressHydrationWarning>
       <span className="dt-m" suppressHydrationWarning>
-        {date.toLocaleDateString(undefined, { month: "short" })}
+        {date.toLocaleDateString(tr.locale, { month: "short" })}
       </span>
       <span className="dt-d" suppressHydrationWarning>
         {date.getDate()}
       </span>
       {!small ? (
         <span className="dt-w" suppressHydrationWarning>
-          {date.toLocaleDateString(undefined, { weekday: "short" })}
+          {date.toLocaleDateString(tr.locale, { weekday: "short" })}
         </span>
       ) : null}
     </span>
@@ -37,11 +39,12 @@ export function DateTile({ t, color, small = false }: { t: number; color?: strin
 
 /** When an event is, in words. */
 export function EventWhen({ e }: { e: Pick<EventView, "startAt" | "endAt" | "allDay"> }) {
+  const t = useT();
   const sameDay = new Date(e.startAt).toDateString() === new Date(e.endAt).toDateString();
   if (e.allDay)
     return sameDay ? (
       <>
-        <Time t={e.startAt} mode="day" /> · all day
+        <Time t={e.startAt} mode="day" /> · {t("all day")}
       </>
     ) : (
       <>
@@ -61,9 +64,10 @@ export function EventWhen({ e }: { e: Pick<EventView, "startAt" | "endAt" | "all
 
 /** Going, maybe, can't. */
 export function RsvpButtons({ e, onChange, size = "sm" }: { e: EventView; onChange: (e: EventView) => void; size?: "sm" | "md" }) {
+  const t = useT();
   const toast = useToast();
   const [pending, start] = useTransition();
-  if (e.cancelled) return <span className="pill danger">Cancelled</span>;
+  if (e.cancelled) return <span className="pill danger">{t("Cancelled")}</span>;
   const past = e.endAt < Date.now();
   const set = (s: RsvpStatus) =>
     start(async () => {
@@ -74,15 +78,15 @@ export function RsvpButtons({ e, onChange, size = "sm" }: { e: EventView; onChan
   const full = !!e.capacity && e.going.length >= e.capacity && e.mine !== "going";
   const cls = size === "sm" ? "btn btn-sm" : "btn";
   return (
-    <div className={`rsvp ${pending ? "busy" : ""}`} role="group" aria-label="Are you going?">
-      <button type="button" className={`${cls} ${e.mine === "going" ? "btn-primary" : ""}`} onClick={() => set("going")} disabled={past || full} aria-pressed={e.mine === "going"} title={full ? "It's full" : undefined}>
-        <Check size={15} /> {e.mine === "going" ? "Going" : full ? "Full" : "Going"}
+    <div className={`rsvp ${pending ? "busy" : ""}`} role="group" aria-label={t("Are you going?")}>
+      <button type="button" className={`${cls} ${e.mine === "going" ? "btn-primary" : ""}`} onClick={() => set("going")} disabled={past || full} aria-pressed={e.mine === "going"} title={full ? t("It's full") : undefined}>
+        <Check size={15} /> {e.mine === "going" ? t("Going") : full ? t("Full{event}", { event: "" }) : t("Going")}
       </button>
       <button type="button" className={`${cls} ${e.mine === "maybe" ? "btn-secondary" : ""}`} onClick={() => set("maybe")} disabled={past} aria-pressed={e.mine === "maybe"}>
-        <HelpCircle size={15} /> Maybe
+        <HelpCircle size={15} /> {t("Maybe")}
       </button>
       <button type="button" className={`${cls} ${e.mine === "no" ? "btn-danger" : ""}`} onClick={() => set("no")} disabled={past} aria-pressed={e.mine === "no"}>
-        <X size={15} /> Can&apos;t
+        <X size={15} /> {t("Can't")}
       </button>
     </div>
   );
@@ -90,6 +94,7 @@ export function RsvpButtons({ e, onChange, size = "sm" }: { e: EventView; onChan
 
 export function EventCard({ event, compact = false }: { event: EventView; compact?: boolean }) {
   const me = useMe();
+  const t = useT();
   const [e, setE] = useState(event);
   const url = `/events/${e.id}`;
   return (
@@ -100,7 +105,7 @@ export function EventCard({ event, compact = false }: { event: EventView; compac
             <CalendarDays size={20} />
           </span>
           <div className="grow small">
-            <UserLink user={e.author} /> <span className="muted">planned something</span> {e.group ? <GroupChip g={e.group} /> : null}
+            <UserLink user={e.author} /> <span className="muted">{t("planned something")}</span> {e.group ? <GroupChip g={e.group} /> : null}
             <div className="tiny muted">
               <Time t={e.createdAt} />
             </div>
@@ -119,7 +124,7 @@ export function EventCard({ event, compact = false }: { event: EventView; compac
             <EventWhen e={e} />
             {e.repeat !== "none" ? (
               <span className="row" style={{ gap: 4, display: "inline-flex", marginLeft: 6 }}>
-                <Repeat size={12} /> {REPEAT_LABEL[e.repeat]}
+                <Repeat size={12} /> {t(REPEAT_LABEL[e.repeat])}
               </span>
             ) : null}
           </div>
@@ -139,12 +144,12 @@ export function EventCard({ event, compact = false }: { event: EventView; compac
               ))}
             </span>
             <span className="small muted">
-              <CalendarCheck size={13} style={{ verticalAlign: -2 }} /> {e.going.length} going{e.capacity ? ` of ${e.capacity}` : ""}
-              {e.maybe.length ? ` · ${e.maybe.length} maybe` : ""}
+              <CalendarCheck size={13} style={{ verticalAlign: -2 }} /> {e.capacity ? t("{n} of {max} going", { n: e.going.length, max: e.capacity }) : t("{n} going", { n: e.going.length })}
+              {e.maybe.length ? ` · ${t("{n} maybe", { n: e.maybe.length })}` : ""}
             </span>
           </span>
         ) : (
-          <span className="small muted">Nobody yet{me ? ": be the first!" : ""}</span>
+          <span className="small muted">{t(me ? "Nobody yet: be the first!" : "Nobody yet")}</span>
         )}
         <span className="spacer" />
         <RsvpButtons e={e} onChange={setE} />

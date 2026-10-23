@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useApp } from "@/components/app/AppProvider";
+import { useApp, useT } from "@/components/app/AppProvider";
 import { isBare } from "./nav";
 import { InstallButton } from "./InstallButton";
 
 /** The status line at the very bottom (in the frame's bottom edge when the frame is on). */
 export function Footer() {
   const { me, site } = useApp();
+  const t = useT();
   const pathname = usePathname();
   if (isBare(pathname)) return null;
   return (
@@ -19,7 +20,7 @@ export function Footer() {
           <>
             {" · "}
             <Link href="/admin" style={{ textDecoration: "underline dotted" }}>
-              ADMIN
+              {t("ADMIN")}
             </Link>
           </>
         ) : null}
@@ -27,7 +28,7 @@ export function Footer() {
           <>
             {" · "}
             <Link href="/settings/notifications" style={{ textDecoration: "underline dotted" }}>
-              NOTIFICATIONS
+              {t("NOTIFICATIONS")}
             </Link>
           </>
         ) : null}
