@@ -22,6 +22,63 @@ const sv: Record<string, string> = {
   "The default for everyone who hasn't picked their own (Settings → Display, or the switch in their menu), for the log-in page and for what's saved for everyone, like chat notices. Changes straight away.":
     "Standard för alla som inte har valt eget (Inställningar → Visning, eller knappen i menyn), för inloggningssidan och för sådant som sparas för alla, som chattnotiser. Ändras direkt.",
 
+  // Admin → Texts (components/admin/TextsEditor.tsx)
+  Texts: "Texter",
+  "Any text on the site, in your own words": "Vilken text som helst på sajten, med dina egna ord",
+  "Write your own wording for any text on the site, in Swedish, English or both. Leave a field empty for the built-in text. Keep the {placeholders}: {name} is where a name goes.":
+    "Skriv egna formuleringar för vilken text som helst på sajten, på svenska, engelska eller båda. Lämna ett fält tomt för den inbyggda texten. Behåll {platshållarna}: {name} är där ett namn hamnar.",
+  "What members and admins made themselves is changed where it lives: a chat room's name in its settings, forum categories above, a group's name in the group.":
+    "Sådant som medlemmar och admins har skapat själva ändras där det finns: ett chattrums namn i rummets inställningar, forumkategorier här ovanför, en grupps namn i gruppen.",
+  "Find a text, e.g. Hej or Good morning": "Hitta en text, t.ex. Hej eller God morgon",
+  "Find a text": "Hitta en text",
+  "All texts": "Alla texter",
+  Changed: "Ändrade",
+  "Type at least two letters to find texts.": "Skriv minst två bokstäver för att hitta texter.",
+  "You haven't changed any texts yet.": "Du har inte ändrat några texter än.",
+  "No text matches that.": "Ingen text matchar det.",
+  "Showing the first 60: search for more of the text.": "Visar de 60 första: sök på mer av texten.",
+  "your own": "egen",
+  "Back to the built-in text": "Tillbaka till den inbyggda texten",
+  "Back to the built-in text.": "Tillbaka till den inbyggda texten.",
+  "Nothing fills in {list} here. This text has: {have}": "Inget fyller i {list} här. Den här texten har: {have}",
+  "Leaves out {list}": "Utelämnar {list}",
+  "There's no such text.": "Den texten finns inte.",
+
+  // the backdrop library (components/admin/BackdropLibrary.tsx)
+  "Backdrop library": "Egna bakgrundsmotiv",
+  "Upload your own backdrops. They show up next to the built-in ones above and in everyone's theme editor.":
+    "Ladda upp egna bakgrundsmotiv. De dyker upp bredvid de inbyggda här ovanför och i allas temaredigerare.",
+  "Backdrop {n}": "Motiv {n}",
+  "Added: everyone can pick it now.": "Tillagt: alla kan välja det nu.",
+  "Remove {name}": "Ta bort {name}",
+  "Remove {name} from the library? Anyone using it gets the stars instead.": "Ta bort {name}? Alla som använder det får stjärnorna i stället.",
+  "Removed.": "Borttaget.",
+  "Add a backdrop": "Lägg till ett bakgrundsmotiv",
+  "Name, e.g. Northern lights": "Namn, t.ex. Norrsken",
+  "Add to the library": "Lägg till",
+
+  // who's here, by the bell (components/shell/OnlineButton.tsx)
+  "{n} person here now": "{n} person här nu",
+  "{n} people here now": "{n} personer här nu",
+  "Here now": "Här nu",
+  you: "du",
+  "All members": "Alla medlemmar",
+
+  // the same in Swedish (listed so Admin → Texts can find and change them)
+  Admin: "Admin",
+  ADMIN: "ADMIN",
+  Mod: "Mod",
+  Moderator: "Moderator",
+  Online: "Online",
+  Status: "Status",
+  Emoji: "Emoji",
+  Auto: "Auto",
+  Info: "Info",
+  Normal: "Normal",
+  Community: "Community",
+  "System & backup": "System & backup",
+  Hooden: "Hooden",
+
   // errors
   "Something went wrong. Try again.": "Något gick fel. Försök igen.",
   "Not here": "Inte här",

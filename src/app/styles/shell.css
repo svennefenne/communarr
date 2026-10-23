@@ -125,7 +125,8 @@ html[data-backdrop="plain"] .backdrop {
   top: 0;
   z-index: 60;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* equal sides, so the sections in the middle are centred in the frame */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   min-height: 64px;
@@ -212,38 +213,13 @@ html[data-backdrop="plain"] .backdrop {
   text-overflow: ellipsis;
   margin-top: 3px;
 }
+/* the sections sit in the middle of the top frame (the side columns are equal, see .site-header) */
 .hd-nav {
   display: flex;
   align-items: center;
+  justify-self: center;
   gap: 2px;
   min-width: 0;
-}
-.nav-key {
-  display: inline-grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  margin: 0 4px;
-  padding: 0 5px;
-  border-radius: 6px;
-  border: 1px solid var(--line-strong);
-  border-bottom-width: 2px;
-  background: var(--surface-2);
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-}
-.nav-key:hover {
-  color: var(--accent-2);
-  border-color: var(--accent-2);
-}
-@media (hover: none), (pointer: coarse) {
-  .nav-key {
-    display: none;
-  }
 }
 .tab {
   position: relative;
@@ -344,6 +320,19 @@ html[data-backdrop="plain"] .backdrop {
 }
 .burger {
   display: none;
+}
+/* the centred sections need the room: search shrinks to its icon before the labels go */
+@media (max-width: 1480px) {
+  .search-btn {
+    min-width: 0;
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+  .search-btn .search-label,
+  .search-btn .kbd {
+    display: none;
+  }
 }
 /* tablets: the sections as icons */
 @media (max-width: 1180px) {

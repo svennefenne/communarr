@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Moon, RotateCcw, Save, Shuffle, Sun } from "lucide-react";
 import { COLOR_KEYS, COLOR_LABEL, PALETTES, fullColors, isHex, type ColorKey, type Colors } from "@/lib/palettes";
-import { BACKDROPS, resolveTheme, themeFromScheme, type SiteLook, type ThemeData } from "@/lib/theme";
+import { resolveTheme, themeFromScheme, type SiteLook, type ThemeData } from "@/lib/theme";
+import { BackdropPicker } from "./BackdropPicker";
 import { DISPLAY_FONTS, UI_FONTS } from "@/lib/fontChoices";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { ImagePick } from "@/components/ui/ImagePick";
@@ -212,13 +213,7 @@ export function ThemeEditor({ id, initial, name: initialName, shared: initialSha
         </Section>
 
         <Section title={t("Backdrop")} hint={t("Drawn behind the pages when there's no picture.")}>
-          <div className="pills">
-            {BACKDROPS.map((b) => (
-              <button key={b.id} type="button" className={`pill ${data.backdrop === b.id ? "active" : ""}`} onClick={() => set("backdrop", b.id)}>
-                {t(b.label)}
-              </button>
-            ))}
-          </div>
+          <BackdropPicker value={data.backdrop} onChange={(b) => set("backdrop", b)} library={site.backdrops ?? []} />
           <div className="setting-row">
             <span className="grow">
               <b>{t("Film grain")}</b>

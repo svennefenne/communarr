@@ -48,15 +48,18 @@ or in a theme you make yourself.
   with the site closed; per kind, per device, quiet hours, and the unread count on the app icon. Installs
   as an app on the home screen.
 - **Search** everything you're allowed to see, as you type (`/` or `Ctrl+K`), with a full results page.
-- **English or Swedish** (svenska): picked on the setup page (from the browser's language) and changed under
-  Admin → Name & texts. Every page, notification, message and date follows it, and the emoji picker
-  searches Swedish names. Translations live in `src/i18n/<language>/`: English text is the key, so a
-  missing one just shows the English.
+- **English or Swedish** (svenska), for each person: SV | EN in the menu (and on the log-in page), or
+  Settings → Display. The site's own language (picked on the setup page from the browser's language,
+  changed under Admin → Name & texts) is the default. Pages, notifications, messages and dates follow it,
+  and the emoji picker searches Swedish names. Translations live in `src/i18n/<language>/`: English text
+  is the key, so a missing one just shows the English. Admins can reword any text under Admin → Texts.
+- **Who's here**: the number of people online (you included) by the bell; open it for who they are.
 - **Admin**: a status board with a 30-day activity chart; members (roles, suspensions, closed accounts,
   password reset links, setting passwords, adding members, approving sign-ups); invite links (uses,
   expiry, role, a group to join) and sign-up modes; reports; groups and chat rooms; announcement line and
-  word filter; forum categories; the site's name and texts; the default scheme, light/dark, background
-  picture, frame, glass and backdrop; switching features off and choosing who may start things; push
+  word filter; forum categories; the site's name, language and texts, and **any built-in text in your
+  own words** (per language); the default scheme, light/dark, background picture, frame, glass and
+  backdrop, and a **library of uploaded backdrops** everyone can pick; switching features off and choosing who may start things; push
   keys and voice servers; time zone; storage, clean-up, search rebuild, database backup and the audit
   log. Moderators see the parts that are theirs.
 

@@ -44,15 +44,21 @@ export interface T {
 
 const fill = (s: string, vars?: Vars) => (vars ? s.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m)) : s);
 
-const made = new Map<Lang, T>();
+/** An admin's own wording (Admin → Texts) for one language: English text → their text. */
+export type Own = Record<string, string>;
 
-export function makeT(lang: Lang): T {
-  let t = made.get(lang);
+// one t per language and wording, so components and effects see the same function each time
+const made = new Map<string, T>();
+
+export function makeT(lang: Lang, own?: Own): T {
+  const key = own && Object.keys(own).length ? `${lang}:${JSON.stringify(own)}` : lang;
+  let t = made.get(key);
   if (t) return t;
+  if (made.size > 50) made.clear();
   const d = DICTS[lang];
   const missing = new Set<string>();
   const fn = ((text: string, vars?: Vars) => {
-    const hit = d?.[text];
+    const hit = own?.[text] ?? d?.[text];
     // while developing: say once which texts this language doesn't have yet
     if (d && hit === undefined && process.env.NODE_ENV === "development" && !missing.has(text) && /[A-Za-z]/.test(text.replace(/\{\w+\}/g, ""))) {
       missing.add(text);
@@ -63,14 +69,22 @@ export function makeT(lang: Lang): T {
   fn.n = (n, one, other, vars) => fn(n === 1 ? one : other, { n, ...vars });
   fn.lang = lang;
   fn.locale = lang === "sv" ? "sv-SE" : undefined;
-  made.set(lang, fn);
+  made.set(key, fn);
   t = fn;
   return t;
 }
 
-/** In the browser: the page's language, set by AppProvider, for helpers outside components. */
+/** The built-in text for a key in a language (what Admin → Texts shows as the default). */
+export const builtIn = (lang: Lang, text: string) => DICTS[lang]?.[text] ?? text;
+
+/** Every built-in text the site knows (the English keys of the dictionaries). */
+export const allTexts = () => Object.keys(DICTS.sv ?? {});
+
+/** In the browser: the page's language and wording, set by AppProvider, for helpers outside components. */
 let clientLang: Lang = "en";
-export function setClientLang(lang: Lang) {
+let clientOwn: Own | undefined;
+export function setClientLang(lang: Lang, own?: Own) {
   clientLang = lang;
+  clientOwn = own;
 }
-export const clientT = () => makeT(clientLang);
+export const clientT = () => makeT(clientLang, clientOwn);
