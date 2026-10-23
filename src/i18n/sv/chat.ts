@@ -219,8 +219,6 @@ const sv: Record<string, string> = {
   "A place for friends": "Ett ställe för vänner",
   Menu: "Meny",
   Sections: "Sektioner",
-  "Previous section (Q)": "Föregående sektion (Q)",
-  "Next section (E)": "Nästa sektion (E)",
   "New messages": "Nya meddelanden",
   Search: "Sök",
   "Search everything": "Sök överallt",

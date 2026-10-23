@@ -71,7 +71,7 @@ export function saveTheme(userId: number, id: number | null, name: string, data:
 
 export function siteLook(): SiteLook {
   const s = getSettings();
-  return { scheme: s.defaultScheme, mode: s.defaultMode, frame: s.frame, glass: s.glass, backdrop: s.backdrop, background: s.background };
+  return { scheme: s.defaultScheme, mode: s.defaultMode, frame: s.frame, glass: s.glass, backdrop: s.backdrop, background: s.background, backdrops: s.backdrops };
 }
 
 /** The theme a page is drawn in, for this member (or a visitor). */

@@ -8,8 +8,26 @@
 import { cssVars, isHex, palette, varsToCss, COLOR_KEYS, type Colors } from "./palettes";
 import { displayFont, uiFont } from "./fontChoices";
 
-export type Backdrop = "orbits" | "stars" | "grid" | "waves" | "plain";
-export const BACKDROPS: { id: Backdrop; label: string }[] = [
+export type BuiltInBackdrop = "orbits" | "stars" | "grid" | "waves" | "plain";
+/** A built-in scene, or "pic:<id>": a picture from the site's library (Admin → Colours & background). */
+export type Backdrop = BuiltInBackdrop | `pic:${string}`;
+
+/** A backdrop an admin uploaded: a picture for computers and tablets, and maybe one for phones. */
+export interface LibraryBackdrop {
+  id: string;
+  name: string;
+  desktop: string;
+  mobile: string;
+}
+
+export const isBackdrop = (x: unknown): x is Backdrop => typeof x === "string" && (BACKDROPS.some((b) => b.id === x) || /^pic:[a-z0-9]{4,24}$/.test(x));
+
+/** The library picture a backdrop points at, if it's one (and still there). */
+const libraryPic = (b: Backdrop, lib: LibraryBackdrop[]) => (b.startsWith("pic:") ? lib.find((x) => `pic:${x.id}` === b) : undefined);
+/** What the page draws behind a library picture: the plain backdrop (or the stars, if it was deleted). */
+const drawn = (b: Backdrop, lib: LibraryBackdrop[]): Backdrop => (!b.startsWith("pic:") ? b : libraryPic(b, lib) ? "plain" : "orbits");
+
+export const BACKDROPS: { id: BuiltInBackdrop; label: string }[] = [
   { id: "orbits", label: "Orbits and stars" },
   { id: "stars", label: "Star field" },
   { id: "grid", label: "Retro grid" },
@@ -51,6 +69,8 @@ export interface SiteLook {
   glass: number;
   backdrop: Backdrop;
   background: { desktop: string; mobile: string; dim: number; blur: number };
+  /** the uploaded backdrops anyone can pick */
+  backdrops: LibraryBackdrop[];
 }
 
 /** Everything themeCss needs. */
@@ -120,7 +140,7 @@ export function cleanTheme(input: unknown): ThemeData {
     radius: clamp(i.radius, 0, 28, 14),
     glass: clamp(i.glass, 0, 100, 72),
     frame: i.frame !== false,
-    backdrop: (["orbits", "stars", "grid", "waves", "plain"] as const).includes(i.backdrop as Backdrop) ? (i.backdrop as Backdrop) : "orbits",
+    backdrop: isBackdrop(i.backdrop) ? i.backdrop : "orbits",
     grain: i.grain !== false,
     background: {
       desktop: safeUrl(bg.desktop),
@@ -135,11 +155,18 @@ export function cleanTheme(input: unknown): ThemeData {
 /** The site's look for a member's preferences (and their own theme, if they use one). */
 export function resolveTheme(site: SiteLook, prefs: { scheme: string; mode: "dark" | "light" | "system"; textSize?: number } | null, custom: ThemeData | null): ResolvedTheme {
   const textSize = clamp(prefs?.textSize, 85, 130, 100);
+  const lib = site.backdrops ?? [];
   if (custom) {
     const mode = custom.modes === "both" ? prefs?.mode || site.mode : custom.modes;
-    return { ...custom, mode, textSize, background: custom.background.desktop || custom.background.mobile ? custom.background : { ...custom.background, ...siteBg(site) } };
+    // their own picture, else the library backdrop they picked, else the site's picture
+    const own = custom.background.desktop || custom.background.mobile;
+    const pic = own ? undefined : libraryPic(custom.backdrop, lib);
+    const background = own ? custom.background : pic ? { ...custom.background, desktop: pic.desktop, mobile: pic.mobile } : { ...custom.background, ...siteBg(site) };
+    return { ...custom, mode, textSize, backdrop: drawn(custom.backdrop, lib), background };
   }
   const p = palette(prefs?.scheme || site.scheme);
+  // the site's picture, else the library backdrop it uses
+  const pic = site.background.desktop || site.background.mobile ? undefined : libraryPic(site.backdrop, lib);
   return {
     dark: p.dark,
     light: p.light,
@@ -149,9 +176,9 @@ export function resolveTheme(site: SiteLook, prefs: { scheme: string; mode: "dar
     radius: 14,
     glass: site.glass,
     frame: site.frame,
-    backdrop: site.backdrop,
+    backdrop: drawn(site.backdrop, lib),
     grain: true,
-    background: { ...siteBg(site), size: "cover" },
+    background: { ...siteBg(site), ...(pic ? { desktop: pic.desktop, mobile: pic.mobile } : {}), size: "cover" },
     textSize,
   };
 }

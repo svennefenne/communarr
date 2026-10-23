@@ -203,11 +203,11 @@ const sv: Record<string, string> = {
 
   // ── the front page (components/home) ──
   "See all": "Visa alla",
-  "Up late": "Uppe sent",
-  "Good morning": "God morgon",
-  Hi: "Hej",
-  "Good evening": "God kväll",
-  "Good night": "God natt",
+  "Up late, {name}": "Uppe sent, {name}?",
+  "Good morning, {name}": "God morgon, {name}",
+  "Hi, {name}": "Hej, {name}",
+  "Good evening, {name}": "God kväll, {name}",
+  "Good night, {name}": "God natt, {name}",
   "Front page": "Förstasidan",
   "Pinned news": "Fäst nyhet",
   "Latest news": "Senaste nytt",

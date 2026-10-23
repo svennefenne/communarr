@@ -33,11 +33,12 @@ function Widget({ title, icon, href, more, children }: { title: string; icon: Re
 
 export function Greeting({ name }: { name: string }) {
   const t = useT();
-  const [hi, setHi] = useState("Hi");
+  const [hi, setHi] = useState("Hi, {name}");
   const [day, setDay] = useState("");
   useEffect(() => {
     const h = new Date().getHours();
-    setHi(h < 5 ? "Up late" : h < 10 ? "Good morning" : h < 17 ? "Hi" : h < 22 ? "Good evening" : "Good night");
+    // whole phrases, so an admin can put the name anywhere (Admin → Texts)
+    setHi(h < 5 ? "Up late, {name}" : h < 10 ? "Good morning, {name}" : h < 17 ? "Hi, {name}" : h < 22 ? "Good evening, {name}" : "Good night, {name}");
     setDay(new Date().toLocaleDateString(t.locale, { weekday: "long", day: "numeric", month: "long" }));
   }, [t]);
   return (
@@ -46,7 +47,7 @@ export function Greeting({ name }: { name: string }) {
         {t("Front page")} {day ? `· ${day}` : ""}
       </span>
       <h1 className="display page-title" suppressHydrationWarning>
-        {t(hi)}, {name.split(" ")[0]}
+        {t(hi, { name: name.split(" ")[0] })}
       </h1>
     </div>
   );

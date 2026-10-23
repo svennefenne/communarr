@@ -7,7 +7,7 @@ import { userT } from "@/lib/t";
 import { audit } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DEFAULTS, dropDefaultTexts, getSettings, setSettings, type SiteSettings } from "@/lib/settings";
-import { isLang } from "@/lib/i18n";
+import { allTexts, builtIn, isLang, LANGS, type Lang } from "@/lib/i18n";
 import { addMember, approve, ban, deleteMember, logoutEverywhere, reindexAll, resetLink, setPasswordFor, setRole, suspend, vacuum } from "@/lib/admin";
 import { createInvite } from "@/lib/accounts";
 import { resolveReport } from "@/lib/reports";
@@ -19,6 +19,7 @@ import { pushTo, rotateVapid } from "@/lib/push";
 import { broadcast } from "@/lib/hub";
 import { cleanLine } from "@/lib/sanitize";
 import { PALETTE_BY_SLUG } from "@/lib/palettes";
+import { isBackdrop, type LibraryBackdrop } from "@/lib/theme";
 import type { User } from "@/lib/users";
 import type { Role } from "@/lib/types";
 
@@ -132,7 +133,24 @@ export async function saveSettingsAction(patch: Partial<SiteSettings>) {
     if (clean.defaultScheme !== undefined && !PALETTE_BY_SLUG.has(clean.defaultScheme)) delete clean.defaultScheme;
     if (clean.registration !== undefined && !["invite", "open", "closed"].includes(clean.registration)) delete clean.registration;
     if (clean.defaultMode !== undefined && !["dark", "light", "system"].includes(clean.defaultMode)) delete clean.defaultMode;
-    if (clean.backdrop !== undefined && !["orbits", "stars", "grid", "waves", "plain"].includes(clean.backdrop)) delete clean.backdrop;
+    if (clean.backdrops !== undefined) {
+      const media = (x: unknown) => (typeof x === "string" && /^\/media\/[\w./-]+$/.test(x) ? x : "");
+      const list = (Array.isArray(clean.backdrops) ? clean.backdrops : []) as Partial<LibraryBackdrop>[];
+      clean.backdrops = list
+        .map((b) => ({
+          id: /^[a-z0-9]{4,24}$/.test(String(b?.id)) ? String(b.id) : Math.random().toString(36).slice(2, 12),
+          name: cleanLine(String(b?.name ?? ""), 40) || "Backdrop",
+          desktop: media(b?.desktop),
+          mobile: media(b?.mobile),
+        }))
+        .filter((b) => b.desktop || b.mobile)
+        .slice(0, 40);
+    }
+    // a library backdrop must be in the library (the site's default goes back to the stars if its picture went)
+    const library = clean.backdrops ?? s.backdrops;
+    const inLibrary = (b: string) => !b.startsWith("pic:") || library.some((x) => `pic:${x.id}` === b);
+    if (clean.backdrop !== undefined && (!isBackdrop(clean.backdrop) || !inLibrary(clean.backdrop))) delete clean.backdrop;
+    if (clean.backdrops !== undefined && !inLibrary(clean.backdrop ?? s.backdrop)) clean.backdrop = "orbits";
     if (clean.glass !== undefined) clean.glass = Math.max(0, Math.min(100, Math.round(clean.glass)));
     if (clean.maxUploadMb !== undefined) clean.maxUploadMb = Math.max(1, Math.min(200, Math.round(clean.maxUploadMb)));
     if (clean.wordFilter !== undefined) clean.wordFilter = clean.wordFilter.map((w) => String(w).trim()).filter(Boolean).slice(0, 500);
@@ -236,6 +254,59 @@ export async function rotateVapidAction() {
     admin(u);
     rotateVapid();
     audit(u.id, "new push keys");
+    return true;
+  });
+}
+
+// ── texts (the site's own wording for any built-in text) ──
+
+export interface TextRow {
+  key: string;
+  /** the built-in text in each language */
+  builtIn: Record<Lang, string>;
+  /** the admin's own, where there is one */
+  own: Partial<Record<Lang, string>>;
+}
+
+/** Built-in texts matching a search (in any language, or the admin's own wording), or every changed one. */
+export async function searchTextsAction(q: string, changedOnly: boolean) {
+  return act((u): TextRow[] => {
+    admin(u);
+    const texts = getSettings().texts;
+    const needle = q.trim().toLowerCase();
+    const changed = new Set(LANGS.flatMap((l) => Object.keys(texts[l.id] ?? {})));
+    const rows: TextRow[] = [];
+    for (const key of allTexts()) {
+      // the starter post's HTML is only used once, at setup
+      if (key.startsWith("<")) continue;
+      if (changedOnly && !changed.has(key)) continue;
+      const row: TextRow = {
+        key,
+        builtIn: Object.fromEntries(LANGS.map((l) => [l.id, builtIn(l.id, key)])) as Record<Lang, string>,
+        own: Object.fromEntries(LANGS.filter((l) => texts[l.id]?.[key] !== undefined).map((l) => [l.id, texts[l.id]![key]])),
+      };
+      if (needle && ![key, ...Object.values(row.builtIn), ...Object.values(row.own)].some((s) => s.toLowerCase().includes(needle))) continue;
+      rows.push(row);
+      if (rows.length >= 60) break;
+    }
+    return rows;
+  });
+}
+
+/** Your own wording for one text in one language; empty goes back to the built-in text. */
+export async function saveTextAction(lang: Lang, key: string, value: string) {
+  return act((u) => {
+    admin(u);
+    if (!isLang(lang) || key.startsWith("<") || !allTexts().includes(key)) throw new UserError("There's no such text.");
+    const v = value.replace(/\s+/g, " ").trim().slice(0, 2000);
+    const texts = { ...getSettings().texts };
+    const mine = { ...(texts[lang] ?? {}) };
+    if (v && v !== builtIn(lang, key)) mine[key] = v;
+    else delete mine[key];
+    texts[lang] = mine;
+    setSettings({ texts });
+    audit(u.id, "text", `${lang}: ${key.slice(0, 80)}`);
+    revalidatePath("/", "layout");
     return true;
   });
 }

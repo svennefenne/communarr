@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Bell, Flag, LayoutGrid, Mail, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users } from "lucide-react";
+import { Activity, Bell, Flag, Languages, LayoutGrid, Mail, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users } from "lucide-react";
 import { requireMod } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { activity, adminMembers, auditLog, overview, system } from "@/lib/admin";
@@ -17,6 +17,7 @@ import { Members } from "@/components/admin/Members";
 import { Invites, type InviteView } from "@/components/admin/Invites";
 import { Reports } from "@/components/admin/Reports";
 import { AnnouncementSettings, FeatureSettings, IdentitySettings, LookSettings } from "@/components/admin/LookSettings";
+import { TextsEditor } from "@/components/admin/TextsEditor";
 import { ForumCategories } from "@/components/admin/ForumCategories";
 import { GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
 
@@ -87,7 +88,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { label: t("Content"), items: [{ id: "content", label: t("Announcement & filter") }, { id: "forum", label: t("Forum categories") }] },
     ...(admin
       ? [
-          { label: t("Look"), items: [{ id: "identity", label: t("Name & texts") }, { id: "look", label: t("Colours & background") }] },
+          { label: t("Look"), items: [{ id: "identity", label: t("Name & texts") }, { id: "texts", label: t("Texts") }, { id: "look", label: t("Colours & background") }] },
           { label: t("Site"), items: [{ id: "features", label: t("Features & permissions") }, { id: "notifications", label: t("Notifications & voice") }, { id: "system", label: t("System & backup") }] },
         ]
       : []),
@@ -138,6 +139,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <>
               <Section id="identity" title={t("Name & texts")} icon={<Type size={18} />}>
                 <IdentitySettings s={s} />
+              </Section>
+              <Section id="texts" title={t("Texts")} icon={<Languages size={18} />} hint={t("Any text on the site, in your own words")}>
+                <TextsEditor />
               </Section>
               <Section id="look" title={t("Colours & background")} icon={<Palette size={18} />} hint={t("The default look for everyone")}>
                 <LookSettings s={s} />

@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { isLang, type Lang } from "./i18n";
+import type { Backdrop, LibraryBackdrop } from "./theme";
 
 /** Site settings (Admin). Stored as JSON per key; anything missing falls back to DEFAULTS. */
 
@@ -31,7 +32,9 @@ export interface SiteSettings {
   /** site-wide backgrounds (upload URLs) */
   background: { desktop: string; mobile: string; dim: number; blur: number };
   /** the backdrop drawn behind every page when no picture is set */
-  backdrop: "orbits" | "stars" | "grid" | "waves" | "plain";
+  backdrop: Backdrop;
+  /** backdrops an admin uploaded, for the site and everyone's own themes */
+  backdrops: LibraryBackdrop[];
   announcement: { text: string; style: "info" | "warn" | "party"; on: boolean; id: number };
   features: { forum: boolean; polls: boolean; calendar: boolean; groups: boolean; chat: boolean; voice: boolean; news: boolean };
   /** who may create these (members or only moderators/admins) */
@@ -44,6 +47,8 @@ export interface SiteSettings {
   pushContact: string;
   /** a word filter for chat and posts: these words are starred out */
   wordFilter: string[];
+  /** an admin's own wording for the built-in texts, per language: English text → their text (Admin → Texts) */
+  texts: Partial<Record<Lang, Record<string, string>>>;
 }
 
 export const DEFAULTS: SiteSettings = {
@@ -61,6 +66,7 @@ export const DEFAULTS: SiteSettings = {
   glass: 72,
   background: { desktop: "", mobile: "", dim: 35, blur: 0 },
   backdrop: "orbits",
+  backdrops: [],
   announcement: { text: "", style: "info", on: false, id: 0 },
   features: { forum: true, polls: true, calendar: true, groups: true, chat: true, voice: true, news: true },
   canCreate: { groups: "members", rooms: "members", events: "members", polls: "members" },
@@ -69,6 +75,7 @@ export const DEFAULTS: SiteSettings = {
   timezone: process.env.TZ || "Europe/Stockholm",
   pushContact: "",
   wordFilter: [],
+  texts: {},
 };
 
 /** The default texts in the other languages (until an admin writes their own). */

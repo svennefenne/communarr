@@ -329,6 +329,43 @@ html[data-density="compact"] .prose {
   font-size: 2.2rem;
 }
 
+/* ── Who's here (the count by the bell) ── */
+.icon-btn.online-btn {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  gap: 5px;
+  padding: 0 9px;
+}
+.online-n {
+  font-weight: 800;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ok);
+}
+.online-menu {
+  width: min(300px, calc(100vw - 24px));
+  padding: 4px 0 0;
+}
+.online-scroll {
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 6px 6px;
+}
+/* phones: the button isn't at the edge, so the list sits across the screen under the header */
+@media (max-width: 699px) {
+  .menu.online-menu {
+    position: fixed;
+    top: calc(max(6px, env(safe-area-inset-top)) + 54px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
+
 /* ── Notifications ── */
 .notif-menu {
   width: min(400px, calc(100vw - 24px));
