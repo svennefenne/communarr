@@ -1,0 +1,56 @@
+import "server-only";
+import { db } from "./db";
+import { getSettings } from "./settings";
+import type { Boot, Me, SiteInfo } from "./bootTypes";
+import type { User } from "./users";
+import { summary } from "./users";
+import { vapidPublicKey } from "./push";
+
+export function me(u: User): Me {
+  return { ...summary(u), isAdmin: u.isAdmin, isMod: u.isMod, presence: u.presence, theme: u.theme };
+}
+
+export function siteInfo(u: User | null): SiteInfo {
+  const s = getSettings();
+  const may = (who: "members" | "mods") => !!u && (who === "members" || u.isMod);
+  const a = s.announcement;
+  return {
+    name: s.siteName,
+    tagline: s.tagline,
+    footer: s.footer,
+    features: s.features,
+    can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod },
+    allowCustomThemes: s.allowCustomThemes,
+    vapidKey: u ? vapidPublicKey() : null,
+    maxUploadMb: s.maxUploadMb,
+    announcement: a.on && a.text.trim() ? { text: a.text, style: a.style, id: a.id } : null,
+    registration: s.registration,
+  };
+}
+
+/** Unread messages per room (rooms with any), for someone. */
+export function roomUnread(userId: number): Record<number, number> {
+  const rows = db()
+    .prepare(
+      `select rm.room_id id, (select count(*) from messages m where m.room_id = rm.room_id and m.id > rm.last_read_id and m.deleted = 0 and m.kind = 'text' and (m.author_id is null or m.author_id != rm.user_id)) n
+       from room_members rm join rooms r on r.id = rm.room_id
+       where rm.user_id = ? and r.archived = 0 and rm.notify != 'none'`,
+    )
+    .all(userId) as { id: number; n: number }[];
+  const out: Record<number, number> = {};
+  for (const r of rows) if (r.n) out[r.id] = r.n;
+  return out;
+}
+
+export function unreadNotifications(userId: number): number {
+  return (db().prepare("select count(*) n from notifications where user_id = ? and read_at is null").get(userId) as { n: number }).n;
+}
+
+export function boot(u: User | null): Boot {
+  const rooms = u ? roomUnread(u.id) : {};
+  return {
+    me: u ? me(u) : null,
+    site: siteInfo(u),
+    counts: { notifications: u ? unreadNotifications(u.id) : 0, chat: Object.keys(rooms).length, rooms },
+  };
+}

@@ -1,0 +1,398 @@
+/* ── What people write (posts, comments, chat, forum), the same in the editor and on the page ── */
+.prose {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose > :last-child {
+  margin-bottom: 0;
+}
+.prose p {
+  margin: 0 0 0.75em;
+}
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-variation-settings: "wdth" var(--display-wdth);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 1.1em 0 0.45em;
+  letter-spacing: 0.01em;
+}
+.prose h1 {
+  font-size: 1.75em;
+  text-transform: uppercase;
+}
+.prose h2 {
+  font-size: 1.35em;
+  text-transform: uppercase;
+}
+.prose h3 {
+  font-size: 1.12em;
+}
+.prose a {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--accent-2-rgb) / 0.45);
+  text-underline-offset: 3px;
+}
+.prose a:hover {
+  text-decoration-color: currentColor;
+}
+.prose ul,
+.prose ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.5em;
+}
+.prose li > p {
+  margin: 0.15em 0;
+}
+.prose li::marker {
+  color: var(--accent-2);
+}
+.prose ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.prose ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55em;
+}
+.prose ul[data-type="taskList"] li > label {
+  flex: none;
+  margin-top: 0.22em;
+  user-select: none;
+}
+.prose ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+.prose ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.prose blockquote {
+  margin: 0 0 0.8em;
+  padding: 0.45em 1em;
+  border-left: 3px solid var(--accent-2);
+  background: rgb(var(--accent-2-rgb) / 0.08);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  color: var(--text-dim);
+}
+.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+.prose code {
+  font-family: var(--ff-mono), ui-monospace, monospace;
+  font-size: 0.88em;
+  padding: 0.12em 0.38em;
+  border-radius: 6px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+}
+.prose pre {
+  margin: 0 0 0.8em;
+  padding: 0.9em 1em;
+  border-radius: var(--radius-xs);
+  background: rgb(0 0 0 / 0.35);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+.prose pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: inherit;
+}
+.prose hr {
+  border: 0;
+  height: 2px;
+  margin: 1.2em 0;
+  background: repeating-linear-gradient(90deg, var(--stripe-1) 0 30px, var(--stripe-2) 30px 60px, var(--stripe-3) 60px 90px, var(--stripe-4) 90px 120px, var(--stripe-5) 120px 150px);
+  opacity: 0.55;
+}
+.prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-xs);
+  margin: 0.6em 0;
+  cursor: zoom-in;
+  background: var(--surface-3);
+}
+.prose img[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+.prose img[data-align="right"] {
+  margin-left: auto;
+}
+@media (min-width: 621px) {
+  .prose:not(.ed-content) img[data-align="left"][width] {
+    float: left;
+    margin: 0.3em 1.1em 0.6em 0;
+    max-width: 55%;
+  }
+  .prose:not(.ed-content) img[data-align="right"][width] {
+    float: right;
+    margin: 0.3em 0 0.6em 1.1em;
+    max-width: 55%;
+  }
+}
+.prose::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+.ed-content img {
+  cursor: default;
+}
+.prose mark {
+  border-radius: 3px;
+  padding: 0 0.15em;
+  color: #1a1a1a;
+}
+.prose table,
+.prose .rt-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 0.8em;
+  table-layout: fixed;
+  font-size: 0.94em;
+}
+.prose th,
+.prose td {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  padding: 0.45em 0.6em;
+  vertical-align: top;
+  min-width: 60px;
+}
+.prose th {
+  background: var(--surface-3);
+  text-align: left;
+  font-weight: 800;
+}
+.prose th > p,
+.prose td > p {
+  margin: 0;
+}
+.prose .tableWrapper,
+.prose-table-scroll {
+  overflow-x: auto;
+}
+.prose div[data-youtube-video] {
+  margin: 0.8em 0;
+}
+.prose div[data-youtube-video] iframe,
+.prose iframe {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: #000;
+}
+.prose .mention {
+  display: inline-block;
+  padding: 0 0.3em;
+  border-radius: 6px;
+  background: rgb(var(--accent-3-rgb) / 0.18);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+.prose .mention:hover {
+  background: rgb(var(--accent-3-rgb) / 0.3);
+}
+.prose .mention.me {
+  background: rgb(var(--accent-2-rgb) / 0.25);
+}
+.prose sub,
+.prose sup {
+  font-size: 0.75em;
+}
+/* a long post folded in a list (Read more) */
+.fold {
+  position: relative;
+  max-height: var(--fold, 520px);
+  overflow: hidden;
+}
+.fold.folded::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 90px;
+  background: linear-gradient(transparent, var(--fold-bg, var(--surface)));
+  pointer-events: none;
+}
+.fold.open {
+  max-height: none;
+}
+html[data-density="compact"] .prose {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* the picture viewer */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.9);
+  animation: fade 150ms ease-out;
+  touch-action: pinch-zoom;
+}
+.lightbox img {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 90px);
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.6);
+}
+.lightbox .lb-bar {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: 10px;
+  left: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.lightbox .lb-bar .icon-btn {
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+}
+.lightbox .lb-cap {
+  position: absolute;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 16px;
+  right: 16px;
+  text-align: center;
+  color: #ddd;
+  font-size: 0.875rem;
+}
+
+/* ── The log-in page: only its window ── */
+.auth-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  padding-top: max(24px, env(safe-area-inset-top));
+}
+.auth-panel {
+  width: min(440px, 100%);
+  padding: 30px 26px 26px;
+  overflow: hidden;
+}
+/* the six stripes along the top */
+.stripe-top::before,
+.auth-panel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--stripe-1) 0 16.66%, var(--stripe-2) 16.66% 33.33%, var(--stripe-3) 33.33% 50%, var(--stripe-4) 50% 66.66%, var(--stripe-5) 66.66% 83.33%, var(--stripe-6) 83.33%);
+}
+.stripe-top {
+  overflow: hidden;
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.auth-mark {
+  width: 44px;
+  height: 52px;
+}
+.auth-site {
+  font-size: 2.2rem;
+}
+
+/* ── Notifications ── */
+.notif-menu {
+  width: min(400px, calc(100vw - 24px));
+  padding: 4px 0 0;
+}
+.notif-scroll {
+  max-height: min(460px, 65vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.notif-row {
+  align-items: flex-start;
+}
+.notif-pic {
+  position: relative;
+  flex: none;
+}
+.notif-kind {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.notif-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+.notif-body {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── The user menu ── */
+.user-menu {
+  width: 280px;
+}
+.user-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+}
+.user-menu-head:hover {
+  background: var(--hover);
+}
+.user-menu .pills {
+  width: 100%;
+}
+.user-menu .pills .pill {
+  flex: 1;
+}

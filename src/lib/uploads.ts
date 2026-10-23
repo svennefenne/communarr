@@ -1,0 +1,121 @@
+import "server-only";
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import sharp from "sharp";
+import { db, now, UPLOAD_DIR } from "./db";
+
+/**
+ * Pictures people upload. Every one is re-encoded (WebP; animated GIFs stay animated), turned the
+ * right way up and stripped of its metadata (no GPS positions from phones), and sized for what it's
+ * for. Files live under DATA_DIR/uploads and are served by /media/….
+ */
+
+export type UploadKind = "image" | "avatar" | "banner" | "cover" | "background";
+
+const DIRS: Record<UploadKind, string> = { image: "img", avatar: "avatar", banner: "banner", cover: "cover", background: "bg" };
+
+export interface Uploaded {
+  id: string;
+  url: string;
+  thumb: string | null;
+  width: number;
+  height: number;
+  size: number;
+}
+
+const ALLOWED = new Set(["jpeg", "png", "webp", "gif", "avif", "heif", "tiff"]);
+
+export async function saveUpload(userId: number, buf: Buffer, kind: UploadKind, name: string): Promise<Uploaded> {
+  const meta = await sharp(buf, { animated: true, limitInputPixels: 120_000_000 }).metadata();
+  if (!meta.format || !ALLOWED.has(meta.format)) throw new Error("That isn't a picture we can use (JPEG, PNG, WebP, GIF or AVIF).");
+  const animated = (meta.pages ?? 1) > 1 && (kind === "image" || kind === "avatar");
+  const id = crypto.randomBytes(12).toString("base64url");
+  const d = new Date();
+  const rel = path.join(/*turbopackIgnore: true*/ DIRS[kind], String(d.getUTCFullYear()), String(d.getUTCMonth() + 1).padStart(2, "0"));
+  fs.mkdirSync(path.join(/*turbopackIgnore: true*/ UPLOAD_DIR, rel), { recursive: true });
+
+  let img = sharp(buf, { animated, limitInputPixels: 120_000_000 }).rotate();
+  switch (kind) {
+    case "avatar":
+      img = img.resize(512, 512, { fit: "cover", position: "attention" });
+      break;
+    case "banner":
+      img = img.resize(1800, 600, { fit: "cover", position: "attention", withoutEnlargement: false });
+      break;
+    case "cover":
+      img = img.resize(1600, 900, { fit: "inside", withoutEnlargement: true });
+      break;
+    case "background":
+      img = img.resize(2560, 2560, { fit: "inside", withoutEnlargement: true });
+      break;
+    default:
+      img = img.resize(2048, 2048, { fit: "inside", withoutEnlargement: true });
+  }
+  const out = await img.webp({ quality: kind === "background" ? 85 : 82, effort: 4, loop: 0 }).toBuffer({ resolveWithObject: true });
+  const file = path.join(rel, `${id}.webp`);
+  fs.writeFileSync(path.join(UPLOAD_DIR, file), out.data);
+  const height = animated && out.info.pageHeight ? out.info.pageHeight : out.info.height;
+
+  let thumb: string | null = null;
+  if (kind === "image" && (out.info.width > 720 || height > 720)) {
+    const t = await sharp(out.data, { animated }).resize(720, 720, { fit: "inside" }).webp({ quality: 78, loop: 0 }).toBuffer();
+    thumb = path.join(rel, `${id}.t.webp`);
+    fs.writeFileSync(path.join(/*turbopackIgnore: true*/ UPLOAD_DIR, thumb), t);
+  }
+  db()
+    .prepare("insert into uploads (id, user_id, kind, path, thumb, mime, size, width, height, name, created_at) values (?, ?, ?, ?, ?, 'image/webp', ?, ?, ?, ?, ?)")
+    .run(id, userId, kind, file, thumb, out.data.length, out.info.width, height, name.slice(0, 120), now());
+  return { id, url: `/media/${file.split(path.sep).join("/")}`, thumb: thumb ? `/media/${thumb.split(path.sep).join("/")}` : null, width: out.info.width, height, size: out.data.length };
+}
+
+/** The file behind a /media/… path, or null (nothing outside the uploads folder). */
+export function mediaFile(parts: string[]): string | null {
+  const rel = parts.join("/");
+  if (!/^[\w./-]+$/.test(rel) || rel.includes("..")) return null;
+  const full = path.resolve(UPLOAD_DIR, rel);
+  if (!full.startsWith(UPLOAD_DIR + path.sep)) return null;
+  return fs.existsSync(full) ? full : null;
+}
+
+export function uploadStats() {
+  const r = db().prepare("select count(*) n, coalesce(sum(size), 0) bytes from uploads").get() as { n: number; bytes: number };
+  const byKind = db().prepare("select kind, count(*) n, coalesce(sum(size), 0) bytes from uploads group by kind").all() as { kind: string; n: number; bytes: number }[];
+  return { ...r, byKind };
+}
+
+/** Delete uploads nothing points at any more (older than a day, so a post being written keeps its pictures). */
+export function cleanOrphans(): { removed: number; bytes: number } {
+  const rows = db().prepare("select id, path, thumb, size from uploads where created_at < ?").all(now() - 86_400_000) as { id: string; path: string; thumb: string | null; size: number }[];
+  const used = new Set<string>();
+  const sources = [
+    "select body_html h from posts",
+    "select cover h from posts where cover is not null",
+    "select body_html h from comments",
+    "select body_html h from forum_threads",
+    "select body_html h from forum_posts",
+    "select description_html h from polls",
+    "select description_html h from events",
+    "select cover h from events where cover is not null",
+    "select body_html h from messages",
+    "select bio_html h from users",
+    "select avatar h from users where avatar is not null",
+    "select banner h from users where banner is not null",
+    "select description_html h from groups",
+    "select avatar h from groups where avatar is not null",
+    "select banner h from groups where banner is not null",
+    "select data_json h from themes",
+    "select value h from settings",
+  ];
+  for (const sql of sources) for (const r of db().prepare(sql).all() as { h: string }[]) for (const m of (r.h || "").matchAll(/\/media\/[\w/-]+\/([\w-]+)(\.t)?\.webp/g)) used.add(m[1]);
+  let removed = 0;
+  let bytes = 0;
+  for (const r of rows) {
+    if (used.has(r.id)) continue;
+    for (const p of [r.path, r.thumb]) if (p) fs.rmSync(path.join(UPLOAD_DIR, p), { force: true });
+    db().prepare("delete from uploads where id = ?").run(r.id);
+    removed++;
+    bytes += r.size;
+  }
+  return { removed, bytes };
+}
