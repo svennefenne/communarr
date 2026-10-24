@@ -119,6 +119,13 @@ export function ChatRoom(p: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // link previews come after their message is drawn: stay at the bottom if you were there
+  useEffect(() => {
+    const on = () => atBottom.current && !highlight && scrollToBottom();
+    window.addEventListener("hd:grew", on);
+    return () => window.removeEventListener("hd:grew", on);
+  }, [highlight]);
+
   // older messages put above: keep what you were looking at in place
   useLayoutEffect(() => {
     const el = scroller.current;
