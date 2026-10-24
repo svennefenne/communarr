@@ -115,6 +115,19 @@ html.app-page:not([data-frame="on"]) .site-footer {
 .chat-title span {
   max-width: 100%;
 }
+/* voice, pinned, members and the menu: at the end of the header row (a row of their own on phones) */
+.chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: none;
+}
+.chat-voice {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
 .chat-scroll {
   flex: 1;
   overflow-y: auto;
@@ -428,8 +441,32 @@ html.app-page:not([data-frame="on"]) .site-footer {
     width: 34px !important;
     height: 34px !important;
   }
+  /* two rows in the same frame: the room's whole name, then its buttons */
   .chat-head {
+    flex-wrap: wrap;
+    row-gap: 6px;
     padding: 6px 8px;
+  }
+  .chat-title {
+    flex: 1 1 0;
+  }
+  .chat-title .ellipsis {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .chat-actions {
+    flex: 1 0 100%;
+    margin-left: 0;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+  }
+  /* voice on the left; pinned, members and the menu on the right (the menu opens leftwards) */
+  .chat-voice {
+    margin-right: auto;
   }
   .chat-new-below {
     bottom: 110px;
