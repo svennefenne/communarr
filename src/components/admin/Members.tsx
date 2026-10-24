@@ -2,18 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Ban, Check, Copy, KeyRound, LogOut, Search, Timer, Trash2, UserPlus, X } from "lucide-react";
+import { Ban, Check, Copy, KeyRound, LogOut, Mail, Search, Timer, Trash2, UserPlus, X } from "lucide-react";
 import type { AdminMember } from "@/lib/admin";
 import type { Role } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { UserChip } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { Dropdown, Modal, useConfirm } from "@/components/ui/ui";
-import { addMemberAction, approveAction, banAction, deleteMemberAction, logoutEverywhereAction, resetLinkAction, setPasswordAction, setRoleAction, suspendAction } from "@/app/actions/admin";
+import { addMemberAction, approveAction, banAction, deleteMemberAction, logoutEverywhereAction, mailResetLinkAction, resetLinkAction, setPasswordAction, setRoleAction, suspendAction } from "@/app/actions/admin";
 
 type Filter = "all" | "waiting" | "suspended" | "closed" | "staff";
 
-export function Members({ members, base, focus }: { members: AdminMember[]; base: string; focus?: number }) {
+export function Members({ members, base, focus, mail }: { members: AdminMember[]; base: string; focus?: number; mail: boolean }) {
   const { me } = useApp();
   const t = useT();
   const toast = useToast();
@@ -149,6 +149,20 @@ export function Members({ members, base, focus }: { members: AdminMember[]; base
                       >
                         <KeyRound size={16} /> {t("Password reset link")}
                       </button>
+                      {mail && m.hasEmail ? (
+                        <button
+                          type="button"
+                          className="menu-item"
+                          data-close
+                          onClick={async () => {
+                            const r = await mailResetLinkAction(m.id);
+                            if (r.ok) toast(t("A link for a new password is on its way to {name}'s confirmed address.", { name: m.name }));
+                            else toast(r.error, { kind: "err" });
+                          }}
+                        >
+                          <Mail size={16} /> {t("Mail a reset link")}
+                        </button>
+                      ) : null}
                       <button type="button" className="menu-item" data-close onClick={() => setPwFor(m)}>
                         <KeyRound size={16} /> {t("Set a password")}
                       </button>

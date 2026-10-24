@@ -42,7 +42,7 @@ export function isActive(s: Section, pathname: string) {
 
 /** Pages that are only their window (no header, frame or bars). */
 export function isBare(pathname: string) {
-  return pathname === "/login" || pathname === "/setup" || pathname === "/signup" || pathname.startsWith("/invite/") || pathname.startsWith("/reset/");
+  return pathname === "/login" || pathname === "/setup" || pathname === "/signup" || pathname === "/forgot" || pathname.startsWith("/invite/") || pathname.startsWith("/reset/") || pathname.startsWith("/mail/");
 }
 
 /** Where each section's live dot comes from. */
