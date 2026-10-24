@@ -152,7 +152,6 @@ const sv: Record<string, string> = {
   "Forgot your password? Ask an admin for a reset link.": "Glömt lösenordet? Be en admin om en länk för att byta det.",
   "New here?": "Ny här?",
   "Make an account": "Skapa ett konto",
-  "Your name": "Ditt namn",
   "What your friends call you": "Det dina vänner kallar dig",
   "For logging in and @mentions: letters, numbers, dots, dashes, underscores.": "För inloggning och @omnämnanden: bokstäver, siffror, punkter, bindestreck och understreck.",
   "Password again": "Lösenordet igen",
@@ -190,14 +189,11 @@ const sv: Record<string, string> = {
   "The two passwords aren't the same.": "Lösenorden är inte likadana.",
   "Usernames are 2–24 letters, numbers, dots, dashes or underscores.": "Användarnamn är 2–24 bokstäver, siffror, punkter, bindestreck eller understreck.",
   "That username is taken.": "Det användarnamnet är upptaget.",
-  "Tell us what to call you.": "Berätta vad vi ska kalla dig.",
-  "That name is a bit long (40 letters at most).": "Det namnet är lite långt (högst 40 tecken).",
   "This invite link doesn't work any more. Ask for a new one.": "Den här inbjudningslänken funkar inte längre. Be om en ny.",
   "This invite link has expired. Ask for a new one.": "Den här inbjudningslänken har gått ut. Be om en ny.",
   "This invite link has been used up. Ask for a new one.": "Den här inbjudningslänken är förbrukad. Be om en ny.",
 
   // profiles and members
-  "Your name can't be empty.": "Ditt namn kan inte vara tomt.",
   "Your current password isn't right.": "Ditt nuvarande lösenord stämmer inte.",
   "You're the only admin: make someone else admin first.": "Du är den enda adminen: gör någon annan till admin först.",
   "Former member": "Tidigare medlem",

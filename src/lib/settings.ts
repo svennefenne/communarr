@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "./db";
 import { isLang, type Lang } from "./i18n";
 import type { Backdrop, LibraryBackdrop } from "./theme";
+import type { TimeFormat, WeekStart } from "./clock";
 
 /** Site settings (Admin). Stored as JSON per key; anything missing falls back to DEFAULTS. */
 
@@ -49,6 +50,10 @@ export interface SiteSettings {
   wordFilter: string[];
   /** an admin's own wording for the built-in texts, per language: English text → their text (Admin → Texts) */
   texts: Partial<Record<Lang, Record<string, string>>>;
+  /** 24-hour or 12-hour times, whatever the language */
+  timeFormat: TimeFormat;
+  /** the first day of the week (1 Monday, 0 Sunday, 6 Saturday) */
+  weekStart: WeekStart;
 }
 
 export const DEFAULTS: SiteSettings = {
@@ -76,6 +81,8 @@ export const DEFAULTS: SiteSettings = {
   pushContact: "",
   wordFilter: [],
   texts: {},
+  timeFormat: "24h",
+  weekStart: 1,
 };
 
 /** The default texts in the other languages (until an admin writes their own). */

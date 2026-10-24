@@ -461,9 +461,6 @@ const sv: Record<string, string> = {
   Compact: "Kompakt",
   "Smaller text in posts and lists, more on the screen.": "Mindre text i inlägg och listor, mer på skärmen.",
   Animations: "Animationer",
-  "Things lift and glide. Off: nothing moves.": "Saker lyfter och glider. Av: inget rör sig.",
-  "Page wipes": "Sidövergångar",
-  "Scene-change wipes between pages, like in the old films.": "Scenbyten mellan sidorna, som i gamla filmer.",
 
   // notifications (components/settings/NotifySettings.tsx, NOTIFY_KINDS in lib/types.ts)
   "Notifications are on for this device.": "Notiser är på för den här enheten.",

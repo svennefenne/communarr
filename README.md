@@ -30,7 +30,7 @@ or in a theme you make yourself.
   the headphones to talk (WebRTC, mute, deafen, who's talking glows), and the call stays up while you
   move around the site.
 - **Calendar**: month (dots on a phone), week and list views, events with time, place, colour, cover,
-  capacity and repeats, for everyone, a group or only you, RSVPs (going, maybe, can't), comments, reminders a day and an hour before,
+  capacity and repeats (every day, week, month or year, or custom: every few days, weeks or months, on chosen weekdays, the first Friday, until a date or so many times), for everyone, a group or only you, RSVPs (going, maybe, can't), comments, reminders a day and an hour before,
   change and cancel notices, `.ics` downloads, and a private calendar feed for your phone's calendar app.
 - **Polls**: single or multiple choice (with a limit), anonymous or not, changeable votes, choices
   members can add, results always / after voting / after closing, closing times, live results.

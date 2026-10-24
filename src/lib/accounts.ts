@@ -9,12 +9,12 @@ import { getSettings } from "./settings";
 import { serverT } from "./t";
 
 /** What's wrong with a new account, as English text (translate it where it's shown: t(err)), or null. */
-export function validateNewUser(username: string, name: string, password: string, password2?: string): string | null {
+export function validateNewUser(username: string, alias: string, password: string, password2?: string): string | null {
   if (!USERNAME_RE.test(username)) return "Usernames are 2–24 letters, numbers, dots, dashes or underscores.";
   if (["admin", "system", "ghost", "me", "new", "settings", "hooden"].includes(username.toLowerCase()) && hasUsers()) return "That username is taken.";
   if (db().prepare("select 1 from users where username = ?").get(username)) return "That username is taken.";
-  if (!name.trim()) return "Tell us what to call you.";
-  if (name.trim().length > 40) return "That name is a bit long (40 letters at most).";
+  // (the alias is optional: without one, the username shows)
+  if (alias.trim().length > 40) return "That alias is a bit long (40 letters at most).";
   if (password.length < 8) return "Passwords need at least 8 characters.";
   if (password2 !== undefined && password !== password2) return "The two passwords aren't the same.";
   return null;
@@ -24,20 +24,25 @@ function hasUsers() {
   return !!db().prepare("select 1 from users limit 1").get();
 }
 
-/** Make an account (one that's waiting can't log in yet), and put the new member in the site's open chat rooms. */
-export async function createUser(o: { username: string; name: string; password: string; role?: Role; invitedBy?: number | null; waiting?: Waiting }): Promise<number> {
+/**
+ * Make an account (one that's waiting can't log in yet), and put the new member in the site's open
+ * chat rooms. The alias is optional: without one, the username is what's shown.
+ */
+export async function createUser(o: { username: string; alias?: string; password: string; role?: Role; invitedBy?: number | null; waiting?: Waiting }): Promise<number> {
   const hash = await hashPassword(o.password);
+  const alias = o.alias?.trim().slice(0, 40) || null;
+  const shown = alias ?? o.username;
   return tx(() => {
     const t = now();
     const id = Number(
       db()
-        .prepare("insert into users (username, display_name, password_hash, role, invited_by, created_at, suspended_until, ban_reason) values (?, ?, ?, ?, ?, ?, ?, ?)")
-        .run(o.username, o.name.trim(), hash, o.role ?? "member", o.invitedBy ?? null, t, o.waiting ? 9_999_999_999_999 : null, o.waiting ?? null).lastInsertRowid,
+        .prepare("insert into users (username, display_name, alias, password_hash, role, invited_by, created_at, suspended_until, ban_reason) values (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .run(o.username, shown, alias, hash, o.role ?? "member", o.invitedBy ?? null, t, o.waiting ? 9_999_999_999_999 : null, o.waiting ?? null).lastInsertRowid,
     );
     const rooms = db().prepare("select id from rooms where kind = 'room' and visibility = 'open' and group_id is null and archived = 0").all() as { id: number }[];
     const join = db().prepare("insert or ignore into room_members (room_id, user_id, joined_at, last_read_id) values (?, ?, ?, (select coalesce(max(id), 0) from messages where room_id = ?))");
     for (const r of rooms) join.run(r.id, id, t, r.id);
-    indexItem("user", id, "members", id, t, o.name, o.username);
+    indexItem("user", id, "members", id, t, shown, o.username);
     return id;
   });
 }

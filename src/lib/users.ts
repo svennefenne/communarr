@@ -8,7 +8,9 @@ import { makeT } from "./i18n";
 export interface UserRow {
   id: number;
   username: string;
+  /** what's shown: the alias, or else the username */
   display_name: string;
+  alias: string | null;
   password_hash: string;
   role: Role;
   avatar: string | null;
@@ -39,7 +41,10 @@ export interface UserRow {
 export interface User {
   id: number;
   username: string;
+  /** what's shown: the alias, or else the username */
   name: string;
+  /** the alias they set (null: none, the username shows) */
+  alias: string | null;
   role: Role;
   isAdmin: boolean;
   isMod: boolean;
@@ -112,6 +117,7 @@ export function toUser(r: UserRow): User {
     id: r.id,
     username: r.username,
     name: r.display_name,
+    alias: r.alias ?? null,
     role: r.role,
     isAdmin: r.role === "admin",
     isMod: r.role === "admin" || r.role === "moderator",

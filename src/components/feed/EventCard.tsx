@@ -1,17 +1,18 @@
 "use client";
 
+import { CardSection } from "./CardSection";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { CalendarCheck, CalendarDays, Check, HelpCircle, Lock, MapPin, Repeat, X } from "lucide-react";
 import type { EventView, RsvpStatus } from "@/lib/contentTypes";
 import { useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserLink } from "@/components/ui/Avatar";
+import { describeRepeat } from "@/lib/repeat";
+import { clock } from "@/lib/clock";
 import { Time } from "@/components/ui/Time";
 import { rsvpAction } from "@/app/actions/content";
 import { GroupChip } from "./PostCard";
 
-/** English: translate where shown, t(REPEAT_LABEL[e.repeat]). */
-export const REPEAT_LABEL = { none: "", daily: "Every day", weekly: "Every week", monthly: "Every month", yearly: "Every year" } as const;
 
 /** The date as a little calendar page. */
 export function DateTile({ t, color, small = false }: { t: number; color?: string; small?: boolean }) {
@@ -92,13 +93,14 @@ export function RsvpButtons({ e, onChange, size = "sm" }: { e: EventView; onChan
   );
 }
 
-export function EventCard({ event, compact = false }: { event: EventView; compact?: boolean }) {
+export function EventCard({ event, compact = false, section = false }: { event: EventView; compact?: boolean; section?: boolean }) {
   const me = useMe();
   const t = useT();
   const [e, setE] = useState(event);
   const url = `/events/${e.id}`;
   return (
     <article className={`panel event-card ${e.cancelled ? "cancelled" : ""}`} style={{ ["--ec" as string]: e.color }}>
+      {section ? <CardSection kind="event" /> : null}
       {!compact ? (
         <header className="post-head">
           <span className="kind-icon event">
@@ -125,7 +127,7 @@ export function EventCard({ event, compact = false }: { event: EventView; compac
             <EventWhen e={e} />
             {e.repeat !== "none" ? (
               <span className="row" style={{ gap: 4, display: "inline-flex", marginLeft: 6 }}>
-                <Repeat size={12} /> {t(REPEAT_LABEL[e.repeat])}
+                <Repeat size={12} /> {describeRepeat(t, e, clock().weekStart)}
               </span>
             ) : null}
           </div>

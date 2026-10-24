@@ -29,7 +29,7 @@ export async function POST() {
     ["erik", "Erik Berg"],
     ["fia", "Fia Holm"],
   ];
-  for (const [u, n] of people) await createUser({ username: u, name: n, password: "testpass123" });
+  for (const [u, n] of people) await createUser({ username: u, alias: n, password: "testpass123" });
   const U = (n: string) => userByName(n) as User;
   const [me, anna, bjorn, cleo, dani, erik, fia] = ["fenne", "anna", "bjorn", "cleo", "dani", "erik", "fia"].map(U);
   const statuses: [User, string, string][] = [

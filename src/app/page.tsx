@@ -42,7 +42,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         <div className="stack loose" style={{ minWidth: 0 }}>
           <PushPrompt />
           {hero && filter === "all" ? <NewsHero post={hero} /> : null}
-          <Feed initial={items} initialFilter={filter} groups={postableGroups(u)} />
+          <Feed initial={items} initialFilter={filter} groups={postableGroups(u)} sections />
         </div>
         <aside className="stack home-side side-sticky">
           {f.calendar ? <UpcomingWidget events={events} /> : null}
