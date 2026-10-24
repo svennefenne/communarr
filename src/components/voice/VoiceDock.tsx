@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Headphones, HeadphoneOff, Mic, MicOff, PhoneOff, Radio } from "lucide-react";
+import { useState } from "react";
+import { Headphones, HeadphoneOff, Mic, MicOff, PhoneOff, Radio, Settings2 } from "lucide-react";
 import { useVoice, type VoicePeer } from "./VoiceProvider";
 import { useApp, useT } from "@/components/app/AppProvider";
 import { useMembers } from "@/components/app/useMembers";
 import { Avatar } from "@/components/ui/Avatar";
 import type { UserSummary } from "@/lib/types";
+import { Modal } from "@/components/ui/ui";
+import { keyName } from "./pipeline";
+import { VoiceSettings } from "./VoiceSettings";
 
 function Face({ p, user, talking, me }: { p: VoicePeer; user?: UserSummary; talking: boolean; me: boolean }) {
   const t = useT();
@@ -34,6 +38,7 @@ function Dock() {
   const t = useT();
   const { conn } = useApp();
   const people = useMembers();
+  const [settings, setSettings] = useState(false);
   if (v.room == null) return null;
   const peers = v.channels[v.room] ?? [];
   return (
@@ -48,6 +53,15 @@ function Dock() {
         ))}
       </div>
       <div className="vc-btns">
+        {/* push to talk: which key, lit while it's held */}
+        {v.prefs.mode === "ptt" && !v.muted ? (
+          <span className={`vc-ptt ${v.talkKey ? "on" : ""}`} title={t("Push to talk")}>
+            {v.talkKey ? t("Talking") : t("Hold {key}", { key: keyName(v.prefs.key) })}
+          </span>
+        ) : null}
+        <button type="button" className="icon-btn sm" onClick={() => setSettings(true)} aria-label={t("Voice settings")} title={t("Voice settings")}>
+          <Settings2 size={17} />
+        </button>
         <button type="button" className={`icon-btn sm ${v.muted ? "on" : ""}`} onClick={v.toggleMute} aria-pressed={v.muted} aria-label={v.muted ? t("Unmute") : t("Mute")} title={v.muted ? t("Unmute") : t("Mute")}>
           {v.muted ? <MicOff size={17} /> : <Mic size={17} />}
         </button>
@@ -58,6 +72,14 @@ function Dock() {
           <PhoneOff size={17} />
         </button>
       </div>
+      {settings ? (
+        <Modal onClose={() => setSettings(false)} label={t("Voice settings")}>
+          <h2 className="h2" style={{ marginTop: 0, marginBottom: 14 }}>
+            {t("Voice settings")}
+          </h2>
+          <VoiceSettings />
+        </Modal>
+      ) : null}
     </div>
   );
 }

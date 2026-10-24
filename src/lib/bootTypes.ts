@@ -1,4 +1,5 @@
 import type { Clock } from "./clock";
+import type { SoundSettings } from "./sounds";
 import type { Lang, Own } from "./i18n";
 import type { Presence, ThemePrefs, UserSummary } from "./types";
 
@@ -7,6 +8,8 @@ export interface Me extends UserSummary {
   isMod: boolean;
   presence: Presence;
   theme: ThemePrefs;
+  /** the groups they're in (when the page loaded) */
+  groups: number[];
 }
 
 export interface Features {
@@ -37,6 +40,8 @@ export interface SiteInfo {
   registration: "invite" | "open" | "closed";
   /** 24-hour or 12-hour times, and the first day of the week */
   clock: Clock;
+  /** the site's sounds (Admin → Sounds; logged in only) */
+  sounds: SoundSettings | null;
 }
 
 export interface Boot {

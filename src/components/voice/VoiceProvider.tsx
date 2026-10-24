@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useApp, useLive, useT } from "@/components/app/AppProvider";
 import { clientT } from "@/lib/i18n";
+import { DEFAULT_VOICE_PREFS, loadVoicePrefs, openPipeline, saveVoicePrefs, type MicLevel, type NoiseMode, type Pipeline, type VoicePrefs } from "./pipeline";
 
 /**
  * Voice chat in the browser. Joining a room's voice calls every other tab in it directly (WebRTC);
@@ -35,6 +36,16 @@ interface Ctx {
   leave: () => void;
   toggleMute: () => void;
   toggleDeafen: () => void;
+  /** your voice settings on this device (push to talk, noise suppression, input sensitivity) */
+  prefs: VoicePrefs;
+  setPrefs: (p: VoicePrefs) => Promise<void>;
+  /** push to talk: the key is held */
+  talkKey: boolean;
+  /** in a call: what the microphone path can do here (no audio worklets: no sensitivity or push to talk) */
+  processed: boolean;
+  noiseInUse: NoiseMode;
+  /** in a call: how loud the microphone is (for the meter) */
+  onMicLevel: (fn: (l: MicLevel) => void) => () => void;
 }
 
 const VoiceCtx = createContext<Ctx | null>(null);
@@ -77,6 +88,19 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const meters = useRef(new Map<number | "me", AnalyserNode>());
   const actx = useRef<AudioContext | null>(null);
   const deafRef = useRef(false);
+  // the microphone's path (noise suppression, sensitivity, push to talk) and your settings for it
+  const pipe = useRef<Pipeline | null>(null);
+  const [prefs, setPrefsState] = useState<VoicePrefs>(DEFAULT_VOICE_PREFS);
+  const prefsRef = useRef<VoicePrefs>(DEFAULT_VOICE_PREFS);
+  const [talkKey, setTalkKey] = useState(false);
+  const talkRef = useRef(false);
+  const [processed, setProcessed] = useState(true);
+  const [noiseInUse, setNoiseInUse] = useState<NoiseMode>("browser");
+  useEffect(() => {
+    const p = loadVoicePrefs();
+    prefsRef.current = p;
+    setPrefsState(p);
+  }, []);
 
   useEffect(() => setSupported(typeof window !== "undefined" && window.isSecureContext && !!navigator.mediaDevices?.getUserMedia && typeof RTCPeerConnection !== "undefined"), []);
   useEffect(() => {
@@ -226,11 +250,26 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   const stopAll = useCallback(() => {
     for (const c of [...pcs.current.keys()]) closePeer(c);
+    pipe.current?.close();
+    pipe.current = null;
     local.current?.getTracks().forEach((t) => t.stop());
     local.current = null;
     meters.current.clear();
     setSpeaking(new Set());
+    talkRef.current = false;
+    setTalkKey(false);
   }, [closePeer]);
+
+  /** The microphone through your settings, ready for a call. */
+  const openMic = useCallback(async () => {
+    const p = await openPipeline(prefsRef.current);
+    pipe.current = p;
+    local.current = p.stream;
+    setProcessed(p.processed);
+    setNoiseInUse(p.noise);
+    meter("me", p.stream);
+    return p;
+  }, [meter]);
 
   const enter = useCallback(
     async (r: number) => {
@@ -258,10 +297,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           void post({ action: "leave", room: roomRef.current, conn: connRef.current }).catch(() => {});
           for (const c of [...pcs.current.keys()]) closePeer(c);
         }
-        if (!local.current) {
-          local.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
-          meter("me", local.current);
-        }
+        if (!local.current) await openMic();
         // a click starts the call: the audio may play now (iPhone)
         void actx.current?.resume();
         setMuted(false);
@@ -277,7 +313,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         setJoining(false);
       }
     },
-    [enter, closePeer, meter, stopAll, t],
+    [enter, closePeer, openMic, stopAll, t],
   );
 
   const leave = useCallback(() => {
@@ -325,8 +361,74 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     if (t && deafRef.current && t.enabled) toggleMute();
   }, [toggleMute]);
 
+  /**
+   * New voice settings: kept on this device, and in a call they apply at once (a new kind of noise
+   * suppression means a new microphone path, swapped into every connection without dropping the call).
+   */
+  const setPrefs = useCallback(
+    async (next: VoicePrefs) => {
+      const before = prefsRef.current;
+      prefsRef.current = next;
+      setPrefsState(next);
+      saveVoicePrefs(next);
+      const p = pipe.current;
+      if (!p) return;
+      if (next.noise !== before.noise) {
+        const wasOn = local.current?.getAudioTracks()[0]?.enabled ?? true;
+        const fresh = await openPipeline(next).catch(() => null);
+        if (!fresh) return;
+        const track = fresh.stream.getAudioTracks()[0];
+        if (track) track.enabled = wasOn;
+        for (const pc of pcs.current.values()) await pc.getSenders().find((s) => s.track?.kind === "audio")?.replaceTrack(track ?? null).catch(() => {});
+        p.close();
+        pipe.current = fresh;
+        local.current = fresh.stream;
+        setProcessed(fresh.processed);
+        setNoiseInUse(fresh.noise);
+        meter("me", fresh.stream);
+      }
+      const cur = pipe.current!;
+      cur.setThreshold(next.threshold);
+      cur.setForce(next.mode === "ptt" ? (talkRef.current ? 1 : -1) : 0);
+    },
+    [meter],
+  );
+
+  // push to talk: while in a call, the key held down opens the microphone (not while typing in a field)
+  useEffect(() => {
+    if (room == null || prefs.mode !== "ptt") return;
+    const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+    const set = (down: boolean) => {
+      if (talkRef.current === down) return;
+      talkRef.current = down;
+      setTalkKey(down);
+      pipe.current?.setForce(down ? 1 : -1);
+    };
+    const onDown = (e: KeyboardEvent) => {
+      if (e.code !== prefs.key || e.repeat || typing(e.target)) return;
+      e.preventDefault();
+      set(true);
+    };
+    const onUp = (e: KeyboardEvent) => e.code === prefs.key && set(false);
+    // a key let go in another window never comes back up here
+    const onBlur = () => set(false);
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+      window.removeEventListener("blur", onBlur);
+      set(false);
+    };
+  }, [room, prefs.mode, prefs.key]);
+
+  const onMicLevel = useCallback((fn: (l: MicLevel) => void) => pipe.current?.onLevel(fn) ?? (() => {}), []);
+
   return (
-    <VoiceCtx.Provider value={{ supported, room, roomName, joining, muted, deafened, error, channels, speaking, links, join, leave, toggleMute, toggleDeafen }}>
+    <VoiceCtx.Provider
+      value={{ supported, room, roomName, joining, muted, deafened, error, channels, speaking, links, join, leave, toggleMute, toggleDeafen, prefs, setPrefs, talkKey, processed, noiseInUse, onMicLevel }}
+    >
       {children}
     </VoiceCtx.Provider>
   );

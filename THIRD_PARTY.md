@@ -12,3 +12,10 @@
   Space Grotesk, Nunito, Atkinson Hyperlegible.
 - **Libraries**: Next.js and React (MIT), better-sqlite3 (MIT), sharp (Apache-2.0), sanitize-html (MIT), web-push (MPL-2.0).
 - **Look and feel**: modelled on Deck Force (the wide poster type, eyebrows, glass header, frame, film grain and wipes).
+
+## Voice chat: strong noise suppression
+
+- **@sapphi-red/web-noise-suppressor** 0.4.1 (MIT, © 2022 翠 / green): the RNNoise audio worklet and its
+  WebAssembly builds, copied into `public/voice/vendor/` at build time.
+- **RNNoise** (BSD-3-Clause, © Xiph.Org Foundation, Mozilla and contributors), built to WebAssembly by
+  **@shiguredo/rnnoise-wasm** (Apache-2.0, © Shiguredo Inc.), inside the package above.

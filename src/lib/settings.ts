@@ -3,6 +3,7 @@ import { db } from "./db";
 import { isLang, type Lang } from "./i18n";
 import type { Backdrop, LibraryBackdrop } from "./theme";
 import type { TimeFormat, WeekStart } from "./clock";
+import { DEFAULT_SOUNDS, type SoundSettings } from "./sounds";
 
 /** Site settings (Admin). Stored as JSON per key; anything missing falls back to DEFAULTS. */
 
@@ -56,6 +57,8 @@ export interface SiteSettings {
   weekStart: WeekStart;
   /** the chat room /chat opens on a computer: a room's id, 0 for none (just the list), -1 for the site's first open room (the Lounge) */
   defaultRoom: number;
+  /** sounds for things that happen (Admin → Sounds) */
+  sounds: SoundSettings;
 }
 
 export const DEFAULTS: SiteSettings = {
@@ -86,6 +89,7 @@ export const DEFAULTS: SiteSettings = {
   timeFormat: "24h",
   weekStart: 1,
   defaultRoom: -1,
+  sounds: DEFAULT_SOUNDS,
 };
 
 /** The default texts in the other languages (until an admin writes their own). */

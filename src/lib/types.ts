@@ -23,6 +23,8 @@ export interface ThemePrefs {
   custom: number | null;
   wipes: boolean;
   motion: boolean;
+  /** the site's sounds (Admin → Sounds): off for this member with the menu's switch; voice chat is never touched */
+  sounds: boolean;
   /** text size: 90..125 (%) */
   textSize: number;
   /** compact lists */

@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { DEFAULTS, dropDefaultTexts, getSettings, setSettings, type SiteSettings } from "@/lib/settings";
 import { allTexts, builtIn, isLang, LANGS, type Lang } from "@/lib/i18n";
 import { placesFor } from "@/lib/textPlaces";
+import { cleanSounds } from "@/lib/sounds";
 import PLACES from "@/i18n/places.json";
 import { addMember, approve, ban, deleteMember, logoutEverywhere, reindexAll, resetLink, setPasswordFor, setRole, suspend, vacuum } from "@/lib/admin";
 import { createInvite } from "@/lib/accounts";
@@ -136,6 +137,7 @@ export async function saveSettingsAction(patch: Partial<SiteSettings>) {
     if (clean.timeFormat !== undefined && clean.timeFormat !== "24h" && clean.timeFormat !== "12h") delete clean.timeFormat;
     if (clean.weekStart !== undefined && ![0, 1, 6].includes(clean.weekStart)) delete clean.weekStart;
     if (clean.defaultRoom !== undefined && !(Number.isInteger(clean.defaultRoom) && clean.defaultRoom >= -1)) delete clean.defaultRoom;
+    if (clean.sounds !== undefined) clean.sounds = cleanSounds(clean.sounds);
     if (clean.siteName !== undefined) clean.siteName = cleanLine(clean.siteName, 40) || s.siteName;
     if (clean.tagline !== undefined) clean.tagline = cleanLine(clean.tagline, 200);
     if (clean.welcome !== undefined) clean.welcome = cleanLine(clean.welcome, 400);

@@ -9,6 +9,7 @@ import { ModeSwitch } from "@/components/shell/UserMenu";
 import { LanguageSetting } from "@/components/app/LanguageToggle";
 import type { Lang } from "@/lib/i18n";
 import { useTransitions } from "@/components/shell/Transitions";
+import { setSoundsOn } from "@/components/app/sfx";
 import { setPrefsAction } from "@/app/actions/me";
 
 export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; language: { own: Lang | null; site: Lang } }) {
@@ -82,6 +83,20 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
             else document.documentElement.dataset.motion = "off";
             setWipe(v);
             void save({ motion: v, wipes: v });
+          }}
+        />
+      </div>
+      <div className="setting-row">
+        <div className="grow">
+          <b>{t("Sounds")}</b>
+          <span className="small muted">{t("A sound when someone comes online, joins your voice chat, or posts. Voice chat itself isn't affected.")}</span>
+        </div>
+        <Switch
+          on={p.sounds !== false}
+          label={t("Sounds")}
+          onChange={(v) => {
+            setSoundsOn(v);
+            void save({ sounds: v });
           }}
         />
       </div>
