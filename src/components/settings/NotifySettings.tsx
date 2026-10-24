@@ -8,6 +8,7 @@ import { useT, useToast } from "@/components/app/AppProvider";
 import { disablePush, enablePush, pushState, testPush, type PushState } from "@/components/app/push";
 import { Switch } from "@/components/ui/ui";
 import { Time } from "@/components/ui/Time";
+import { TimeField } from "@/components/ui/DateTime";
 import { InstallHelp } from "@/components/shell/InstallButton";
 import { notifyPrefsAction, resetCalendarFeedAction } from "@/app/actions/settings";
 
@@ -144,10 +145,10 @@ export function NotifySettings({ prefs, devices, feed, mail }: { prefs: NotifyPr
         </p>
         <div className="row wrap">
           <label className="row small">
-            {t("From")} <input type="time" className="input sm" style={{ width: 130 }} value={p.quietFrom} onChange={(e) => save({ quietFrom: e.target.value })} />
+            {t("From")} <TimeField small step={15} value={p.quietFrom} onChange={(v) => save({ quietFrom: v })} label={t("From")} />
           </label>
           <label className="row small">
-            {t("to")} <input type="time" className="input sm" style={{ width: 130 }} value={p.quietTo} onChange={(e) => save({ quietTo: e.target.value })} />
+            {t("to")} <TimeField small step={15} value={p.quietTo} onChange={(v) => save({ quietTo: v })} label={t("to")} />
           </label>
           {p.quietFrom ? (
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => save({ quietFrom: "", quietTo: "" })}>

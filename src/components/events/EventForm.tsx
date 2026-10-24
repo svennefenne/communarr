@@ -10,6 +10,7 @@ import type { EventView } from "@/lib/contentTypes";
 import { createEventAction, updateEventAction } from "@/app/actions/content";
 import type { RepeatRule } from "@/lib/repeat";
 import { CustomRepeat, type RepeatEnds } from "./CustomRepeat";
+import { DateField, TimeField } from "@/components/ui/DateTime";
 
 const COLORS = ["#d65a2b", "#e2a634", "#2f7088", "#4f8f50", "#9c5bb5", "#d4689a", "#5b7bd6", "#c8412f"];
 
@@ -126,15 +127,15 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
           <div className="field">
             <label>{t("Starts")}</label>
             <div className="input-group">
-              <input type="date" className="input" value={sd} onChange={(e) => setStartDate(e.target.value)} />
-              {!allDay ? <input type="time" className="input" value={st} onChange={(e) => setStartTime(e.target.value)} style={{ maxWidth: 140 }} /> : null}
+              <DateField value={sd} onChange={setStartDate} label={t("Starts")} />
+              {!allDay ? <TimeField value={st} onChange={setStartTime} label={t("Starts")} /> : null}
             </div>
           </div>
           <div className="field">
             <label>{t("Ends")}</label>
             <div className="input-group">
-              <input type="date" className="input" value={edd} min={sd} onChange={(e) => setEdd(e.target.value)} />
-              {!allDay ? <input type="time" className="input" value={et} onChange={(e) => setEt(e.target.value)} style={{ maxWidth: 140 }} /> : null}
+              <DateField value={edd} min={sd} onChange={setEdd} label={t("Ends")} />
+              {!allDay ? <TimeField value={et} onChange={setEt} label={t("Ends")} /> : null}
             </div>
           </div>
         </div>
@@ -153,7 +154,7 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
           {repeat !== "none" && repeat !== "custom" ? (
             <div className="field">
               <label htmlFor="ef-until">{t("Until (optional)")}</label>
-              <input id="ef-until" type="date" className="input" value={until} min={sd} onChange={(e) => setUntil(e.target.value)} />
+              <DateField id="ef-until" value={until} min={sd} onChange={setUntil} clearable placeholder={t("No end")} />
             </div>
           ) : null}
         </div>

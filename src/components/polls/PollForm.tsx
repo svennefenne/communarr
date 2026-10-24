@@ -5,10 +5,11 @@ import { useRef, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, Plus, Send, Trash2 } from "lucide-react";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
+import { DateField, TimeField } from "@/components/ui/DateTime";
 import type { PollView } from "@/lib/contentTypes";
 import { createPollAction, updatePollAction } from "@/app/actions/content";
 
-/** A Date as the value of an <input type="datetime-local"> (local time). */
+/** A Date as "2026-11-06T18:30" (local time): the day and time fields' values joined. */
 export function toLocalInput(t: number | null | undefined) {
   if (!t) return "";
   const d = new Date(t);
@@ -164,7 +165,17 @@ export function PollForm({ groups, poll, groupId }: { groups: { id: number; name
           </div>
           <div className="field">
             <label htmlFor="pf-close">{t("Closes (optional)")}</label>
-            <input id="pf-close" type="datetime-local" className="input" value={closes} onChange={(e) => setCloses(e.target.value)} />
+            <div className="input-group">
+              <DateField
+                id="pf-close"
+                value={closes.slice(0, 10)}
+                min={toLocalInput(Date.now()).slice(0, 10)}
+                onChange={(d) => setCloses(d ? `${d}T${closes.slice(11) || "18:00"}` : "")}
+                clearable
+                placeholder={t("Doesn't close")}
+              />
+              <TimeField value={closes.slice(11)} onChange={(v) => setCloses(`${closes.slice(0, 10) || toLocalInput(Date.now()).slice(0, 10)}T${v}`)} label={t("Time")} />
+            </div>
             <div className="chip-row">
               {QUICK_CLOSE.map(([l, ms]) => (
                 <button key={l} type="button" className="pill soft" onClick={() => setCloses(toLocalInput(Date.now() + ms))}>

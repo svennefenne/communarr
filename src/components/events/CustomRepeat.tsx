@@ -3,6 +3,7 @@
 import { useT } from "@/components/app/AppProvider";
 import { clock, weekDays } from "@/lib/clock";
 import { capital, describeRepeat, NTH_ON, weekdayName, weekOfMonth, type RepeatFreq, type RepeatRule } from "@/lib/repeat";
+import { DateField } from "@/components/ui/DateTime";
 
 export type RepeatEnds = "never" | "on" | "after";
 
@@ -99,7 +100,7 @@ export function CustomRepeat({
             {t("After")}
           </button>
         </div>
-        {ends === "on" ? <input type="date" className="input sm" value={until} min={minDate} onChange={(e) => onUntil(e.target.value)} aria-label={t("The last day")} style={{ width: "auto" }} /> : null}
+        {ends === "on" ? <DateField small value={until} min={minDate} onChange={onUntil} label={t("The last day")} /> : null}
         {ends === "after" ? (
           <span className="row" style={{ gap: 6 }}>
             <input
