@@ -35,7 +35,8 @@ html.app-page:not([data-frame="on"]) .site-footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 12px 6px;
+  /* the same edges as the rows' highlights and the invitation cards below it */
+  margin: 0 6px 6px;
   padding: 0 12px;
   height: 38px;
   border-radius: 11px;

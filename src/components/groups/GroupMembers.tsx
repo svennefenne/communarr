@@ -28,7 +28,7 @@ export function GroupMembers({ groupId, members, requests, canManage, isOwner }:
   const asking = requests.filter((r) => r.kind === "request");
   const invited = requests.filter((r) => r.kind === "invite");
   return (
-    <div className="narrow-col stack loose">
+    <div className="stack loose">
       {canManage && asking.length ? (
         <section className="panel">
           <div className="panel-head">

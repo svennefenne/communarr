@@ -91,18 +91,6 @@
   overflow: hidden;
   container-type: inline-size;
 }
-/* in a narrow column (the forum's side, a phone): title and replies only */
-@container (max-width: 560px) {
-  .thread-row {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 10px;
-    padding: 10px 12px;
-  }
-  .thread-last,
-  .thread-stats span:last-child {
-    display: none;
-  }
-}
 .thread-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto 110px;
@@ -159,6 +147,47 @@
   align-items: center;
   gap: 6px;
   justify-content: flex-end;
+}
+.thread-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+}
+.thread-meta-narrow {
+  display: none;
+}
+/* in a narrow column (the forum's side, a phone): the title, one line with the category and the
+   latest, and the replies (after the rules above, so it wins) */
+@container (max-width: 560px) {
+  .thread-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 11px 14px;
+  }
+  .thread-last,
+  .thread-stats span:last-child,
+  .thread-meta-wide {
+    display: none;
+  }
+  .thread-meta {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .thread-meta-narrow {
+    display: inline;
+  }
+  /* the category as coloured text, not a box */
+  .thread-meta .cat-chip {
+    display: inline;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
 }
 .thread-h1 {
   font-size: clamp(1.4rem, 3.6vw, 2.1rem);
@@ -679,6 +708,16 @@
 }
 
 /* ── Themes ── */
+/* beside the categories on a wide screen; a line of its own, as wide as the schemes, on a phone */
+.scheme-search {
+  flex: 1 1 200px;
+  max-width: 320px;
+}
+@media (max-width: 600px) {
+  .scheme-search {
+    max-width: none;
+  }
+}
 .scheme-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
@@ -910,30 +949,38 @@
 }
 
 /* ── Profiles and members ── */
-/* side by side: the label and filters along the top, then the feed's first card and About start level
-   (the left column and the feed step aside, so their parts are the grid's own rows) */
+/* a feed beside a side column, when what's above the feed's cards isn't a frame (a label, the
+   filters): those get rows of their own along the top (--feed-head-rows of them), and the first card
+   and the side column start level below (the main column and the feed step aside, so their parts are
+   the grid's own rows) */
 @media (min-width: 1061px) {
-  .profile-cols {
-    grid-template-rows: auto auto 1fr;
+  .feed-cols {
+    grid-template-rows: repeat(var(--feed-head-rows, 2), auto) 1fr;
     row-gap: 14px;
   }
-  .profile-cols > .profile-main,
-  .profile-cols .feed {
+  .feed-cols > .feed-main,
+  .feed-cols .feed {
     display: contents;
   }
-  .profile-cols > .profile-main > *,
-  .profile-cols .feed > * {
+  .feed-cols > .feed-main > *,
+  .feed-cols .feed > * {
     grid-column: 1;
   }
-  .profile-cols .feed-filters {
+  .feed-cols .feed-filters {
     justify-self: start;
   }
-  .profile-cols .feed-body {
-    grid-row: 3;
+  .feed-cols .feed-body,
+  .feed-cols > aside {
+    grid-row: -2 / -1;
   }
-  .profile-cols > aside {
+  .feed-cols > aside {
     grid-column: 2;
-    grid-row: 3;
+  }
+}
+/* a group's side column (what's coming up, who's in it): beside the tab on a wide screen only */
+@media (max-width: 1060px) {
+  .group-cols > .group-side {
+    display: none;
   }
 }
 .profile-head {
@@ -988,13 +1035,25 @@
   color: var(--text);
   font-size: 1rem;
 }
-.member-grid {
+/* the cards, and the search and filters above them on the same columns (search: two, filters: from the third) */
+.member-grid,
+.member-tools {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 14px;
 }
+.member-tools {
+  align-items: center;
+}
+.member-tools > * {
+  grid-column: span 2;
+}
+.member-tools > .pills {
+  justify-self: start;
+}
 @media (max-width: 520px) {
-  .member-grid {
+  .member-grid,
+  .member-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }

@@ -212,6 +212,8 @@ const sv: Record<string, string> = {
   "{name} mentioned you in the forum": "{name} nämnde dig i forumet",
   "{name} mentioned you in “{title}”": "{name} nämnde dig i ”{title}”",
   "{name} replied to “{title}”": "{name} svarade i ”{title}”",
+  "{name} replied": "{name} svarade",
+  "Members · {n}": "Medlemmar · {n}",
   "{name} wrote:": "{name} skrev:",
   Someone: "Någon",
 
