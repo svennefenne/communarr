@@ -5,7 +5,7 @@ import type { Editor } from "@tiptap/react";
 import { useEditorState } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { NodeSelection } from "@tiptap/pm/state";
-import { AlignCenter, AlignLeft, AlignRight, Bold, ExternalLink, Highlighter, Italic, Link2, Pencil, RemoveFormatting, Strikethrough, Trash2, Underline, Unlink } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, ExternalLink, Highlighter, ImagePlus, Italic, Link2, LoaderCircle, Pencil, RemoveFormatting, Strikethrough, Trash2, Underline, Unlink } from "lucide-react";
 import { HIGHLIGHTS, TEXT_COLORS } from "./Toolbar";
 import { Modal } from "@/components/ui/ui";
 import { useT } from "@/components/app/AppProvider";
@@ -278,6 +278,67 @@ export function VideoDialog({ editor, onClose }: { editor: Editor; onClose: () =
     >
       <input className="input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" autoFocus onKeyDown={(e) => e.key === "Enter" && save()} />
       {err ? <div className="form-error" style={{ marginTop: 10 }}>{err}</div> : null}
+    </Modal>
+  );
+}
+
+/** Adding a picture: from this device, or from a link (the site keeps a copy). */
+export function PictureDialog({ onPick, onLink, onClose }: { onPick: () => void; onLink: (url: string) => Promise<string | null>; onClose: () => void }) {
+  const t = useT();
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const add = async () => {
+    if (!url.trim() || busy) return;
+    setBusy(true);
+    setErr("");
+    const problem = await onLink(url.trim());
+    setBusy(false);
+    if (problem) setErr(problem);
+    else onClose();
+  };
+  return (
+    <Modal
+      title={t("Add a picture")}
+      onClose={onClose}
+      footer={
+        <button type="button" className={`btn btn-primary ${busy ? "loading" : ""}`} disabled={!url.trim() || busy} onClick={() => void add()}>
+          {busy ? <LoaderCircle size={15} className="spin" /> : null} {t("Add the picture")}
+        </button>
+      }
+    >
+      <div className="stack">
+        <button
+          type="button"
+          className="btn btn-block"
+          onClick={() => {
+            onClose();
+            onPick();
+          }}
+        >
+          <ImagePlus size={16} /> {t("Choose pictures on this device…")}
+        </button>
+        <div className="field" style={{ margin: 0 }}>
+          <label htmlFor="pic-link">{t("Or a link to a picture")}</label>
+          <input
+            id="pic-link"
+            className="input"
+            type="url"
+            inputMode="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://…"
+            autoFocus={!touch()}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              void add();
+            }}
+          />
+          <span className="tiny muted">{t("A link to a page works too: its own picture is used. The site keeps a copy, so the picture stays even if the link stops working.")}</span>
+        </div>
+        {err ? <div className="form-error">{err}</div> : null}
+      </div>
     </Modal>
   );
 }

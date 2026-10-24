@@ -12,9 +12,9 @@ import { UserError } from "./errors";
  * for. Files live under DATA_DIR/uploads and are served by /media/….
  */
 
-export type UploadKind = "image" | "avatar" | "banner" | "cover" | "background";
+export type UploadKind = "image" | "avatar" | "banner" | "cover" | "background" | "preview";
 
-const DIRS: Record<UploadKind, string> = { image: "img", avatar: "avatar", banner: "banner", cover: "cover", background: "bg" };
+const DIRS: Record<UploadKind, string> = { image: "img", avatar: "avatar", banner: "banner", cover: "cover", background: "bg", preview: "preview" };
 
 export interface Uploaded {
   id: string;
@@ -49,6 +49,9 @@ export async function saveUpload(userId: number, buf: Buffer, kind: UploadKind, 
       break;
     case "background":
       img = img.resize(2560, 2560, { fit: "inside", withoutEnlargement: true });
+      break;
+    case "preview":
+      img = img.resize(1200, 1200, { fit: "inside", withoutEnlargement: true });
       break;
     default:
       img = img.resize(2048, 2048, { fit: "inside", withoutEnlargement: true });
@@ -121,6 +124,8 @@ export function uploadStats() {
 
 /** Delete uploads nothing points at any more (older than a day, so a post being written keeps its pictures). */
 export function cleanOrphans(): { removed: number; bytes: number } {
+  // link previews are fetched again when they're wanted after a month; their pictures go with them
+  db().prepare("delete from link_previews where fetched_at < ?").run(now() - 30 * 86_400_000);
   const rows = db().prepare("select id, path, thumb, size from uploads where created_at < ?").all(now() - 86_400_000) as { id: string; path: string; thumb: string | null; size: number }[];
   const used = new Set<string>();
   const sources = [
@@ -141,6 +146,7 @@ export function cleanOrphans(): { removed: number; bytes: number } {
     "select banner h from groups where banner is not null",
     "select data_json h from themes",
     "select value h from settings",
+    "select image h from link_previews where image is not null",
   ];
   // (the sounds in Admin → Sounds are in the settings: kept like a picture in a post)
   for (const sql of sources) for (const r of db().prepare(sql).all() as { h: string }[]) for (const m of (r.h || "").matchAll(/\/media\/[\w/-]+\/([\w-]+)(\.t)?\.(?:webp|mp3|ogg|oga|wav|m4a|webm|flac)/g)) used.add(m[1]);

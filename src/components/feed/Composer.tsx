@@ -7,6 +7,7 @@ import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile } from "@/components/ui/ui";
+import { ImageLinkButton } from "@/components/ui/ImageLink";
 import { createPostAction } from "@/app/actions/content";
 
 export interface ComposerGroup {
@@ -167,6 +168,7 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
               }}
             />
           </label>
+          <ImageLinkButton kind="cover" onImage={setCover} />
           <label className="check small">
             <input type="checkbox" checked={notifyAll} onChange={(e) => setNotifyAll(e.target.checked)} /> {t("Notify everyone")}
           </label>

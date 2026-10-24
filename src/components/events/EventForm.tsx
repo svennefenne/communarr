@@ -6,6 +6,8 @@ import { ImagePlus, Send, X } from "lucide-react";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile } from "@/components/ui/ui";
+import { ImageLinkButton } from "@/components/ui/ImageLink";
+import { LinkPreviews } from "@/components/content/LinkPreviews";
 import type { EventView } from "@/lib/contentTypes";
 import { createEventAction, updateEventAction } from "@/app/actions/content";
 import type { RepeatRule } from "@/lib/repeat";
@@ -32,6 +34,13 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
   const toast = useToast();
   const t = useT();
   const ed = useRef<EditorHandle>(null);
+  // the details as written, a moment after typing stops: their links get previews
+  const [details, setDetails] = useState(event?.html ?? "");
+  const detailsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const typed = (h: string) => {
+    clearTimeout(detailsTimer.current);
+    detailsTimer.current = setTimeout(() => setDetails(h), 700);
+  };
   const s0 = event ? new Date(event.startAt) : initialStart(date);
   const e0 = event ? new Date(event.endAt) : new Date(s0.getTime() + 2 * 3600_000);
   const [title, setTitle] = useState(event?.title ?? "");
@@ -207,12 +216,14 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
                 }}
               />
             </label>
+            <ImageLinkButton kind="cover" onImage={setCover} />
           </div>
         </div>
       </div>
       <div className="field">
         <span className="label">{t("Details")}</span>
-        <RichEditor ref={ed} initial={event?.html} placeholder={t("What to bring, what's the plan… @mention people to invite them.")} minHeight={150} draftKey={event ? undefined : "event"} />
+        <RichEditor ref={ed} initial={event?.html} placeholder={t("What to bring, what's the plan… @mention people to invite them.")} minHeight={150} draftKey={event ? undefined : "event"} onChange={typed} />
+        <LinkPreviews html={details} />
       </div>
       {/* a group's event stays the group's; otherwise everyone or only you, or a group when it's new */}
       {!event?.group ? (
