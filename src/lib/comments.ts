@@ -7,7 +7,7 @@ import { cleanHtml } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { canSeePost, postRow } from "./posts";
 import { canSeePoll, pollRow } from "./polls";
-import { canSeeEvent, eventRow } from "./events";
+import { canSeeEvent, eventRow, eventScope } from "./events";
 import { groupScope } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
@@ -44,7 +44,7 @@ function target(u: User, type: CommentTarget, id: number): { authorId: number; t
   }
   const e = eventRow(id);
   if (!e || !canSeeEvent(u, e)) return null;
-  return { authorId: e.author_id, title: e.title, url: `/events/${id}`, locked: false, scope: groupScope(e.group_id) };
+  return { authorId: e.author_id, title: e.title, url: `/events/${id}`, locked: false, scope: eventScope(e.group_id, !!e.private, e.author_id) };
 }
 
 export function listComments(u: User, type: CommentTarget, id: number): CommentView[] {

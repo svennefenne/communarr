@@ -66,7 +66,8 @@ export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?:
   if ((f === "all" || f === "events") && feats.calendar) {
     const s = scope();
     const a = by("author_id");
-    const rows = db().prepare(`select * from events where ${s.sql}${a.sql} and created_at < ? order by created_at desc limit ?`).all(...s.params, ...a.params, before, limit + 1) as EventRow[];
+    // "Only me" events stay in their author's calendar (like "only me" posts, out of the feed)
+    const rows = db().prepare(`select * from events where ${s.sql}${a.sql} and private = 0 and created_at < ? order by created_at desc limit ?`).all(...s.params, ...a.params, before, limit + 1) as EventRow[];
     for (const e of toEventViews(u, rows)) items.push({ type: "event", at: e.createdAt, event: e });
   }
   items.sort((a, b) => b.at - a.at);
