@@ -19,8 +19,9 @@ export function MemberGrid({ members }: { members: (UserSummary & { pronouns: st
     .sort((a, b) => rank(a.id) - rank(b.id) || a.name.localeCompare(b.name));
   return (
     <div className="stack">
-      <div className="row wrap">
-        <div className="chat-search" style={{ margin: 0, flex: "1 1 220px", maxWidth: 360 }}>
+      {/* on the cards' own grid, so the search and the filters line up with the cards below */}
+      <div className="member-tools">
+        <div className="chat-search" style={{ margin: 0 }}>
           <Search size={15} />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Find someone")} aria-label={t("Find someone")} />
         </div>

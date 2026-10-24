@@ -72,10 +72,11 @@ export function NewsHero({ post }: { post: PostView }) {
   );
 }
 
-export function UpcomingWidget({ events }: { events: EventView[] }) {
+/** What's coming up (a group's own: its calendar and "plan something" go to the group) */
+export function UpcomingWidget({ events, href = "/calendar", planHref = "/events/new" }: { events: EventView[]; href?: string; planHref?: string }) {
   const t = useT();
   return (
-    <Widget title={t("Coming up")} icon={<CalendarDays size={14} />} href="/calendar" more={t("Calendar")}>
+    <Widget title={t("Coming up")} icon={<CalendarDays size={14} />} href={href} more={t("Calendar")}>
       {events.length ? (
         <div className="list">
           {events.map((e) => (
@@ -96,7 +97,7 @@ export function UpcomingWidget({ events }: { events: EventView[] }) {
       ) : (
         <div className="panel-body small muted">
           {t("Nothing planned.")}{" "}
-          <Link href="/events/new" className="link">
+          <Link href={planHref} className="link">
             {t("Plan something")}
           </Link>
         </div>
@@ -140,6 +141,25 @@ export function ChatWidget({ rooms }: { rooms: RoomInfo[] }) {
       ) : (
         <div className="panel-body small muted">{t("No chats yet.")}</div>
       )}
+    </Widget>
+  );
+}
+
+/** A group's members, the way "Here now" shows people (the first twelve; the rest on the members tab) */
+export function MembersWidget({ members, count, href }: { members: UserSummary[]; count: number; href: string }) {
+  const t = useT();
+  return (
+    <Widget title={t("Members · {n}", { n: count })} icon={<UsersRound size={14} />} href={href} more={t("Everyone")}>
+      <div className="panel-body">
+        <div className="online-grid">
+          {members.slice(0, 12).map((m) => (
+            <Link key={m.id} href={`/u/${encodeURIComponent(m.username)}`} className="online-person" title={m.name}>
+              <Avatar user={m} size={40} presence />
+              <span className="tiny ellipsis">{m.name.split(" ")[0]}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </Widget>
   );
 }

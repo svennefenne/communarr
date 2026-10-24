@@ -8,11 +8,15 @@ import { Time } from "@/components/ui/Time";
 import { CategoryChip } from "@/components/feed/ThreadCard";
 import { useT } from "@/components/app/AppProvider";
 
-/** Threads as rows: title and who started it, replies and views, the last post. */
-export function ThreadList({ threads, showCategory = false }: { threads: ThreadCard[]; showCategory?: boolean }) {
+/**
+ * Threads as rows: title and who started it, replies and views, the last post. In a narrow column
+ * (the forum's side, a phone) one line under the title instead: the category, who was last active and
+ * when, with the replies on the right. bare: no panel round it (it's inside one already).
+ */
+export function ThreadList({ threads, showCategory = false, bare = false }: { threads: ThreadCard[]; showCategory?: boolean; bare?: boolean }) {
   const tr = useT();
   return (
-    <div className="panel thread-list">
+    <div className={`${bare ? "" : "panel"} thread-list`}>
       {threads.map((t) => (
         <Link key={t.id} href={`/forum/t/${t.id}`} className={`thread-row ${t.unread ? "unread" : ""}`}>
           <Avatar user={t.author} size={38} />
@@ -23,10 +27,16 @@ export function ThreadList({ threads, showCategory = false }: { threads: ThreadC
               {t.unread ? <span className="dot" title={tr("New")} /> : null}
               <span>{t.title}</span>
             </span>
-            <span className="tiny muted row wrap" style={{ gap: "2px 8px" }}>
+            <span className="tiny muted thread-meta">
               {showCategory ? <CategoryChip c={t.category} link={false} /> : null}
-              <span>
+              {/* wide: who started it and when (the last post has its own column) */}
+              <span className="thread-meta-wide">
                 {t.author.name} · <Time t={t.createdAt} />
+              </span>
+              {/* narrow: the latest, once */}
+              <span className="thread-meta-narrow">
+                {showCategory ? " · " : null}
+                {t.replies && t.lastBy ? tr("{name} replied", { name: t.lastBy.name }) : t.author.name} · <Time t={t.lastPostAt} />
               </span>
             </span>
           </span>
