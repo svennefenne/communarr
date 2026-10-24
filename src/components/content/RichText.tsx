@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMe, useT } from "@/components/app/AppProvider";
+import { LinkPreviews } from "./LinkPreviews";
+import type { LinkPreview } from "@/lib/links";
 
 export function openLightbox(images: { src: string; alt: string }[], index: number) {
   window.dispatchEvent(new CustomEvent("hd:lightbox", { detail: { images, index } }));
@@ -10,9 +12,22 @@ export function openLightbox(images: { src: string; alt: string }[], index: numb
 
 /**
  * Shows what someone wrote (already cleaned on the server). Mentions go to the profile, pictures
- * open big, and a long text can be folded with "Read more".
+ * open big, a long text can be folded with "Read more", and its links get preview cards (previews:
+ * false for none, or the previews the page already has).
  */
-export function RichText({ html, className = "", fold = 0, foldBg }: { html: string; className?: string; fold?: number; foldBg?: string }) {
+export function RichText({
+  html,
+  className = "",
+  fold = 0,
+  foldBg,
+  previews = true,
+}: {
+  html: string;
+  className?: string;
+  fold?: number;
+  foldBg?: string;
+  previews?: boolean | Record<string, LinkPreview | null>;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const me = useMe();
@@ -64,6 +79,7 @@ export function RichText({ html, className = "", fold = 0, foldBg }: { html: str
           {t(open ? "Show less" : "Read more")}
         </button>
       ) : null}
+      {previews !== false ? <LinkPreviews html={html} initial={typeof previews === "object" ? previews : undefined} /> : null}
     </>
   );
 }

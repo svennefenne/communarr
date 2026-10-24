@@ -10,7 +10,6 @@ import { Avatar, UserChip, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
 import { RichText } from "@/components/content/RichText";
-import { LinkPreviews } from "@/components/content/LinkPreviews";
 import type { LinkPreview } from "@/lib/links";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
@@ -144,8 +143,7 @@ export function EventDetail({ event, previews }: { event: EventView; previews?: 
             {e.html ? (
               <>
                 <hr />
-                <RichText html={e.html} />
-                <LinkPreviews html={e.html} initial={previews} />
+                <RichText html={e.html} previews={previews ?? true} />
               </>
             ) : null}
             <div className="post-foot">
