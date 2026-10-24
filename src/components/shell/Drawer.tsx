@@ -10,11 +10,13 @@ import { ADMIN, isActive, MORE, visibleSections } from "./nav";
 import { Brand } from "./Header";
 import { ModeSwitch } from "./UserMenu";
 import { LanguageToggle } from "@/components/app/LanguageToggle";
+import { OnlinePeople, useHereNow } from "./OnlineButton";
 
 /** The menu from the side: every section and place, and light or dark. */
 export function Drawer({ onClose }: { onClose: () => void }) {
   const { me, site, counts, openSearch } = useApp();
   const t = useT();
+  const here = useHereNow();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -42,6 +44,10 @@ export function Drawer({ onClose }: { onClose: () => void }) {
         >
           <Search size={17} /> <span>{t("Search everything")}</span>
         </button>
+        <span className="eyebrow">{t("Here now · {n}", { n: here.length })}</span>
+        <div className="drawer-online">
+          <OnlinePeople ids={here} onPick={onClose} />
+        </div>
         {visibleSections(site.features).map((s) => {
           const Icon = s.icon;
           const n = s.href === "/chat" ? counts.chat : 0;

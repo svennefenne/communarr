@@ -43,7 +43,8 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
   const [repeat, setRepeat] = useState<EventView["repeat"]>(event?.repeat ?? "none");
   const [until, setUntil] = useState(event?.repeatUntil ? dateStr(new Date(event.repeatUntil)) : "");
   const [capacity, setCapacity] = useState(event?.capacity ? String(event.capacity) : "");
-  const [group, setGroup] = useState<number | "">(event?.group?.id ?? groupId ?? "");
+  // who it's for: everyone (""), only me ("me") or a group
+  const [group, setGroup] = useState<number | "" | "me">(event ? (event.private ? "me" : event.group?.id ?? "") : groupId ?? "");
   const [pending, start] = useTransition();
 
   // moving the start moves the end with it
@@ -90,7 +91,8 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         repeat,
         repeatUntil: repeat !== "none" && until ? new Date(`${until}T23:59:59`).getTime() : null,
         capacity: capacity ? Number(capacity) : null,
-        groupId: group || null,
+        groupId: typeof group === "number" ? group : null,
+        private: group === "me",
       };
       const r = event ? await updateEventAction(event.id, input) : await createEventAction(input);
       if (!r.ok) {
@@ -202,17 +204,22 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         <span className="label">{t("Details")}</span>
         <RichEditor ref={ed} initial={event?.html} placeholder={t("What to bring, what's the plan… @mention people to invite them.")} minHeight={150} draftKey={event ? undefined : "event"} />
       </div>
-      {!event && groups.length ? (
+      {/* a group's event stays the group's; otherwise everyone or only you, or a group when it's new */}
+      {!event?.group ? (
         <div className="field">
           <label htmlFor="ef-group">{t("For")}</label>
-          <select id="ef-group" className="select" value={group} onChange={(e) => setGroup(e.target.value ? Number(e.target.value) : "")}>
+          <select id="ef-group" className="select" value={group} onChange={(e) => setGroup(e.target.value === "me" ? "me" : e.target.value ? Number(e.target.value) : "")}>
             <option value="">{t("Everyone")}</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
+            <option value="me">{t("Only me")}</option>
+            {!event
+              ? groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))
+              : null}
           </select>
+          {group === "me" ? <span className="small muted">{t("Only you see it, in your calendar. Nobody is invited or told.")}</span> : null}
         </div>
       ) : null}
       <div className="row" style={{ justifyContent: "flex-end" }}>

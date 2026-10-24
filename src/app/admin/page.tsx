@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Bell, Flag, Languages, LayoutGrid, Mail, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users } from "lucide-react";
+import { Activity, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users } from "lucide-react";
 import { requireMod } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { activity, adminMembers, auditLog, overview, system } from "@/lib/admin";
@@ -16,6 +16,8 @@ import { Overview } from "@/components/admin/Overview";
 import { Members } from "@/components/admin/Members";
 import { Invites, type InviteView } from "@/components/admin/Invites";
 import { Reports } from "@/components/admin/Reports";
+import { Feedback } from "@/components/admin/Feedback";
+import { listFeedback, openFeedback } from "@/lib/feedback";
 import { AnnouncementSettings, FeatureSettings, IdentitySettings, LookSettings } from "@/components/admin/LookSettings";
 import { TextsEditor } from "@/components/admin/TextsEditor";
 import { ForumCategories } from "@/components/admin/ForumCategories";
@@ -82,6 +84,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         { id: "members", label: t("Members"), badge: o.pending },
         ...(admin ? [{ id: "invites", label: t("Invites & sign-up") }] : []),
         { id: "reports", label: t("Reports"), badge: o.reports },
+        ...(admin ? [{ id: "feedback", label: t("Feedback"), badge: openFeedback() }] : []),
         ...(admin ? [{ id: "rooms", label: t("Groups & chat rooms") }] : []),
       ],
     },
@@ -124,6 +127,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <Section id="reports" title={t("Reports")} icon={<Flag size={18} />} hint={t("Things members flagged")} badge={o.reports}>
             <Reports open={open} closed={reports.filter((r) => r.status !== "open").slice(0, 50)} />
           </Section>
+          {admin ? (
+            <Section id="feedback" title={t("Feedback")} icon={<MessageSquareText size={18} />} hint={t("What members sent from their menu")} badge={openFeedback()}>
+              <Feedback items={listFeedback()} />
+            </Section>
+          ) : null}
           {admin ? (
             <Section id="rooms" title={t("Groups & chat rooms")} icon={<LayoutGrid size={18} />}>
               <GroupsRooms groups={groups} rooms={rooms} />
