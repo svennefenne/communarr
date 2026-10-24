@@ -283,7 +283,7 @@ export function SystemSection({ sys, storage, audit }: { sys: SystemInfo; storag
             {storage.byKind.map((k) => (
               <div key={k.kind} className="list-row">
                 <span className="grow">
-                  {k.kind === "sound" ? t("Sounds ({n})", { n: k.n }) : t(`Pictures: ${k.kind} ({n})`, { n: k.n })}
+                  {k.kind === "sound" ? t("Sounds ({n})", { n: k.n }) : k.kind === "preview" ? t("Link previews ({n})", { n: k.n }) : t(`Pictures: ${k.kind} ({n})`, { n: k.n })}
                 </span>
                 <b>{bytes(k.bytes)}</b>
               </div>

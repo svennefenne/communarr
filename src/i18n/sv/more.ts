@@ -145,6 +145,33 @@ const sv: Record<string, string> = {
   "Doesn't close": "Stänger inte",
   Time: "Tid",
   "No end": "Inget slut",
+
+  // pictures from links, and link previews
+  "Link previews ({n})": "Länkförhandsvisningar ({n})",
+  "That picture couldn't be fetched.": "Bilden gick inte att hämta.",
+  "Fetching the picture from the link…": "Hämtar bilden från länken…",
+  "Add the picture": "Lägg till bilden",
+  "Choose pictures on this device…": "Välj bilder på den här enheten…",
+  "Or a link to a picture": "Eller en länk till en bild",
+  "A link to a page works too: its own picture is used. The site keeps a copy, so the picture stays even if the link stops working.":
+    "En länk till en sida går också: då används sidans egen bild. Sajten sparar en kopia, så bilden finns kvar även om länken slutar fungera.",
+  "A picture from a link": "En bild från en länk",
+  "Use the picture": "Använd bilden",
+  "The picture's link": "Bildens länk",
+  "A link to a picture, or to a page: then the page's own picture is used. The site keeps a copy, so it stays even if the link stops working.":
+    "En länk till en bild, eller till en sida: då används sidans egen bild. Sajten sparar en kopia, så den finns kvar även om länken slutar fungera.",
+  "From a link": "Från en länk",
+  "That doesn't look like a link.": "Det där ser inte ut som en länk.",
+  "That address can't be used.": "Den adressen går inte att använda.",
+  "We couldn't find that address.": "Vi hittade inte den adressen.",
+  "That link didn't work.": "Länken fungerade inte.",
+  "That link sends us round in circles.": "Länken skickar oss runt i cirklar.",
+  "That link took too long to answer.": "Länken tog för lång tid att svara.",
+  "That link didn't work ({status}).": "Länken fungerade inte ({status}).",
+  "That's too big ({n} MB at most).": "Den är för stor (högst {n} MB).",
+  "That link isn't a picture we can use.": "Länken är inte en bild vi kan använda.",
+  "That picture isn't here any more.": "Den bilden finns inte kvar här.",
+  "That page has no picture to use.": "Sidan har ingen bild att använda.",
 };
 
 export default sv;

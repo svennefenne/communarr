@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { ImagePlus, LoaderCircle, Trash2 } from "lucide-react";
 import { uploadFile } from "./ui";
+import { ImageLinkButton } from "./ImageLink";
 import { useT, useToast } from "@/components/app/AppProvider";
 
-/** Pick a picture: shows it, uploads a new one, or takes it away. */
+/** Pick a picture: shows it, uploads a new one (or takes one from a link), or takes it away. */
 export function ImagePick({
   value,
   onChange,
@@ -47,13 +48,15 @@ export function ImagePick({
       </label>
       <div className="stack tight">
         <span className="small">{label}</span>
-        {value ? (
-          <button type="button" className="btn btn-ghost btn-xs" onClick={() => onChange(null)} style={{ alignSelf: "flex-start" }}>
-            <Trash2 size={13} /> {t("Remove")}
-          </button>
-        ) : (
-          <span className="tiny muted">{t("Tap to choose a picture")}</span>
-        )}
+        {value ? null : <span className="tiny muted">{t("Tap to choose a picture")}</span>}
+        <span className="row wrap" style={{ gap: 4 }}>
+          <ImageLinkButton kind={kind} onImage={onChange} className="btn btn-ghost btn-xs" />
+          {value ? (
+            <button type="button" className="btn btn-ghost btn-xs" onClick={() => onChange(null)}>
+              <Trash2 size={13} /> {t("Remove")}
+            </button>
+          ) : null}
+        </span>
       </div>
     </div>
   );

@@ -468,3 +468,86 @@ html[data-density="compact"] .prose {
   flex: none;
   padding: 0 10px;
 }
+
+/* link previews (an event's details): a card per link, or the picture a link is */
+.link-previews {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.link-card {
+  display: flex;
+  gap: 14px;
+  max-width: 560px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-2);
+  border-radius: 12px;
+  background: var(--field);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    border-color 150ms,
+    background 150ms;
+}
+.link-card:hover {
+  border-color: var(--line-strong);
+  border-left-color: var(--accent);
+  background: var(--hover);
+}
+.link-card-pic {
+  flex: none;
+  width: 150px;
+  aspect-ratio: 1.91;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--surface);
+}
+.link-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.link-card-site {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.link-card-title,
+.link-card-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.link-card-title {
+  line-height: 1.3;
+}
+.link-card-desc {
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+.link-card.pic-only {
+  display: block;
+  width: fit-content;
+  padding: 0;
+  border-left-width: 1px;
+  overflow: hidden;
+}
+.link-card.pic-only img {
+  display: block;
+  max-width: 100%;
+  max-height: 380px;
+}
+@media (max-width: 520px) {
+  .link-card {
+    flex-direction: column;
+  }
+  .link-card-pic {
+    width: 100%;
+  }
+}

@@ -10,6 +10,8 @@ import { Avatar, UserChip, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
 import { RichText } from "@/components/content/RichText";
+import { LinkPreviews } from "@/components/content/LinkPreviews";
+import type { LinkPreview } from "@/lib/links";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
 import { ItemMenu } from "@/components/content/ItemMenu";
@@ -35,7 +37,7 @@ function People({ title, list }: { title: string; list: EventView["going"] }) {
   );
 }
 
-export function EventDetail({ event }: { event: EventView }) {
+export function EventDetail({ event, previews }: { event: EventView; previews?: Record<string, LinkPreview | null> }) {
   const me = useMe();
   const toast = useToast();
   const t = useT();
@@ -143,6 +145,7 @@ export function EventDetail({ event }: { event: EventView }) {
               <>
                 <hr />
                 <RichText html={e.html} />
+                <LinkPreviews html={e.html} initial={previews} />
               </>
             ) : null}
             <div className="post-foot">
