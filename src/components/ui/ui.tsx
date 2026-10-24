@@ -155,4 +155,20 @@ export async function uploadFile(file: File, kind: "image" | "avatar" | "banner"
   return { id: data.id, url: data.url, width: data.width ?? 0, height: data.height ?? 0, thumb: data.thumb };
 }
 
+/**
+ * A picture from a link, fetched by the site and kept like an upload. A link to a page uses the
+ * page's own picture; with onlyImage, a page link gives null instead (it stays a link).
+ */
+export async function importImage(url: string, kind: "image" | "avatar" | "banner" | "background" | "cover" = "image", onlyImage = false): Promise<{ url: string; width: number; height: number; thumb?: string } | null> {
+  const fd = new FormData();
+  fd.append("url", url);
+  fd.append("kind", kind);
+  if (onlyImage) fd.append("only", "1");
+  const res = await fetch("/api/upload", { method: "POST", body: fd });
+  const data = (await res.json().catch(() => ({}))) as { url?: string; width?: number; height?: number; thumb?: string; notImage?: boolean; error?: string };
+  if (res.ok && data.notImage) return null;
+  if (!res.ok || !data.url) throw new Error(data.error || clientT()("That picture couldn't be fetched."));
+  return { url: data.url, width: data.width ?? 0, height: data.height ?? 0, thumb: data.thumb };
+}
+
 export type { ActionResult } from "@/lib/types";
