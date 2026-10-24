@@ -11,6 +11,7 @@ import { cleanTheme, type ThemeData } from "@/lib/theme";
 import { getSettings } from "@/lib/settings";
 import { db } from "@/lib/db";
 import { resetFeedToken } from "@/lib/events";
+import { removeEmail, startConfirmation } from "@/lib/accountMail";
 import type { NotifyKind } from "@/lib/types";
 
 export async function updateProfileAction(input: ProfileInput) {
@@ -44,7 +45,7 @@ export async function endSessionAction(id: string) {
   });
 }
 
-export async function notifyPrefsAction(input: Partial<Record<NotifyKind, { app?: boolean; push?: boolean }>> & { quietFrom?: string; quietTo?: string; tz?: string }) {
+export async function notifyPrefsAction(input: Partial<Record<NotifyKind, { app?: boolean; push?: boolean; mail?: boolean }>> & { quietFrom?: string; quietTo?: string; tz?: string }) {
   return act((u) => setNotifyPrefs(u, input));
 }
 
@@ -89,4 +90,24 @@ export async function deleteThemeAction(id: number) {
 
 export async function resetCalendarFeedAction() {
   return act((u) => resetFeedToken(u.id));
+}
+
+// ───────────── your email address (Settings → Account) ─────────────
+
+/** Use this address: a link to confirm it goes there (the confirmed one stays until it's clicked). */
+export async function setEmailAction(email: string) {
+  return act(async (u) => {
+    const to = await startConfirmation(u, email);
+    revalidatePath("/settings/account");
+    return to;
+  });
+}
+
+/** No address on the account (no mails at all). */
+export async function removeEmailAction() {
+  return act((u) => {
+    removeEmail(u.id);
+    revalidatePath("/settings/account");
+    return true;
+  });
 }

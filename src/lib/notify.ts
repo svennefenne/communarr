@@ -2,6 +2,7 @@ import "server-only";
 import { db, now } from "./db";
 import { isLooking, sendTo } from "./hub";
 import { pushTo } from "./push";
+import { mailNotification } from "./accountMail";
 import { getSettings } from "./settings";
 import { userT } from "./t";
 import type { Vars } from "./i18n";
@@ -22,6 +23,8 @@ export interface NotifyInput {
   pushOnly?: boolean;
   /** collapse pushes with the same tag on the device (a chat room) */
   tag?: string;
+  /** a fuller title for the mail than a push needs (English too): "{name} sent you a message" */
+  mailTitle?: string;
 }
 
 function inQuietHours(p: NotifyPrefs): boolean {
@@ -38,10 +41,10 @@ function inQuietHours(p: NotifyPrefs): boolean {
 }
 
 /**
- * Tell people about something: an entry in their bell (live), and a push notification on their
- * devices unless they're looking at the site right now. Each member's settings decide which kinds
- * they get, and quiet hours hold pushes back. The one who did it is never notified. Title and body
- * are English, written in each recipient's own language.
+ * Tell people about something: an entry in their bell (live), a push notification on their devices
+ * unless they're looking at the site right now, and a mail when they're not on the site at all.
+ * Each member's settings decide which kinds they get, and quiet hours hold pushes back. The one who
+ * did it is never notified. Title and body are English, written in each recipient's own language.
  */
 export function notify(userIds: Iterable<number>, n: NotifyInput) {
   const ids = [...new Set(userIds)].filter((id) => id && id !== n.actorId);
@@ -54,7 +57,7 @@ export function notify(userIds: Iterable<number>, n: NotifyInput) {
   const ins = db().prepare("insert into notifications (user_id, kind, actor_id, title, body, url, created_at) values (?, ?, ?, ?, ?, ?, ?)");
   for (const r of rows) {
     const u = toUser(r);
-    const pref = u.notify[n.kind] ?? { app: true, push: true };
+    const pref = u.notify[n.kind] ?? { app: true, push: true, mail: false };
     const tr = userT(u.id);
     const title = tr(n.title, n.vars);
     const body = n.body ? tr(n.body, n.vars) : "";
@@ -68,6 +71,7 @@ export function notify(userIds: Iterable<number>, n: NotifyInput) {
     if (pref.push && !isLooking(u.id) && !inQuietHours(u.notify)) {
       void pushTo(u.id, { title, body, url: n.url, tag: n.tag ?? n.kind, badge: unread || undefined }).catch(() => {});
     }
+    if (pref.mail && r.email) mailNotification({ ...u, email: r.email }, { kind: n.kind, title: n.mailTitle ? tr(n.mailTitle, n.vars) : title, body, url: n.url, tag: n.tag });
   }
 }
 

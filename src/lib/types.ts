@@ -43,8 +43,8 @@ export const NOTIFY_KINDS = {
   reaction: "Reactions to your posts",
 } as const;
 export type NotifyKind = keyof typeof NOTIFY_KINDS;
-/** for each kind: in the bell, and as a push notification on your devices */
-export type NotifyPrefs = Record<NotifyKind, { app: boolean; push: boolean }> & { quietFrom: string; quietTo: string };
+/** for each kind: in the bell, as a push notification on your devices, and by mail while you're away */
+export type NotifyPrefs = Record<NotifyKind, { app: boolean; push: boolean; mail: boolean }> & { quietFrom: string; quietTo: string };
 
 export interface NotificationItem {
   id: number;

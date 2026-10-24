@@ -293,3 +293,54 @@
 .admin-sys {
   overflow-wrap: anywhere;
 }
+
+/* Admin → Texts: where a text shows up; each place picks every text on that page */
+.text-places {
+  gap: 6px;
+  align-items: center;
+}
+.chip-link {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.chip-link:hover,
+.chip-link:focus-visible {
+  color: var(--text);
+  border-color: var(--accent);
+  outline: none;
+}
+.chip-link.on {
+  color: var(--on-accent, #fff);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Admin → Mail: a lamp that says whether mail goes out */
+.mail-status {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.mail-lamp {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.mail-status.on .mail-lamp {
+  background: var(--ok);
+  box-shadow: 0 0 0 4px rgb(92 196 106 / 0.18);
+}

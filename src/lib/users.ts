@@ -31,6 +31,9 @@ export interface UserRow {
   invited_by: number | null;
   created_at: number;
   last_seen: number | null;
+  /** confirmed only (the one waiting to be confirmed is on its mail_tokens link) */
+  email: string | null;
+  mail_token: string | null;
 }
 
 export interface User {
@@ -75,10 +78,22 @@ export function defaultTheme(): ThemePrefs {
   return { scheme: s.defaultScheme, mode: s.defaultMode, custom: null, wipes: true, motion: true, textSize: 100, density: "comfy" };
 }
 
+/** what comes by mail unless you say otherwise (only while you're away, and only to a confirmed address) */
+export const MAIL_KINDS: NotifyKind[] = ["dm", "mention", "invite", "news"];
+
 export function defaultNotify(): NotifyPrefs {
   const out: Record<string, unknown> = { quietFrom: "", quietTo: "" };
-  for (const k of Object.keys(NOTIFY_KINDS) as NotifyKind[]) out[k] = { app: true, push: k !== "reaction" && k !== "room" };
+  for (const k of Object.keys(NOTIFY_KINDS) as NotifyKind[]) out[k] = { app: true, push: k !== "reaction" && k !== "room", mail: MAIL_KINDS.includes(k) };
   return out as NotifyPrefs;
+}
+
+/** Someone's saved choices over the defaults, kind by kind (a switch added later gets its default). */
+function notifyPrefs(json: string | null): NotifyPrefs {
+  const d = defaultNotify();
+  const saved = parse(json, {} as Partial<NotifyPrefs>) as Record<string, unknown>;
+  const out = { ...d, ...saved } as NotifyPrefs;
+  for (const k of Object.keys(NOTIFY_KINDS) as NotifyKind[]) out[k] = { ...d[k], ...((saved[k] as object) ?? {}) };
+  return out;
 }
 
 function parse<T extends object>(json: string | null, fallback: T): T {
@@ -113,7 +128,7 @@ export function toUser(r: UserRow): User {
     statusUntil: expired ? null : r.status_until,
     presence: r.presence,
     theme: parse(r.theme_json, defaultTheme()),
-    notify: parse(r.notify_json, defaultNotify()),
+    notify: notifyPrefs(r.notify_json),
     createdAt: r.created_at,
     lastSeen: r.last_seen,
     banned: !!r.banned,

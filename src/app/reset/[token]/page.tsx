@@ -2,6 +2,7 @@ import { db, now } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { ResetForm } from "@/components/auth/AuthForms";
+import { mailReady } from "@/lib/mail";
 import { requestT } from "@/lib/t";
 
 export async function generateMetadata() {
@@ -16,7 +17,7 @@ export default async function ResetPage({ params }: { params: Promise<{ token: s
   if (!row || row.expires_at < now())
     return (
       <AuthShell siteName={s.siteName} eyebrow={t("Password")} title={t("This link doesn't work")}>
-        <div className="form-error">{t("It has been used or has expired. Ask an admin for a new one.")}</div>
+        <div className="form-error">{mailReady() ? t("It has been used or has expired. Get a new one under “Forgot your password?” on the log-in page, or ask an admin.") : t("It has been used or has expired. Ask an admin for a new one.")}</div>
       </AuthShell>
     );
   return (

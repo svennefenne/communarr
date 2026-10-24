@@ -5,6 +5,7 @@ import { defaultTextIn, getSettings } from "@/lib/settings";
 import { userById } from "@/lib/users";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignupForm } from "@/components/auth/AuthForms";
+import { mailReady } from "@/lib/mail";
 import { requestT } from "@/lib/t";
 
 export async function generateMetadata() {
@@ -46,7 +47,7 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
         </>
       }
     >
-      <SignupForm code={code} />
+      <SignupForm code={code} mail={mailReady()} />
     </AuthShell>
   );
 }
