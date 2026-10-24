@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Bookmark, Languages, LogOut, Moon, Palette, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
+import { Bookmark, Languages, LogOut, MessageSquareText, Moon, Palette, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
 import { useApp, useT } from "@/components/app/AppProvider";
 import { LanguageToggle } from "@/components/app/LanguageToggle";
 import { Avatar } from "@/components/ui/Avatar";
 import { Switch, useDropdown } from "@/components/ui/ui";
 import { useTransitions } from "./Transitions";
 import { StatusDialog } from "./StatusDialog";
+import { FeedbackDialog } from "./FeedbackDialog";
 import { logoutAction, setPrefsAction } from "@/app/actions/me";
 import type { ThemePrefs } from "@/lib/types";
 
@@ -50,6 +51,7 @@ export function UserMenu() {
   const t = useT();
   const { open, setOpen, toggle, ref } = useDropdown();
   const [status, setStatus] = useState(false);
+  const [feedback, setFeedback] = useState(false);
   const { wipe, setWipe } = useTransitions();
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const router = useRouter();
@@ -112,6 +114,17 @@ export function UserMenu() {
               <ShieldCheck size={17} /> {t("Admin")}
             </Link>
           ) : null}
+          <button
+            type="button"
+            className="menu-item"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              setFeedback(true);
+            }}
+          >
+            <MessageSquareText size={17} /> {t("Send feedback")}
+          </button>
           <div className="menu-sep" />
           <div style={{ padding: "6px 8px" }}>
             <ModeSwitch mode={me.theme.mode} />
@@ -138,6 +151,7 @@ export function UserMenu() {
         </div>
       ) : null}
       {status ? <StatusDialog me={me} onClose={() => setStatus(false)} /> : null}
+      {feedback ? <FeedbackDialog onClose={() => setFeedback(false)} /> : null}
     </div>
   );
 }

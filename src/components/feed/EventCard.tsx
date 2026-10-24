@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { CalendarCheck, CalendarDays, Check, HelpCircle, MapPin, Repeat, X } from "lucide-react";
+import { CalendarCheck, CalendarDays, Check, HelpCircle, Lock, MapPin, Repeat, X } from "lucide-react";
 import type { EventView, RsvpStatus } from "@/lib/contentTypes";
 import { useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserLink } from "@/components/ui/Avatar";
@@ -106,6 +106,7 @@ export function EventCard({ event, compact = false }: { event: EventView; compac
           </span>
           <div className="grow small">
             <UserLink user={e.author} /> <span className="muted">{t("planned something")}</span> {e.group ? <GroupChip g={e.group} /> : null}
+            {e.private ? <span className="muted"> · <Lock size={11} style={{ verticalAlign: "-1px" }} /> {t("only you")}</span> : null}
             <div className="tiny muted">
               <Time t={e.createdAt} />
             </div>

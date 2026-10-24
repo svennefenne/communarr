@@ -11,6 +11,7 @@ import { allTexts, builtIn, isLang, LANGS, type Lang } from "@/lib/i18n";
 import { addMember, approve, ban, deleteMember, logoutEverywhere, reindexAll, resetLink, setPasswordFor, setRole, suspend, vacuum } from "@/lib/admin";
 import { createInvite } from "@/lib/accounts";
 import { resolveReport } from "@/lib/reports";
+import { deleteFeedback, markFeedback } from "@/lib/feedback";
 import { cleanOrphans } from "@/lib/uploads";
 import { deleteCategory, moveCategory, saveCategory } from "@/lib/forum";
 import { deleteGroup } from "@/lib/groups";
@@ -307,6 +308,27 @@ export async function saveTextAction(lang: Lang, key: string, value: string) {
     setSettings({ texts });
     audit(u.id, "text", `${lang}: ${key.slice(0, 80)}`);
     revalidatePath("/", "layout");
+    return true;
+  });
+}
+
+// ── feedback (from the user menu's "Send feedback") ──
+
+export async function feedbackDoneAction(id: number, done: boolean) {
+  return act((u) => {
+    admin(u);
+    markFeedback(u, id, done);
+    revalidatePath("/admin");
+    return true;
+  });
+}
+
+export async function deleteFeedbackAction(id: number) {
+  return act((u) => {
+    admin(u);
+    deleteFeedback(id);
+    audit(u.id, "delete feedback", String(id));
+    revalidatePath("/admin");
     return true;
   });
 }

@@ -369,6 +369,15 @@ html[data-backdrop="plain"] .backdrop {
 }
 /* phones: the sections move to the bar at the bottom */
 @media (max-width: 699px) {
+  /* nearly solid bars: on a small screen, the page showing through reads as text on top of text */
+  :root {
+    --header-bg: rgb(var(--bg-rgb) / max(0.95, var(--glass-a)));
+  }
+  /* search and who's here live in the menu (☰), so the name has room */
+  .site-header .hd-right .search-btn,
+  .site-header .hd-right .online-btn {
+    display: none;
+  }
   .site-header {
     gap: 8px;
     min-height: 56px;
@@ -649,6 +658,14 @@ html[data-backdrop="plain"] .backdrop {
     transform: translateX(-30px);
     opacity: 0;
   }
+}
+/* who's here (on a phone the menu has it, not the top bar) */
+.drawer-online {
+  flex: none;
+  max-height: 32vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-bottom: 4px;
 }
 .drawer-link {
   position: relative;

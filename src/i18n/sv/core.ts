@@ -44,6 +44,29 @@ const sv: Record<string, string> = {
   "Leaves out {list}": "Utelämnar {list}",
   "There's no such text.": "Den texten finns inte.",
 
+  // feedback (components/shell/FeedbackDialog.tsx, components/admin/Feedback.tsx, lib/feedback.ts)
+  "Send feedback": "Skicka feedback",
+  "Ideas, wishes, something that doesn't work? Tell the admins.": "Idéer, önskemål, något som inte funkar? Berätta för admins.",
+  "What's on your mind?": "Vad tänker du på?",
+  "Your feedback": "Din feedback",
+  "Include the page I'm on": "Ta med sidan jag är på",
+  "Only admins see feedback, with your name.": "Bara admins ser feedback, med ditt namn.",
+  "Thanks! The admins will read it.": "Tack! Admins läser det.",
+  "That's a lot of feedback in one go. Try again in a while.": "Det var mycket feedback på en gång. Försök igen om en stund.",
+  "{name} sent feedback": "{name} skickade feedback",
+  Feedback: "Feedback",
+  "What members sent from their menu": "Det medlemmarna skickat från sin meny",
+  "No feedback yet": "Ingen feedback än",
+  "When someone uses “Send feedback” in their menu, it lands here.": "När någon använder ”Skicka feedback” i sin meny hamnar det här.",
+  "handled by {name}": "hanterad av {name}",
+  Handled: "Hanterad",
+  "Open again": "Öppna igen",
+  "Mark as handled": "Markera som hanterad",
+  "Delete this feedback?": "Ta bort den här feedbacken?",
+
+  // an event only you see (components/events/EventForm.tsx)
+  "Only you see it, in your calendar. Nobody is invited or told.": "Bara du ser det, i din kalender. Ingen bjuds in eller får veta.",
+
   // the backdrop library (components/admin/BackdropLibrary.tsx)
   "Backdrop library": "Egna bakgrundsmotiv",
   "Upload your own backdrops. They show up next to the built-in ones above and in everyone's theme editor.":

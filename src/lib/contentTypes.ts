@@ -119,6 +119,8 @@ export interface EventView {
   color: string;
   cover: string | null;
   group: GroupRef | null;
+  /** only the one who planned it sees it ("Only me") */
+  private: boolean;
   author: UserSummary;
   repeat: "none" | "daily" | "weekly" | "monthly" | "yearly";
   repeatUntil: number | null;
