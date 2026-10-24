@@ -24,6 +24,9 @@ export async function register() {
         db().prepare("delete from sessions where expires_at < ?").run(now);
         db().prepare("delete from notifications where read_at is not null and created_at < ?").run(now - 90 * 86_400_000);
         db().prepare("delete from resets where expires_at < ?").run(now - 86_400_000);
+        db().prepare("delete from mail_tokens where expires_at < ?").run(now - 30 * 86_400_000);
+        // sign-ups that never clicked the link in their confirmation mail: gone after a week (the name is free again)
+        db().prepare("delete from users where ban_reason in ('unconfirmed', 'unconfirmed pending') and banned = 0 and created_at < ?").run(now - 7 * 86_400_000);
       }
     } catch (e) {
       console.error("[clock]", e);

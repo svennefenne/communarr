@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { summary, type UserRow } from "@/lib/users";
+import { NOT_WAITING, summary, type UserRow } from "@/lib/users";
 import { MemberGrid } from "@/components/profile/MemberGrid";
 import { requestT } from "@/lib/t";
 
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function MembersPage() {
   await requireUser();
   const t = await requestT();
-  const rows = db().prepare("select * from users where banned = 0 and (ban_reason is null or ban_reason != 'pending') order by display_name collate nocase").all() as UserRow[];
+  const rows = db().prepare(`select * from users where banned = 0 and ${NOT_WAITING} order by display_name collate nocase`).all() as UserRow[];
   return (
     <div className="page">
       <div className="page-head">

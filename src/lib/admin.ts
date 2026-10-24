@@ -9,7 +9,7 @@ import { dropUser, onlineCount, sendTo } from "./hub";
 import { indexItem } from "./search";
 import { groupScope } from "./groups";
 import { openReportCount } from "./reports";
-import { summary, type User, type UserRow } from "./users";
+import { isUnconfirmed, isWaiting, NOT_WAITING, summary, type User, type UserRow } from "./users";
 import type { Role, UserSummary } from "./types";
 
 export interface AdminMember extends UserSummary {
@@ -24,6 +24,8 @@ export interface AdminMember extends UserSummary {
   invitedBy: string | null;
   /** a confirmed email address (for a reset link by mail; the address itself stays private) */
   hasEmail: boolean;
+  /** signed up, hasn't clicked the link in the confirmation mail yet */
+  unconfirmed: boolean;
 }
 
 export function overview() {
@@ -32,7 +34,7 @@ export function overview() {
   const dbSize = ["hooden.db", "hooden.db-wal"].reduce((s, f) => s + (fs.existsSync(path.join(DATA_DIR, f)) ? fs.statSync(path.join(DATA_DIR, f)).size : 0), 0);
   const up = db().prepare("select coalesce(sum(size), 0) n from uploads").get() as { n: number };
   return {
-    members: n("select count(*) n from users where banned = 0 and (ban_reason is null or ban_reason != 'pending')"),
+    members: n(`select count(*) n from users where banned = 0 and ${NOT_WAITING}`),
     online: onlineCount(),
     pending: n("select count(*) n from users where ban_reason = 'pending' and banned = 0"),
     reports: openReportCount(),
@@ -91,8 +93,9 @@ export function adminMembers(): AdminMember[] {
     lastSeen: r.last_seen,
     banned: !!r.banned,
     banReason: r.ban_reason,
-    suspendedUntil: r.ban_reason === "pending" ? null : r.suspended_until,
+    suspendedUntil: isWaiting(r.ban_reason) ? null : r.suspended_until,
     pending: r.ban_reason === "pending" && !r.banned,
+    unconfirmed: isUnconfirmed(r),
     posts: posts.get(r.id) ?? 0,
     messages: msgs.get(r.id) ?? 0,
     invitedBy: r.invited_by ? names.get(r.invited_by) ?? null : null,
@@ -130,7 +133,7 @@ export function suspend(by: User, id: number, days: number | null) {
   if (t.role === "admin" && !by.isAdmin) throw new UserError("Moderators can't suspend admins.");
   if (t.id === by.id) throw new UserError("You can't suspend yourself.");
   const until = days ? now() + days * 86_400_000 : null;
-  db().prepare("update users set suspended_until = ?, ban_reason = case when ban_reason = 'pending' then null else ban_reason end where id = ?").run(until, id);
+  db().prepare(`update users set suspended_until = ?, ban_reason = case when ${NOT_WAITING} then ban_reason else null end where id = ?`).run(until, id);
   if (until) kick(id);
   audit(by.id, days ? "suspend" : "unsuspend", t.username, days ? `${days} days` : "");
 }
@@ -146,10 +149,11 @@ export function ban(by: User, id: number, banned: boolean, reason = "") {
 
 export function approve(by: User, id: number, yes: boolean) {
   const t = target(id);
-  // only for sign-ups waiting to get in (not a way round a suspension)
-  if (t.ban_reason !== "pending" || t.banned) throw new UserError("They aren't waiting to get in.");
+  // only for sign-ups waiting to get in (not a way round a suspension); letting in someone who hasn't
+  // confirmed their address skips the mail too
+  if (!isWaiting(t.ban_reason) || t.banned) throw new UserError("They aren't waiting to get in.");
   if (yes) db().prepare("update users set suspended_until = null, ban_reason = null where id = ?").run(id);
-  else db().prepare("delete from users where id = ? and ban_reason = 'pending'").run(id);
+  else db().prepare(`delete from users where id = ? and not ${NOT_WAITING}`).run(id);
   audit(by.id, yes ? "approve" : "reject", t.username);
 }
 
