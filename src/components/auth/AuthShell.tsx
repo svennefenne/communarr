@@ -22,7 +22,11 @@ export function AuthShell({ siteName, eyebrow, title, intro, toggle = true, chil
             <div className="eyebrow">{eyebrow}</div>
             <div className="display auth-site">{siteName}</div>
           </div>
-          {toggle ? <LanguageToggle short /> : null}
+          {toggle ? (
+            <div className="auth-lang">
+              <LanguageToggle short />
+            </div>
+          ) : null}
         </div>
         <h1 className="h2" style={{ marginTop: 6 }}>
           {title}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useT } from "@/components/app/AppProvider";
 
 const KEY = "hd.adminFolded";
@@ -14,14 +14,46 @@ function folded(): string[] {
   }
 }
 
+/** "Collapse all" / "Expand all" tells every section at once (and remembers it like a single fold). */
+const FOLD_ALL = "hd:admin-fold-all";
+
+/** The two buttons at the top of the Admin page. */
+export function FoldAll() {
+  const t = useT();
+  const all = (open: boolean) => {
+    try {
+      const ids = [...document.querySelectorAll<HTMLElement>(".admin-section")].map((s) => s.id);
+      localStorage.setItem(KEY, JSON.stringify(open ? [] : ids));
+    } catch {
+      /* private mode */
+    }
+    window.dispatchEvent(new CustomEvent(FOLD_ALL, { detail: open }));
+  };
+  return (
+    <div className="pills" role="group" aria-label={t("All sections")}>
+      <button type="button" className="pill" onClick={() => all(false)}>
+        <ChevronsDownUp size={14} /> {t("Collapse all")}
+      </button>
+      <button type="button" className="pill" onClick={() => all(true)}>
+        <ChevronsUpDown size={14} /> {t("Expand all")}
+      </button>
+    </div>
+  );
+}
+
 /** One part of the Admin page: a title that folds it away (remembered), and a link target (#id). */
 export function Section({ id, title, icon, hint, children, badge }: { id: string; title: string; icon: React.ReactNode; hint?: string; children: React.ReactNode; badge?: number }) {
   const [open, setOpen] = useState(true);
   useEffect(() => {
     setOpen(!folded().includes(id) || window.location.hash === `#${id}`);
     const onHash = () => window.location.hash === `#${id}` && setOpen(true);
+    const onAll = (e: Event) => setOpen((e as CustomEvent<boolean>).detail);
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener(FOLD_ALL, onAll);
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+      window.removeEventListener(FOLD_ALL, onAll);
+    };
   }, [id]);
   const toggle = () => {
     const next = !open;

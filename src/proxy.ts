@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Everything is for members: without a session cookie, pages send you to the log-in page (which
  * sends you back afterwards). Whether the session is still good is checked by the pages themselves.
  */
-const OPEN = [/^\/login$/, /^\/setup$/, /^\/signup$/, /^\/invite\//, /^\/reset\//, /^\/api\/health$/, /^\/manifest\.webmanifest$/, /^\/sw\.js$/, /^\/icons\//, /^\/media\/bg\//, /^\/offline$/, /^\/cal\//, /^\/api\/dev\//];
+const OPEN = [/^\/login$/, /^\/setup$/, /^\/signup$/, /^\/invite\//, /^\/reset\//, /^\/forgot$/, /^\/mail\//, /^\/api\/mail\//, /^\/api\/health$/, /^\/manifest\.webmanifest$/, /^\/sw\.js$/, /^\/icons\//, /^\/media\/bg\//, /^\/offline$/, /^\/cal\//, /^\/api\/dev\//];
 
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;

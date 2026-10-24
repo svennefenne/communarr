@@ -191,14 +191,6 @@ html[data-backdrop="plain"] .backdrop {
   line-height: 1;
   min-width: 0;
 }
-.brand-top {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.32em;
-  color: var(--accent-2);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 .brand-name {
   font-family: var(--font-display);
   font-weight: 800;
@@ -211,7 +203,6 @@ html[data-backdrop="plain"] .backdrop {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 3px;
 }
 /* the sections sit in the middle of the top frame (the side columns are equal, see .site-header) */
 .hd-nav {
@@ -361,9 +352,6 @@ html[data-backdrop="plain"] .backdrop {
     padding-right: 4px;
   }
   .user-btn .user-btn-name {
-    display: none;
-  }
-  .brand-top {
     display: none;
   }
 }

@@ -8,6 +8,8 @@ import { audit } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { DEFAULTS, dropDefaultTexts, getSettings, setSettings, type SiteSettings } from "@/lib/settings";
 import { allTexts, builtIn, isLang, LANGS, type Lang } from "@/lib/i18n";
+import { placesFor } from "@/lib/textPlaces";
+import PLACES from "@/i18n/places.json";
 import { addMember, approve, ban, deleteMember, logoutEverywhere, reindexAll, resetLink, setPasswordFor, setRole, suspend, vacuum } from "@/lib/admin";
 import { createInvite } from "@/lib/accounts";
 import { resolveReport } from "@/lib/reports";
@@ -19,6 +21,10 @@ import { archiveRoom, deleteRoom } from "@/lib/chat";
 import { pushTo, rotateVapid } from "@/lib/push";
 import { broadcast } from "@/lib/hub";
 import { cleanLine } from "@/lib/sanitize";
+import { mailReady, normEmail, saveMailSettings, sendMail, validEmail, type MailSecurity } from "@/lib/mail";
+import { testMail } from "@/lib/mailTemplates";
+import { mailResetLink, rememberOrigin } from "@/lib/accountMail";
+import { baseUrl } from "@/lib/url";
 import { PALETTE_BY_SLUG } from "@/lib/palettes";
 import { isBackdrop, type LibraryBackdrop } from "@/lib/theme";
 import type { User } from "@/lib/users";
@@ -267,10 +273,18 @@ export interface TextRow {
   builtIn: Record<Lang, string>;
   /** the admin's own, where there is one */
   own: Partial<Record<Lang, string>>;
+  /** where it shows up (English place names, src/lib/textPlaces.ts) */
+  places: string[];
 }
 
-/** Built-in texts matching a search (in any language, or the admin's own wording), or every changed one. */
-export async function searchTextsAction(q: string, changedOnly: boolean) {
+/** The places a text shows up in (from src/i18n/places.json). */
+const placesOf = (key: string) => placesFor(key, (PLACES as Record<string, string[]>)[key] ?? []);
+
+/**
+ * Built-in texts matching a search (in any language, or the admin's own wording), every changed one,
+ * or every one on a page (`place`).
+ */
+export async function searchTextsAction(q: string, changedOnly: boolean, place = "") {
   return act((u): TextRow[] => {
     admin(u);
     const texts = getSettings().texts;
@@ -281,14 +295,17 @@ export async function searchTextsAction(q: string, changedOnly: boolean) {
       // the starter post's HTML is only used once, at setup
       if (key.startsWith("<")) continue;
       if (changedOnly && !changed.has(key)) continue;
+      const places = placesOf(key);
+      if (place && !places.includes(place)) continue;
       const row: TextRow = {
         key,
         builtIn: Object.fromEntries(LANGS.map((l) => [l.id, builtIn(l.id, key)])) as Record<Lang, string>,
         own: Object.fromEntries(LANGS.filter((l) => texts[l.id]?.[key] !== undefined).map((l) => [l.id, texts[l.id]![key]])),
+        places,
       };
       if (needle && ![key, ...Object.values(row.builtIn), ...Object.values(row.own)].some((s) => s.toLowerCase().includes(needle))) continue;
       rows.push(row);
-      if (rows.length >= 60) break;
+      if (rows.length >= (place ? 150 : 60)) break;
     }
     return rows;
   });
@@ -331,4 +348,66 @@ export async function deleteFeedbackAction(id: number) {
     revalidatePath("/admin");
     return true;
   });
+}
+
+// ───────────── mail ─────────────
+
+export interface MailInput {
+  host: string;
+  port: number;
+  security: MailSecurity;
+  user: string;
+  /** null: keep the saved password */
+  pass: string | null;
+  from: string;
+  fromName: string;
+}
+
+/** Admin → Mail: the SMTP server (an empty server turns the saved one off). */
+export async function saveMailAction(input: MailInput) {
+  return act(async (u) => {
+    admin(u);
+    const host = input.host.trim().slice(0, 200);
+    const from = normEmail(input.from);
+    if (host && !validEmail(from)) throw new UserError("The sender needs a real address (the one the server sends as).");
+    const security: MailSecurity = input.security === "tls" || input.security === "none" ? input.security : "starttls";
+    const port = Math.round(Number(input.port));
+    saveMailSettings({
+      host,
+      port: port > 0 && port < 65536 ? port : security === "tls" ? 465 : security === "none" ? 25 : 587,
+      security,
+      user: input.user.trim().slice(0, 200),
+      pass: input.pass === null ? null : input.pass.slice(0, 500),
+      from,
+      // (a line of its own in the mail's header: no line breaks)
+      fromName: input.fromName.replace(/\s+/g, " ").trim().slice(0, 60),
+    });
+    audit(u.id, host ? "mail settings" : "mail off", host);
+    await rememberOrigin();
+    revalidatePath("/admin");
+    return true;
+  });
+}
+
+/** Admin → Mail: send a test mail (to the address given, or your own). */
+export async function testMailAction(to: string) {
+  return act(async (u) => {
+    admin(u);
+    if (!mailReady()) throw new UserError("Set up the mail server first.");
+    const addr = normEmail(to) || ((db().prepare("select email from users where id = ?").get(u.id) as { email: string | null } | undefined)?.email ?? "");
+    if (!validEmail(addr)) throw new UserError("Write the address to send it to.");
+    const site = getSettings().siteName;
+    try {
+      await sendMail(testMail(userT(u.id), { to: addr, site, origin: await baseUrl() }), site);
+    } catch (e) {
+      throw new UserError("It didn't go: {error}", { error: (e instanceof Error ? e.message : String(e)).slice(0, 300) });
+    }
+    revalidatePath("/admin");
+    return addr;
+  });
+}
+
+/** Admin → Members: mail someone a link for a new password (to their confirmed address). */
+export async function mailResetLinkAction(id: number) {
+  return act((u) => mailResetLink(u, id));
 }

@@ -22,6 +22,8 @@ export interface AdminMember extends UserSummary {
   posts: number;
   messages: number;
   invitedBy: string | null;
+  /** a confirmed email address (for a reset link by mail; the address itself stays private) */
+  hasEmail: boolean;
 }
 
 export function overview() {
@@ -94,6 +96,7 @@ export function adminMembers(): AdminMember[] {
     posts: posts.get(r.id) ?? 0,
     messages: msgs.get(r.id) ?? 0,
     invitedBy: r.invited_by ? names.get(r.invited_by) ?? null : null,
+    hasEmail: !!r.email,
   }));
 }
 

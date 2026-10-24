@@ -24,7 +24,6 @@ export function Brand({ name }: { name: string }) {
         <i />
       </span>
       <span className="brand-text">
-        <span className="brand-top">{t("A place for friends")}</span>
         <span className="brand-name">{name}</span>
       </span>
     </Link>
