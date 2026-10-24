@@ -864,6 +864,23 @@
   align-items: center;
   gap: 10px 18px;
 }
+.notify-grid.with-mail {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+/* three switch columns on a phone: each only as wide as its switch, so the kinds keep their room */
+@media (max-width: 480px) {
+  .notify-grid.with-mail {
+    column-gap: 8px;
+  }
+  /* as wide as the longest word: one word a line, never broken inside one */
+  .notify-grid.with-mail > .label {
+    width: min-content;
+    max-width: none;
+    font-size: 0.5625rem;
+    letter-spacing: 0.02em;
+    overflow-wrap: normal;
+  }
+}
 .notify-grid > .label {
   max-width: 5.5rem;
   font-size: 0.625rem;

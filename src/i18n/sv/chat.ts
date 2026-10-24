@@ -216,7 +216,6 @@ const sv: Record<string, string> = {
 
   // the frame: header, bottom bar, drawer, footer (shell/*, nav.ts)
   "{name} home": "{name} startsida",
-  "A place for friends": "Ett ställe för vänner",
   Menu: "Meny",
   Sections: "Sektioner",
   "New messages": "Nya meddelanden",

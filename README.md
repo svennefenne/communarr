@@ -132,8 +132,23 @@ Open the site and you're asked to make the **admin** account (and name the site)
 forum categories, a Lounge and a Gaming chat room and a welcome news post. After that Hooden is
 invite-only: **Admin → Invites & sign-up** makes invite links (for one person or several, for a while
 or forever, optionally into a group or as moderators). You can also open a sign-up page (optionally with
-approval), or add members yourself with a made-up password. Forgotten passwords: Admin → Members →
-*Password reset link*.
+approval), or add members yourself with a made-up password.
+
+## Mail
+
+With a mail server (Admin → Mail, or the `SMTP_*` variables below; the Admin page wins) Hooden can:
+
+- **confirm an address**: members add theirs under Settings → Account (or when they sign up), and a link
+  confirms it (48 hours). Nobody else sees it.
+- **reset a forgotten password**: *Forgot your password or username?* on the log-in page mails the
+  username and a link for a new password (an hour, once). Admins can also mail one from Admin → Members.
+- **send notifications by mail**: a third switch per kind under Settings → Notifications (on to begin
+  with for direct messages, @mentions, invitations and news). Only while you're not on the site, at
+  most one per conversation in half an hour, with a one-click *stop all notification mails* link.
+
+Admin → Mail has a test mail and shows the last mail that didn't go. Without mail, forgotten passwords
+are a link an admin makes under Admin → Members → *Password reset link*. Gmail works (an app password,
+STARTTLS); so does a relay on your own network (no encryption, port 25).
 
 ## Settings (environment)
 
@@ -146,6 +161,10 @@ approval), or add members yourself with a made-up password. Forgotten passwords:
 | `VOICE_TURN_URL`, `VOICE_TURN_USER`, `VOICE_TURN_PASS` | | A TURN server for voice chat (also Admin → Notifications & voice) |
 | `TRUSTED_IP_HEADER` | | The header your proxy puts the visitor's address in, e.g. `cf-connecting-ip` behind a Cloudflare Tunnel (used to slow down password guessing; otherwise the last `X-Forwarded-For` hop) |
 | `PUSH_HOSTS` | | Extra push-service hosts to accept, comma-separated (Google, Mozilla, Apple and Microsoft are built in) |
+| `SMTP_HOST`, `SMTP_PORT` | | The mail server (see [Mail](#mail); Admin → Mail takes over when set there) |
+| `SMTP_SECURE` | `starttls` | `starttls` (587), `tls` (465) or `none` (a relay on your own network, 25) |
+| `SMTP_USER`, `SMTP_PASS` | | The mail server's log-in (empty: none) |
+| `SMTP_FROM`, `SMTP_FROM_NAME` | | The sender's address (e.g. `noreply@example.com`) and name (the site's name if empty) |
 | `PORT` | `3000` | The port inside the container |
 | `DATA_DIR` | `/data` | Where everything is kept |
 

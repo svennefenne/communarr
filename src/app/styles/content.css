@@ -325,8 +325,29 @@ html[data-density="compact"] .prose {
   width: 44px;
   height: 52px;
 }
+.auth-brand .grow {
+  min-width: 0;
+}
 .auth-site {
   font-size: 2.2rem;
+  overflow-wrap: anywhere;
+}
+.auth-lang {
+  flex: none;
+}
+/* phones: the name needs the whole row, so the language switch gets its own, in the corner */
+@media (max-width: 440px) {
+  .auth-brand {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .auth-lang {
+    order: -1;
+    flex-basis: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin: -14px -8px 0 0;
+  }
 }
 
 /* ── Who's here (the count by the bell) ── */
@@ -411,7 +432,7 @@ html[data-density="compact"] .prose {
 
 /* ── The user menu ── */
 .user-menu {
-  width: 280px;
+  width: 300px;
 }
 .user-menu-head {
   display: flex;
@@ -427,9 +448,23 @@ html[data-density="compact"] .prose {
 .user-menu-head:hover {
   background: var(--hover);
 }
+/* light or dark: the menu's width, one line */
 .user-menu .pills {
   width: 100%;
+  flex-wrap: nowrap;
 }
 .user-menu .pills .pill {
   flex: 1;
+  min-width: 0;
+  gap: 5px;
+  padding: 0 8px;
+}
+/* the language: just its two buttons, beside the word */
+.user-menu .menu-item .pills {
+  width: auto;
+  flex: none;
+}
+.user-menu .menu-item .pills .pill {
+  flex: none;
+  padding: 0 10px;
 }

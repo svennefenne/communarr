@@ -421,6 +421,22 @@ const MIGRATIONS: string[] = [
   );
   create index feedback_created on feedback(created_at);
   `,
+  /* 5: mail. A member's address (only once it's confirmed), the key in the "stop these mails" link, and
+        the links that confirm an address (the address waiting to be confirmed rides on its link) */ `
+  alter table users add column email text;
+  alter table users add column mail_token text;
+  create unique index users_email on users(email);
+  create unique index users_mail_token on users(mail_token);
+  create table mail_tokens (
+    token text primary key,
+    user_id integer not null references users(id) on delete cascade,
+    email text not null,
+    created_at integer not null,
+    expires_at integer not null,
+    used_at integer
+  );
+  create index mail_tokens_user on mail_tokens(user_id);
+  `,
 ];
 
 function open(): Database.Database {

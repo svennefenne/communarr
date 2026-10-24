@@ -441,7 +441,7 @@ export function sendMessage(u: User, roomId: number, html: string, replyTo?: num
     sendTo(m.user_id, "unread", { room: roomId, n: unreadFor(roomId, m.user_id) });
     if (mentioned.has(m.user_id)) continue;
     if (m.notify === "none" || m.notify === "mentions") continue;
-    notify([m.user_id], { kind: r.kind === "dm" ? "dm" : "room", actorId: u.id, title, body, vars, url, pushOnly: true, tag: `room-${roomId}` });
+    notify([m.user_id], { kind: r.kind === "dm" ? "dm" : "room", actorId: u.id, title, body, vars, url, pushOnly: true, tag: `room-${roomId}`, mailTitle: r.kind === "dm" ? "{name} sent you a message" : undefined });
   }
   // mentions: in the bell too (people who can see the room)
   const canRead = new Set(isOpenRoom(r) ? [...mentioned] : ms.map((m) => m.user_id).filter((id) => mentioned.has(id)));

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users } from "lucide-react";
+import { Activity, AtSign, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users } from "lucide-react";
 import { requireMod } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { activity, adminMembers, auditLog, overview, system } from "@/lib/admin";
@@ -10,7 +10,7 @@ import { uploadStats } from "@/lib/uploads";
 import { vapidPublicKey } from "@/lib/push";
 import { baseUrl } from "@/lib/url";
 import { requestT } from "@/lib/t";
-import { Section } from "@/components/admin/Section";
+import { FoldAll, Section } from "@/components/admin/Section";
 import { AdminNav, type NavGroup } from "@/components/admin/AdminNav";
 import { Overview } from "@/components/admin/Overview";
 import { Members } from "@/components/admin/Members";
@@ -22,6 +22,9 @@ import { AnnouncementSettings, FeatureSettings, IdentitySettings, LookSettings }
 import { TextsEditor } from "@/components/admin/TextsEditor";
 import { ForumCategories } from "@/components/admin/ForumCategories";
 import { GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
+import { MailAdmin } from "@/components/admin/MailAdmin";
+import { getMailSettings, lastMailFailure, mailReady } from "@/lib/mail";
+import { mailOrigin, rememberOrigin } from "@/lib/accountMail";
 
 export async function generateMetadata() {
   return { title: (await requestT())("Admin") };
@@ -30,6 +33,8 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ user?: string }> }) {
   const u = await requireMod();
+  // (links in mails: the address an admin uses, unless PUBLIC_URL says)
+  if (u.isAdmin) await rememberOrigin();
   const t = await requestT();
   const { user: focus } = await searchParams;
   const s = getSettings();
@@ -92,7 +97,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     ...(admin
       ? [
           { label: t("Look"), items: [{ id: "identity", label: t("Name & texts") }, { id: "texts", label: t("Texts") }, { id: "look", label: t("Colours & background") }] },
-          { label: t("Site"), items: [{ id: "features", label: t("Features & permissions") }, { id: "notifications", label: t("Notifications & voice") }, { id: "system", label: t("System & backup") }] },
+          {
+            label: t("Site"),
+            items: [
+              { id: "features", label: t("Features & permissions") },
+              { id: "notifications", label: t("Notifications & voice") },
+              { id: "mail", label: t("Mail") },
+              { id: "system", label: t("System & backup") },
+            ],
+          },
         ]
       : []),
   ];
@@ -105,6 +118,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <h1 className="display page-title">{t("Admin")}</h1>
         </div>
         <div className="page-actions">
+          <FoldAll />
           <Link href="/news" className="btn btn-sm">
             <Sparkles size={15} /> {t("Write news")}
           </Link>
@@ -117,7 +131,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <Overview o={o} days={activity(30)} isAdmin={admin} />
           </Section>
           <Section id="members" title={t("Members")} icon={<Users size={18} />} hint={t("Roles, suspensions, closed accounts, password resets")} badge={o.pending}>
-            <Members members={adminMembers()} base={base} focus={focus ? Number(focus) : undefined} />
+            <Members members={adminMembers()} base={base} focus={focus ? Number(focus) : undefined} mail={mailReady()} />
           </Section>
           {admin ? (
             <Section id="invites" title={t("Invites & sign-up")} icon={<Mail size={18} />} hint={t("Who can join, and links to send")}>
@@ -160,6 +174,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               <Section id="notifications" title={t("Notifications & voice")} icon={<Bell size={18} />}>
                 <NotifyVoice s={s} vapid={vapidPublicKey()} devices={o.devices} timezones={tzs} />
               </Section>
+              <Section id="mail" title={t("Mail")} icon={<AtSign size={18} />} hint={t("Forgotten passwords and notifications by mail")}>
+                <MailAdmin {...mailProps(u.id, s.siteName)} />
+              </Section>
               <Section id="system" title={t("System & backup")} icon={<Server size={18} />}>
                 <SystemSection sys={system()} storage={{ db: o.dbBytes, uploads: up.bytes, byKind: up.byKind }} audit={auditLog(120)} />
               </Section>
@@ -169,4 +186,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
     </div>
   );
+}
+
+/** Admin → Mail's settings, without the password (only whether there is one). */
+function mailProps(userId: number, siteName: string) {
+  const { settings, source } = getMailSettings();
+  const myEmail = (db().prepare("select email from users where id = ?").get(userId) as { email: string | null } | undefined)?.email ?? null;
+  return {
+    settings: settings ? { host: settings.host, port: settings.port, security: settings.security, user: settings.user, from: settings.from, fromName: settings.fromName, hasPass: !!settings.pass } : null,
+    source,
+    lastFailure: lastMailFailure(),
+    myEmail,
+    siteName,
+    origin: mailOrigin(),
+  };
 }

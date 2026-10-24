@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BellRing, CalendarPlus, Monitor, RefreshCw, Send, Smartphone } from "lucide-react";
 import { NOTIFY_KINDS, type NotifyKind, type NotifyPrefs } from "@/lib/types";
@@ -19,7 +20,7 @@ const STATE_TEXT: Record<PushState, string> = {
   unsupported: "This browser can't show notifications from websites.",
 };
 
-export function NotifySettings({ prefs, devices, feed }: { prefs: NotifyPrefs; devices: { id: number; ua: string; createdAt: number; lastOk: number | null }[]; feed: { mine: string; all: string } }) {
+export function NotifySettings({ prefs, devices, feed, mail }: { prefs: NotifyPrefs; devices: { id: number; ua: string; createdAt: number; lastOk: number | null }[]; feed: { mine: string; all: string }; mail: { ready: boolean; email: string | null } }) {
   const t = useT();
   const toast = useToast();
   const [state, setState] = useState<PushState | null>(null);
@@ -108,19 +109,31 @@ export function NotifySettings({ prefs, devices, feed }: { prefs: NotifyPrefs; d
           <h2 className="h2">{t("What to tell you about")}</h2>
         </div>
         <div className="panel-body">
-          <div className="notify-grid">
+          <div className={`notify-grid ${mail.ready ? "with-mail" : ""}`}>
             <span />
             <span className="label">{t("In the bell")}</span>
             <span className="label">{t("On my devices")}</span>
+            {mail.ready ? <span className="label">{t("By mail")}</span> : null}
             {(Object.keys(NOTIFY_KINDS) as NotifyKind[]).map((k) => (
               <div key={k} className="notify-row">
                 <span>{t(NOTIFY_KINDS[k])}</span>
                 <Switch on={p[k].app} label={t("{kind} in the bell", { kind: t(NOTIFY_KINDS[k]) })} onChange={(v) => save({ [k]: { app: v } })} />
                 <Switch on={p[k].push} label={t("{kind} on my devices", { kind: t(NOTIFY_KINDS[k]) })} onChange={(v) => save({ [k]: { push: v } })} />
+                {mail.ready ? <Switch on={p[k].mail} label={t("{kind} by mail", { kind: t(NOTIFY_KINDS[k]) })} onChange={(v) => save({ [k]: { mail: v } })} /> : null}
               </div>
             ))}
           </div>
           <p className="hint">{t("Chat messages don't go in the bell (the chat counts them); choose per room in the room's ⋯ menu whether you hear about every message, only @mentions, or nothing.")}</p>
+          {mail.ready ? (
+            <p className="hint">
+              {mail.email ? t("Mails go to {email}, only while you're not on the site, and at most one per conversation in half an hour.", { email: mail.email }) : t("Mails need a confirmed email address:")}{" "}
+              {!mail.email ? (
+                <Link href="/settings/account" className="link">
+                  {t("add one under Settings → Account")}
+                </Link>
+              ) : null}
+            </p>
+          ) : null}
         </div>
       </section>
 

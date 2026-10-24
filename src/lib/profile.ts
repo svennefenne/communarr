@@ -79,11 +79,11 @@ export function endSessionById(userId: number, id: string) {
   db().prepare("delete from sessions where user_id = ? and id = ?").run(userId, id);
 }
 
-export function setNotifyPrefs(u: User, input: Partial<Record<NotifyKind, { app?: boolean; push?: boolean }>> & { quietFrom?: string; quietTo?: string; tz?: string }) {
+export function setNotifyPrefs(u: User, input: Partial<Record<NotifyKind, { app?: boolean; push?: boolean; mail?: boolean }>> & { quietFrom?: string; quietTo?: string; tz?: string }) {
   const next = { ...u.notify } as NotifyPrefs & { tz?: string };
   for (const k of Object.keys(NOTIFY_KINDS) as NotifyKind[]) {
     const v = input[k];
-    if (v) next[k] = { app: v.app ?? next[k].app, push: v.push ?? next[k].push };
+    if (v) next[k] = { app: v.app ?? next[k].app, push: v.push ?? next[k].push, mail: v.mail ?? next[k].mail };
   }
   const hm = /^([01]\d|2[0-3]):[0-5]\d$/;
   if (input.quietFrom !== undefined) next.quietFrom = hm.test(input.quietFrom) ? input.quietFrom : "";
