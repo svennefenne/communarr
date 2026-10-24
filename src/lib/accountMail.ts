@@ -8,7 +8,7 @@ import { confirmMail, notificationMail, recoveryMail } from "./mailTemplates";
 import { getSettings } from "./settings";
 import { userT } from "./t";
 import { baseUrl } from "./url";
-import { MAIL_KINDS, toUser, type User, type UserRow } from "./users";
+import { isUnconfirmed, MAIL_KINDS, toUser, type User, type UserRow } from "./users";
 import { NOTIFY_KINDS, type NotifyKind, type NotifyPrefs } from "./types";
 
 /**
@@ -71,11 +71,15 @@ function takenByOther(email: string, userId: number): boolean {
   return !!db().prepare("select 1 from users where email = ? and id != ?").get(email, userId);
 }
 
+/** Is this address some account's already (before there's an account to compare with: signing up)? */
+export const emailTaken = (email: string) => !!db().prepare("select 1 from users where email = ?").get(normEmail(email));
+
 /**
  * Use this address: mails a link that confirms it (the confirmed one, if any, stays until then).
+ * signup: the welcome version, for a new account that opens when the link is clicked.
  * Throws a UserError for a bad address, one in use, or too many tries.
  */
-export async function startConfirmation(u: Pick<User, "id" | "username" | "name">, raw: string): Promise<string> {
+export async function startConfirmation(u: Pick<User, "id" | "username" | "name">, raw: string, opts: { signup?: boolean } = {}): Promise<string> {
   if (!mailReady()) throw new UserError("This site can't send mail yet: an admin sets it up under Admin → Mail.");
   const email = normEmail(raw);
   if (!validEmail(email)) throw new UserError("That doesn't look like an email address.");
@@ -87,30 +91,59 @@ export async function startConfirmation(u: Pick<User, "id" | "username" | "name"
   const o = mailOrigin() ?? (await baseUrl());
   const site = getSettings().siteName;
   try {
-    await sendMail(confirmMail(userT(u.id), { to: email, site, origin: o, name: u.name, username: u.username, link: `${o}/mail/confirm/${token}`, hours: CONFIRM_HOURS }), site);
+    await sendMail(confirmMail(userT(u.id), { to: email, site, origin: o, name: u.name, username: u.username, link: `${o}/mail/confirm/${token}`, hours: CONFIRM_HOURS, signup: !!opts.signup }), site);
   } catch {
     throw new UserError("The mail couldn't be sent. Try again later, or tell an admin.");
   }
   return email;
 }
 
-/** The link in the confirmation mail: the address becomes the account's. */
-export function confirmEmail(token: string): { ok: true; userId: number; email: string } | { ok: false; error: string } {
+/**
+ * Logging in before confirming: a new link to the address they signed up with (the newest one they
+ * asked for). Returns that address, or null when no mail could go (too many already, or none to send to).
+ */
+export async function resendSignupLink(r: UserRow): Promise<string | null> {
+  const last = db().prepare("select email from mail_tokens where user_id = ? order by created_at desc limit 1").get(r.id) as { email: string } | undefined;
+  if (!last) return null;
+  try {
+    return await startConfirmation({ id: r.id, username: r.username, name: r.display_name }, last.email, { signup: true });
+  } catch {
+    return null;
+  }
+}
+
+/** What clicking the link did: the address is the account's; a new account opened, or went on to an admin. */
+export type Confirmed = { ok: true; userId: number; email: string; opened: "in" | "pending" | null } | { ok: false; error: string };
+
+/** The link in the confirmation mail: the address becomes the account's (and a new account opens). */
+export function confirmEmail(token: string): Confirmed {
   const r = db().prepare("select * from mail_tokens where token = ?").get(token) as { user_id: number; email: string; expires_at: number; used_at: number | null } | undefined;
   if (!r) return { ok: false, error: "This link doesn't work. Add the address again under Settings → Account to get a new one." };
-  const user = db().prepare("select email from users where id = ?").get(r.user_id) as { email: string | null } | undefined;
+  const user = db().prepare("select email, ban_reason, banned from users where id = ?").get(r.user_id) as Pick<UserRow, "email" | "ban_reason" | "banned"> | undefined;
+  if (!user) return { ok: false, error: "This link doesn't work. Add the address again under Settings → Account to get a new one." };
   // a second click (or the mail program peeking first) is fine
-  if (r.used_at && user?.email === r.email) return { ok: true, userId: r.user_id, email: r.email };
-  if (r.used_at || r.expires_at < now()) return { ok: false, error: "This link has expired or been used. Add the address again under Settings → Account to get a new one." };
+  if (r.used_at && user.email === r.email) return { ok: true, userId: r.user_id, email: r.email, opened: null };
+  if (r.used_at || r.expires_at < now()) {
+    return {
+      ok: false,
+      error: isUnconfirmed(user)
+        ? "This link has expired. Log in with your username and password, and we'll send you a new one."
+        : "This link has expired or been used. Add the address again under Settings → Account to get a new one.",
+    };
+  }
   if (takenByOther(r.email, r.user_id)) return { ok: false, error: "Another account confirmed that address first." };
+  // a new account: in now, or on to an admin when sign-ups need their approval
+  const opened = isUnconfirmed(user) ? (user.ban_reason === "unconfirmed pending" ? "pending" : "in") : null;
   tx(() => {
     db().prepare("update users set email = ? where id = ?").run(r.email, r.user_id);
+    if (opened === "in") db().prepare("update users set ban_reason = null, suspended_until = null where id = ?").run(r.user_id);
+    if (opened === "pending") db().prepare("update users set ban_reason = 'pending' where id = ?").run(r.user_id);
     db().prepare("update mail_tokens set used_at = ? where token = ?").run(now(), token);
     // older links for this account (other addresses) stop working
     db().prepare("delete from mail_tokens where user_id = ? and used_at is null").run(r.user_id);
   });
   audit(r.user_id, "email confirmed");
-  return { ok: true, userId: r.user_id, email: r.email };
+  return { ok: true, userId: r.user_id, email: r.email, opened };
 }
 
 /** No address any more (and no link waiting): no mails at all. */

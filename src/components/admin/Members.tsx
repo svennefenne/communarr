@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Ban, Check, Copy, KeyRound, LogOut, Mail, Search, Timer, Trash2, UserPlus, X } from "lucide-react";
+import { Ban, Check, Copy, KeyRound, LogOut, Mail, MailQuestion, Search, Timer, Trash2, UserPlus, X } from "lucide-react";
 import type { AdminMember } from "@/lib/admin";
 import type { Role } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
@@ -41,14 +41,14 @@ export function Members({ members, base, focus, mail }: { members: AdminMember[]
   const now = Date.now();
   const list = members.filter((m) => {
     if (q && !m.name.toLowerCase().includes(q.toLowerCase()) && !m.username.toLowerCase().includes(q.toLowerCase())) return false;
-    if (filter === "waiting") return m.pending;
+    if (filter === "waiting") return m.pending || m.unconfirmed;
     if (filter === "suspended") return !!m.suspendedUntil && m.suspendedUntil > now;
     if (filter === "closed") return m.banned;
     if (filter === "staff") return m.role !== "member";
     return true;
   });
   const counts = {
-    waiting: members.filter((m) => m.pending).length,
+    waiting: members.filter((m) => m.pending || m.unconfirmed).length,
     suspended: members.filter((m) => m.suspendedUntil && m.suspendedUntil > now).length,
     closed: members.filter((m) => m.banned).length,
   };
@@ -93,15 +93,25 @@ export function Members({ members, base, focus, mail }: { members: AdminMember[]
                 {t("{posts} posts · {messages} messages", { posts: m.posts, messages: m.messages })}
               </span>
               {m.pending ? <span className="badge accent">{t("Waiting")}</span> : null}
+              {m.unconfirmed ? (
+                <span className="badge" title={t("Signed up, but hasn't clicked the link in the confirmation mail yet. Removed after a week if they don't.")}>
+                  <MailQuestion size={11} /> {t("Unconfirmed")}
+                </span>
+              ) : null}
               {suspended ? (
                 <span className="badge danger" title={t("Until {date}", { date: new Date(m.suspendedUntil!).toLocaleString(t.locale) })}>
                   <Timer size={11} /> {t("Suspended")}
                 </span>
               ) : null}
               {m.banned ? <span className="badge danger">{t("Closed")}</span> : null}
-              {m.pending ? (
+              {m.pending || m.unconfirmed ? (
                 <>
-                  <button type="button" className="btn btn-primary btn-xs" onClick={() => run(approveAction(m.id, true), t("{name} is in.", { name: m.name }))}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-xs"
+                    title={m.unconfirmed ? t("Let them in without confirming their address") : undefined}
+                    onClick={() => run(approveAction(m.id, true), t("{name} is in.", { name: m.name }))}
+                  >
                     <Check size={13} /> {t("Let in")}
                   </button>
                   <button type="button" className="btn btn-ghost btn-xs" onClick={() => confirm(t("Turn {name} away? Their account is deleted.", { name: m.name }), t("Turn away"), () => run(approveAction(m.id, false)))}>

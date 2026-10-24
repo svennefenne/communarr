@@ -138,8 +138,13 @@ approval), or add members yourself with a made-up password.
 
 With a mail server (Admin → Mail, or the `SMTP_*` variables below; the Admin page wins) Hooden can:
 
-- **confirm an address**: members add theirs under Settings → Account (or when they sign up), and a link
-  confirms it (48 hours). Nobody else sees it.
+- **verify sign-ups**: signing up (invite link or open sign-up) needs an email address, and the account
+  opens when the link mailed to it is clicked (48 hours; logging in before that sends a new one). With
+  approval turned on, it then waits for an admin as usual. Admins see these sign-ups under Admin →
+  Members (*Unconfirmed*) and can let them in without the mail; ones never confirmed are removed after
+  a week. Without mail, sign-ups get straight in as before.
+- **confirm an address**: members already in add theirs under Settings → Account, and a link confirms it
+  (48 hours). Nobody else sees it.
 - **reset a forgotten password**: *Forgot your password or username?* on the log-in page mails the
   username and a link for a new password (an hour, once). Admins can also mail one from Admin → Members.
 - **send notifications by mail**: a third switch per kind under Settings → Notifications (on to begin

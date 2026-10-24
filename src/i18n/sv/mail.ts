@@ -28,12 +28,35 @@ const sv: Record<string, string> = {
   "You get this because you chose “{kind}” by mail, and you weren't on {site} just then.": "Du får det här för att du valt ”{kind}” på mejl, och inte var inne på {site} just då.",
   "Choose which mails you get": "Välj vilka mejl du får",
   "Stop all notification mails": "Stoppa alla notismejl",
+  "Welcome to {site}: confirm your address": "Välkommen till {site}: bekräfta din adress",
+  "Welcome, {name}!": "Välkommen, {name}!",
+  "Your account {username} on {site} is almost ready.": "Ditt konto {username} på {site} är nästan klart.",
+  "Confirm your email address and it opens: then log in with your username and password.": "Bekräfta din e-postadress så öppnas det: logga sedan in med ditt användarnamn och lösenord.",
+  "Confirm and open my account": "Bekräfta och öppna mitt konto",
+  "The link works for {n} hours. Logging in before you've clicked it sends a new one.": "Länken fungerar i {n} timmar. Loggar du in innan du klickat på den skickas en ny.",
+  "Didn't sign up? Then you can ignore this mail: the account is removed after a week.": "Har du inte skapat något konto? Då kan du strunta i mejlet: kontot tas bort efter en vecka.",
+
+  // ── signing up with mail: the account opens with the link ──
+  "We'll send a link to it: your account opens when you click it. Also for a new password if you forget yours. Nobody else sees it.":
+    "Vi skickar en länk dit: ditt konto öppnas när du klickar på den. Även för ett nytt lösenord om du glömmer ditt. Ingen annan ser den.",
+  "Write your email address: your account opens when you click the link we send to it.": "Skriv din e-postadress: ditt konto öppnas när du klickar på länken vi skickar dit.",
+  "Almost there! We've sent a link to {email}. Click it to open your account (it works for 48 hours), then log in. Nothing there? Look in the spam folder.":
+    "Nästan klart! Vi har skickat en länk till {email}. Klicka på den för att öppna ditt konto (den fungerar i 48 timmar), och logga sedan in. Inget där? Titta i skräpposten.",
+  "Your account opens when you confirm your email address. We've sent a new link to {email}: click it, then log in.":
+    "Ditt konto öppnas när du bekräftar din e-postadress. Vi har skickat en ny länk till {email}: klicka på den och logga sedan in.",
+  "Your account opens when you confirm your email address: click the link in the mail we sent (look in the spam folder too). No mail? Ask an admin to let you in.":
+    "Ditt konto öppnas när du bekräftar din e-postadress: klicka på länken i mejlet vi skickade (titta i skräpposten också). Inget mejl? Be en admin att släppa in dig.",
+  "You're in!": "Du är inne!",
+  "{email} is confirmed and your account is open. Log in with your username and password.": "{email} är bekräftad och ditt konto är öppet. Logga in med ditt användarnamn och lösenord.",
+  "{email} is confirmed. An admin will let you in soon; then you can log in.": "{email} är bekräftad. En admin släpper snart in dig; sedan kan du logga in.",
+  "This link has expired. Log in with your username and password, and we'll send you a new one.": "Länken har gått ut. Logga in med ditt användarnamn och lösenord, så skickar vi en ny.",
+  "Signed up, but hasn't clicked the link in the confirmation mail yet. Removed after a week if they don't.":
+    "Har skapat ett konto men inte klickat på länken i bekräftelsemejlet än. Tas bort efter en vecka om det inte händer.",
+  Unconfirmed: "Obekräftad",
+  "Let them in without confirming their address": "Släpp in utan att adressen bekräftas",
 
   // ── your address (Settings → Account, signing up, the confirmation link) ──
   "Email address": "E-postadress",
-  optional: "frivilligt",
-  "For a new password if you forget yours, and the notifications you choose. We'll send a link to confirm it.":
-    "För ett nytt lösenord om du glömmer ditt, och de notiser du väljer. Vi skickar en länk för att bekräfta den.",
   "For a new password if you forget yours, and the notifications you choose to get by mail. Nobody else on the site sees it.":
     "För ett nytt lösenord om du glömmer ditt, och de notiser du väljer att få på mejl. Ingen annan på sajten ser den.",
   "This site can't send mail yet: an admin sets it up under Admin → Mail.": "Sajten kan inte skicka mejl än: en admin ställer in det under Admin → Mejl.",
