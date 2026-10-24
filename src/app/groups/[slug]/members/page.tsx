@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { canManageGroup, canReadGroup, groupMembers, groupRequests, groupRole, groupRow } from "@/lib/groups";
 import { GroupMembers } from "@/components/groups/GroupMembers";
+import { GroupColumns } from "@/components/groups/GroupColumns";
 
 export const dynamic = "force-dynamic";
 
@@ -9,5 +10,10 @@ export default async function GroupMembersPage({ params }: { params: Promise<{ s
   const g = groupRow(decodeURIComponent((await params).slug));
   if (!g || !canReadGroup(u, g)) return null;
   const manage = canManageGroup(u, g);
-  return <GroupMembers groupId={g.id} members={groupMembers(g.id)} requests={manage ? groupRequests(g.id) : []} canManage={manage} isOwner={groupRole(g.id, u.id) === "owner" || u.isAdmin} />;
+  return (
+    // (the side column leaves its members out here: they're all listed)
+    <GroupColumns u={u} g={g} members={false}>
+      <GroupMembers groupId={g.id} members={groupMembers(g.id)} requests={manage ? groupRequests(g.id) : []} canManage={manage} isOwner={groupRole(g.id, u.id) === "owner" || u.isAdmin} />
+    </GroupColumns>
+  );
 }
