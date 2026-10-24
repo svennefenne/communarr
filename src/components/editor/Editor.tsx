@@ -11,6 +11,7 @@ import { ImageBubble, LinkBubble, LinkDialog, PictureDialog, TextBubble, VideoDi
 import { mentionOpen } from "./mentionState";
 import { importImage, uploadFile, Modal } from "@/components/ui/ui";
 import { useT, useToast } from "@/components/app/AppProvider";
+import { LinkPreviews } from "@/components/content/LinkPreviews";
 
 export interface EditorHandle {
   getHTML: () => string;
@@ -50,6 +51,8 @@ export interface EditorProps {
   className?: string;
   label?: string;
   onFocus?: () => void;
+  /** cards for the links under the editor as they're written (a moment after typing stops) */
+  previews?: boolean;
 }
 
 const SHORTCUTS: [string, string][] = [
@@ -100,7 +103,7 @@ function writeDraft(key: string, html: string) {
 }
 
 export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEditor(
-  { name, initial = "", variant = "full", placeholder: placeholderProp, onChange, onSubmit, enterSends = false, autoFocus = false, minHeight, draftKey, limit, showToolbar, actions, className = "", label, onFocus },
+  { name, initial = "", variant = "full", placeholder: placeholderProp, onChange, onSubmit, enterSends = false, autoFocus = false, minHeight, draftKey, limit, showToolbar, actions, className = "", label, onFocus, previews = false },
   ref,
 ) {
   const compact = variant === "compact";
@@ -108,6 +111,12 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
   const placeholder = placeholderProp ?? t("Write something…");
   const toast = useToast();
   const [html, setHtml] = useState(initial);
+  // the text as it was a moment ago (at once when it's emptied), for its links' cards (previews)
+  const [settled, setSettled] = useState(initial);
+  useEffect(() => {
+    const later = setTimeout(() => setSettled(html), html ? 700 : 0);
+    return () => clearTimeout(later);
+  }, [html]);
   const [uploading, setUploading] = useState(0);
   const [fetching, setFetching] = useState(0);
   const fetchingRef = useRef(0);
@@ -358,98 +367,101 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
   const words = useEditorState({ editor, selector: ({ editor: e }) => (e ? (e.storage.characterCount?.words?.() as number) ?? 0 : 0) });
 
   return (
-    <div className={`editor ${compact ? "compact" : "full"} ${expanded ? "ed-full" : ""} ${className}`} style={minHeight ? ({ ["--ed-min" as string]: `${minHeight}px` } as React.CSSProperties) : undefined}>
-      {name ? <input type="hidden" name={name} value={html} /> : null}
-      {editor && toolbar ? (
-        <Toolbar editor={editor} compact={compact} expanded={expanded} onExpand={() => setExpanded((x) => !x)} onImage={() => setPicture(true)} onLink={() => setLink(true)} onVideo={() => setVideo(true)} />
-      ) : null}
-      <div className="ed-body" onClick={(e) => e.target === e.currentTarget && editor?.commands.focus("end")}>
-        {editor ? <EditorContent editor={editor} /> : <div className="prose ed-content ed-loading" dangerouslySetInnerHTML={{ __html: initial || `<p class="faint">${placeholder}</p>` }} />}
-      </div>
-      {editor ? (
-        <>
-          <TextBubble editor={editor} onLink={() => setLink(true)} />
-          <LinkBubble editor={editor} onEdit={() => setLink(true)} />
-          <ImageBubble editor={editor} />
-        </>
-      ) : null}
-      <div className="ed-foot">
-        {compact ? (
+    <>
+      <div className={`editor ${compact ? "compact" : "full"} ${expanded ? "ed-full" : ""} ${className}`} style={minHeight ? ({ ["--ed-min" as string]: `${minHeight}px` } as React.CSSProperties) : undefined}>
+        {name ? <input type="hidden" name={name} value={html} /> : null}
+        {editor && toolbar ? (
+          <Toolbar editor={editor} compact={compact} expanded={expanded} onExpand={() => setExpanded((x) => !x)} onImage={() => setPicture(true)} onLink={() => setLink(true)} onVideo={() => setVideo(true)} />
+        ) : null}
+        <div className="ed-body" onClick={(e) => e.target === e.currentTarget && editor?.commands.focus("end")}>
+          {editor ? <EditorContent editor={editor} /> : <div className="prose ed-content ed-loading" dangerouslySetInnerHTML={{ __html: initial || `<p class="faint">${placeholder}</p>` }} />}
+        </div>
+        {editor ? (
           <>
-            <button type="button" className={`tb-btn ${toolbar ? "on" : ""}`} title={t("Formatting")} aria-label={t("Formatting")} aria-pressed={toolbar} onMouseDown={(e) => e.preventDefault()} onClick={() => setToolbar((x) => !x)}>
-              <Type size={17} />
-            </button>
-            <button type="button" className="tb-btn" title={t("Add a picture")} aria-label={t("Add a picture")} onMouseDown={(e) => e.preventDefault()} onClick={() => setPicture(true)}>
-              <ImagePlus size={17} />
-            </button>
+            <TextBubble editor={editor} onLink={() => setLink(true)} />
+            <LinkBubble editor={editor} onEdit={() => setLink(true)} />
+            <ImageBubble editor={editor} />
           </>
         ) : null}
-        <span className="ed-status">
-          {uploading ? (
-            <span className="row" style={{ gap: 6 }}>
-              <LoaderCircle size={14} className="spin" /> {t.n(uploading, "Uploading {n} picture…", "Uploading {n} pictures…")}
-            </span>
-          ) : fetching ? (
-            <span className="row" style={{ gap: 6 }}>
-              <LoaderCircle size={14} className="spin" /> {t("Fetching the picture from the link…")}
-            </span>
-          ) : restored ? (
-            <span>
-              {t("Draft restored")} ·{" "}
-              <button
-                type="button"
-                className="link"
-                style={{ background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" }}
-                onClick={() => {
-                  editor?.commands.clearContent(true);
-                  setRestored(false);
-                  if (draftKey) writeDraft(draftKey, "");
-                }}
-              >
-                {t("discard")}
+        <div className="ed-foot">
+          {compact ? (
+            <>
+              <button type="button" className={`tb-btn ${toolbar ? "on" : ""}`} title={t("Formatting")} aria-label={t("Formatting")} aria-pressed={toolbar} onMouseDown={(e) => e.preventDefault()} onClick={() => setToolbar((x) => !x)}>
+                <Type size={17} />
               </button>
-            </span>
-          ) : !compact ? (
-            <span>{words ? t.n(words, "{n} word", "{n} words") : t("Drop or paste pictures anywhere")}</span>
+              <button type="button" className="tb-btn" title={t("Add a picture")} aria-label={t("Add a picture")} onMouseDown={(e) => e.preventDefault()} onClick={() => setPicture(true)}>
+                <ImagePlus size={17} />
+              </button>
+            </>
           ) : null}
-        </span>
-        {!compact ? (
-          <button type="button" className="tb-btn" title={t("Shortcuts")} aria-label={t("Keyboard shortcuts")} onClick={() => setHelp(true)}>
-            <CircleHelp size={16} />
-          </button>
+          <span className="ed-status">
+            {uploading ? (
+              <span className="row" style={{ gap: 6 }}>
+                <LoaderCircle size={14} className="spin" /> {t.n(uploading, "Uploading {n} picture…", "Uploading {n} pictures…")}
+              </span>
+            ) : fetching ? (
+              <span className="row" style={{ gap: 6 }}>
+                <LoaderCircle size={14} className="spin" /> {t("Fetching the picture from the link…")}
+              </span>
+            ) : restored ? (
+              <span>
+                {t("Draft restored")} ·{" "}
+                <button
+                  type="button"
+                  className="link"
+                  style={{ background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" }}
+                  onClick={() => {
+                    editor?.commands.clearContent(true);
+                    setRestored(false);
+                    if (draftKey) writeDraft(draftKey, "");
+                  }}
+                >
+                  {t("discard")}
+                </button>
+              </span>
+            ) : !compact ? (
+              <span>{words ? t.n(words, "{n} word", "{n} words") : t("Drop or paste pictures anywhere")}</span>
+            ) : null}
+          </span>
+          {!compact ? (
+            <button type="button" className="tb-btn" title={t("Shortcuts")} aria-label={t("Keyboard shortcuts")} onClick={() => setHelp(true)}>
+              <CircleHelp size={16} />
+            </button>
+          ) : null}
+          {actions}
+        </div>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => {
+            const files = [...(e.target.files ?? [])];
+            e.target.value = "";
+            void upload(files);
+          }}
+        />
+        {picture ? <PictureDialog onPick={() => fileInput.current?.click()} onLink={(url) => fromLink(url)} onClose={() => setPicture(false)} /> : null}
+        {link && editor ? <LinkDialog editor={editor} onClose={() => setLink(false)} /> : null}
+        {video && editor ? <VideoDialog editor={editor} onClose={() => setVideo(false)} /> : null}
+        {help ? (
+          <Modal title={t("Writing tips")} onClose={() => setHelp(false)}>
+            <p className="muted small" style={{ marginTop: 0 }}>
+              {t("Everything is in the bar above the text. Select words for quick formatting, and drop, paste or pick pictures (then drag their corner to resize). These shortcuts work too:")}
+            </p>
+            <div className="list inset">
+              {SHORTCUTS.map(([a, b]) => (
+                <div key={a} className="list-row" style={{ padding: "8px 12px" }}>
+                  <span className="grow">{t(a)}</span>
+                  <span className="mono small muted">{t(b)}</span>
+                </div>
+              ))}
+            </div>
+          </Modal>
         ) : null}
-        {actions}
       </div>
-      <input
-        ref={fileInput}
-        type="file"
-        accept="image/*"
-        multiple
-        hidden
-        onChange={(e) => {
-          const files = [...(e.target.files ?? [])];
-          e.target.value = "";
-          void upload(files);
-        }}
-      />
-      {picture ? <PictureDialog onPick={() => fileInput.current?.click()} onLink={(url) => fromLink(url)} onClose={() => setPicture(false)} /> : null}
-      {link && editor ? <LinkDialog editor={editor} onClose={() => setLink(false)} /> : null}
-      {video && editor ? <VideoDialog editor={editor} onClose={() => setVideo(false)} /> : null}
-      {help ? (
-        <Modal title={t("Writing tips")} onClose={() => setHelp(false)}>
-          <p className="muted small" style={{ marginTop: 0 }}>
-            {t("Everything is in the bar above the text. Select words for quick formatting, and drop, paste or pick pictures (then drag their corner to resize). These shortcuts work too:")}
-          </p>
-          <div className="list inset">
-            {SHORTCUTS.map(([a, b]) => (
-              <div key={a} className="list-row" style={{ padding: "8px 12px" }}>
-                <span className="grow">{t(a)}</span>
-                <span className="mono small muted">{t(b)}</span>
-              </div>
-            ))}
-          </div>
-        </Modal>
-      ) : null}
-    </div>
+      {previews ? <LinkPreviews html={settled} /> : null}
+    </>
   );
 });

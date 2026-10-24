@@ -174,7 +174,7 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
           </label>
         </div>
       ) : null}
-      <RichEditor ref={ed} variant="full" placeholder={news ? t("What's new?") : t("What's on your mind, {name}?", { name: first })} autoFocus={!news} draftKey={groupId ? `post-g${groupId}` : "post"} minHeight={140} onSubmit={submit} />
+      <RichEditor ref={ed} variant="full" placeholder={news ? t("What's new?") : t("What's on your mind, {name}?", { name: first })} autoFocus={!news} draftKey={groupId ? `post-g${groupId}` : "post"} minHeight={140} onSubmit={submit} previews />
       <div className="composer-bar">
         {!news ? (
           <button type="button" className={`btn btn-ghost btn-sm ${showTitle ? "on" : ""}`} onClick={() => setShowTitle((s) => !s)}>
