@@ -60,21 +60,22 @@ export default async function ForumPage() {
             ))}
           </div>
         </div>
+        {/* one panel, its name inside: its top is level with the categories' */}
         <aside className="stack">
-          <div className="row between">
-            <span className="eyebrow">{t("Latest activity")}</span>
-          </div>
-          {latest.length ? (
-            <ThreadList threads={latest} showCategory />
-          ) : (
-            <div className="panel">
+          <section className="panel">
+            <div className="panel-head">
+              <span className="eyebrow">{t("Latest activity")}</span>
+            </div>
+            {latest.length ? (
+              <ThreadList threads={latest} showCategory bare />
+            ) : (
               <Empty icon={<MessagesSquare size={24} />} title={t("No threads yet")}>
                 <Link href="/forum/new" className="link">
                   {t("Start the first one")}
                 </Link>
               </Empty>
-            </div>
-          )}
+            )}
+          </section>
         </aside>
       </div>
     </div>

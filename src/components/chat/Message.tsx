@@ -12,6 +12,9 @@ import { EmojiPopover, QUICK_REACTIONS } from "@/components/ui/EmojiPicker";
 import { RichText } from "@/components/content/RichText";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 
+/** the reactions chat suggests: the usual ones without 😂 (the picker still has every emoji) */
+const CHAT_REACTIONS = QUICK_REACTIONS.filter((e) => e !== "😂");
+
 export interface MessageHandlers {
   onReply: (m: ChatMessage) => void;
   onReact: (m: ChatMessage, emoji: string) => void;
@@ -147,7 +150,7 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
       </div>
       {!m.deleted && !editing ? (
         <div className="msg-tools">
-          {QUICK_REACTIONS.slice(0, 3).map((e) => (
+          {CHAT_REACTIONS.slice(0, 2).map((e) => (
             <button key={e} type="button" className="msg-tool emoji" onClick={() => h.onReact(m, e)} aria-label={t("React {emoji}", { emoji: e })}>
               {e}
             </button>
@@ -180,7 +183,7 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
       {sheet ? (
         <Modal onClose={() => setSheet(false)} label={t("Message")}>
           <div className="quick-reacts" style={{ justifyContent: "space-between", marginBottom: 10 }}>
-            {QUICK_REACTIONS.map((e) => (
+            {CHAT_REACTIONS.map((e) => (
               <button
                 key={e}
                 type="button"

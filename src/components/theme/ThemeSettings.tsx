@@ -79,7 +79,7 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
               </button>
             ))}
           </div>
-          <div className="chat-search" style={{ margin: 0, flex: "1 1 200px", maxWidth: 320 }}>
+          <div className="chat-search scheme-search" style={{ margin: 0 }}>
             <Search size={15} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Find a scheme")} aria-label={t("Find a scheme")} />
           </div>
