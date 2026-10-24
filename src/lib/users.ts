@@ -192,6 +192,19 @@ export function allMembers(): UserSummary[] {
 
 export const USERNAME_RE = /^[a-zA-Z0-9_.-]{2,24}$/;
 
+/**
+ * Sign-ups that aren't in yet, kept in ban_reason (with suspended_until far ahead, so no session
+ * works): waiting for an admin ("pending"), for the link in their confirmation mail ("unconfirmed"),
+ * or for the link and then an admin ("unconfirmed pending").
+ */
+export type Waiting = "pending" | "unconfirmed" | "unconfirmed pending";
+export const WAITING: readonly Waiting[] = ["pending", "unconfirmed", "unconfirmed pending"];
+/** SQL: not a sign-up that's waiting (for member lists and counts) */
+export const NOT_WAITING = "(ban_reason is null or ban_reason not in ('pending', 'unconfirmed', 'unconfirmed pending'))";
+export const isWaiting = (reason: string | null): reason is Waiting => WAITING.includes(reason as Waiting);
+/** Signed up, but hasn't clicked the link in the confirmation mail yet. */
+export const isUnconfirmed = (r: Pick<UserRow, "ban_reason" | "banned">) => !r.banned && (r.ban_reason === "unconfirmed" || r.ban_reason === "unconfirmed pending");
+
 export function memberCount(): number {
   return (db().prepare("select count(*) n from users where banned = 0").get() as { n: number }).n;
 }

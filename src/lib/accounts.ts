@@ -1,7 +1,8 @@
 import "server-only";
 import { db, now, tx } from "./db";
 import { hashPassword, randomToken } from "./auth";
-import { USERNAME_RE, type UserRow } from "./users";
+import { USERNAME_RE, type UserRow, type Waiting } from "./users";
+import { notify } from "./notify";
 import type { Role } from "./types";
 import { indexItem } from "./search";
 import { getSettings } from "./settings";
@@ -23,15 +24,15 @@ function hasUsers() {
   return !!db().prepare("select 1 from users limit 1").get();
 }
 
-/** Make an account, and put the new member in the site's open chat rooms. */
-export async function createUser(o: { username: string; name: string; password: string; role?: Role; invitedBy?: number | null; pending?: boolean }): Promise<number> {
+/** Make an account (one that's waiting can't log in yet), and put the new member in the site's open chat rooms. */
+export async function createUser(o: { username: string; name: string; password: string; role?: Role; invitedBy?: number | null; waiting?: Waiting }): Promise<number> {
   const hash = await hashPassword(o.password);
   return tx(() => {
     const t = now();
     const id = Number(
       db()
         .prepare("insert into users (username, display_name, password_hash, role, invited_by, created_at, suspended_until, ban_reason) values (?, ?, ?, ?, ?, ?, ?, ?)")
-        .run(o.username, o.name.trim(), hash, o.role ?? "member", o.invitedBy ?? null, t, o.pending ? 9_999_999_999_999 : null, o.pending ? "pending" : null).lastInsertRowid,
+        .run(o.username, o.name.trim(), hash, o.role ?? "member", o.invitedBy ?? null, t, o.waiting ? 9_999_999_999_999 : null, o.waiting ?? null).lastInsertRowid,
     );
     const rooms = db().prepare("select id from rooms where kind = 'room' and visibility = 'open' and group_id is null and archived = 0").all() as { id: number }[];
     const join = db().prepare("insert or ignore into room_members (room_id, user_id, joined_at, last_read_id) values (?, ?, ?, (select coalesce(max(id), 0) from messages where room_id = ?))");
@@ -61,6 +62,29 @@ export function inviteState(code: string): { ok: true; invite: InviteRow } | { o
   if (inv.expires_at && inv.expires_at < now()) return { ok: false, error: "This invite link has expired. Ask for a new one." };
   if (inv.max_uses != null && inv.uses >= inv.max_uses) return { ok: false, error: "This invite link has been used up. Ask for a new one." };
   return { ok: true, invite: inv };
+}
+
+/** A sign-up that couldn't go on (its confirmation mail didn't go): gone again, and the invite use given back. */
+export function undoSignup(userId: number, inv: InviteRow | null) {
+  tx(() => {
+    db().prepare("delete from users where id = ?").run(userId);
+    if (inv) db().prepare("update invites set uses = max(uses - 1, 0) where code = ?").run(inv.code);
+  });
+}
+
+/** Tell the admins someone joined, or is waiting for them to let them in. */
+export function announceNewMember(userId: number, pending: boolean) {
+  const u = db().prepare("select username, display_name from users where id = ?").get(userId) as { username: string; display_name: string } | undefined;
+  if (!u) return;
+  const admins = (db().prepare("select id from users where role = 'admin'").all() as { id: number }[]).map((a) => a.id);
+  notify(admins, {
+    kind: "group",
+    actorId: userId,
+    title: pending ? "{name} wants to join" : "{name} joined",
+    body: pending ? "Let them in under Admin → Members." : "Say hi to @{username}!",
+    vars: { name: u.display_name, username: u.username },
+    url: pending ? "/admin#members" : `/u/${encodeURIComponent(u.username)}`,
+  });
 }
 
 export function redeemInvite(inv: InviteRow, userId: number) {
