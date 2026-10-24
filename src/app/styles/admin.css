@@ -344,3 +344,30 @@
   background: var(--ok);
   box-shadow: 0 0 0 4px rgb(92 196 106 / 0.18);
 }
+
+/* Admin → Sounds: a row per thing that happens (what, sound, volume, listen) */
+.sound-rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 200px) minmax(90px, 160px) 3.2em auto;
+  align-items: center;
+  gap: 10px 12px;
+}
+.sound-row {
+  display: contents;
+}
+.sound-vol {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 620px) {
+  .sound-rows {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .sound-what {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+  }
+  .sound-rows select {
+    grid-column: 1 / -1;
+  }
+}

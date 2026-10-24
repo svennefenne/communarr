@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, AtSign, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users } from "lucide-react";
+import { Activity, AtSign, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users, Volume2 } from "lucide-react";
 import { requireMod } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { activity, adminMembers, auditLog, overview, system } from "@/lib/admin";
@@ -23,6 +23,8 @@ import { TextsEditor } from "@/components/admin/TextsEditor";
 import { ForumCategories } from "@/components/admin/ForumCategories";
 import { DefaultRoom, GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
 import { MailAdmin } from "@/components/admin/MailAdmin";
+import { SoundsAdmin } from "@/components/admin/SoundsAdmin";
+import { withDefaults } from "@/lib/sounds";
 import { getMailSettings, lastMailFailure, mailReady } from "@/lib/mail";
 import { firstOpenRoom } from "@/lib/chat";
 import { mailOrigin, rememberOrigin } from "@/lib/accountMail";
@@ -103,6 +105,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             items: [
               { id: "features", label: t("Features & permissions") },
               { id: "notifications", label: t("Notifications & voice") },
+              { id: "sounds", label: t("Sounds") },
               { id: "mail", label: t("Mail") },
               { id: "system", label: t("System & backup") },
             ],
@@ -177,6 +180,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </Section>
               <Section id="notifications" title={t("Notifications & voice")} icon={<Bell size={18} />}>
                 <NotifyVoice s={s} vapid={vapidPublicKey()} devices={o.devices} timezones={tzs} />
+              </Section>
+              <Section id="sounds" title={t("Sounds")} icon={<Volume2 size={18} />} hint={t("Sounds for what happens on the site, and how loud")}>
+                <SoundsAdmin initial={withDefaults(s.sounds)} />
               </Section>
               <Section id="mail" title={t("Mail")} icon={<AtSign size={18} />} hint={t("Forgotten passwords and notifications by mail")}>
                 <MailAdmin {...mailProps(u.id, s.siteName)} />

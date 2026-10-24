@@ -145,14 +145,14 @@ export function useConfirm() {
 }
 
 /** Uploads a file to /api/upload; resolves to its URL and size. */
-export async function uploadFile(file: File, kind: "image" | "avatar" | "banner" | "background" | "cover" = "image"): Promise<{ url: string; width: number; height: number; thumb?: string }> {
+export async function uploadFile(file: File, kind: "image" | "avatar" | "banner" | "background" | "cover" | "sound" = "image"): Promise<{ id?: string; url: string; width: number; height: number; thumb?: string }> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("kind", kind);
   const res = await fetch("/api/upload", { method: "POST", body: fd });
-  const data = (await res.json().catch(() => ({}))) as { url?: string; width?: number; height?: number; thumb?: string; error?: string };
+  const data = (await res.json().catch(() => ({}))) as { id?: string; url?: string; width?: number; height?: number; thumb?: string; error?: string };
   if (!res.ok || !data.url) throw new Error(data.error || clientT()("The upload didn't work."));
-  return { url: data.url, width: data.width ?? 0, height: data.height ?? 0, thumb: data.thumb };
+  return { id: data.id, url: data.url, width: data.width ?? 0, height: data.height ?? 0, thumb: data.thumb };
 }
 
 export type { ActionResult } from "@/lib/types";
