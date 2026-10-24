@@ -231,8 +231,8 @@ export function reindexAll(): number {
       indexItem("poll", p.id, groupScope(p.group_id), p.author_id, p.created_at, p.question, `${opts} ${p.description_text}`);
       n++;
     }
-    for (const e of db().prepare("select * from events").all() as { id: number; title: string; location: string; description_text: string; author_id: number; created_at: number; group_id: number | null }[]) {
-      indexItem("event", e.id, groupScope(e.group_id), e.author_id, e.created_at, e.title, `${e.location} ${e.description_text}`);
+    for (const e of db().prepare("select * from events").all() as { id: number; title: string; location: string; description_text: string; author_id: number; created_at: number; group_id: number | null; private: number }[]) {
+      indexItem("event", e.id, e.private ? `u:${e.author_id}` : groupScope(e.group_id), e.author_id, e.created_at, e.title, `${e.location} ${e.description_text}`);
       n++;
     }
     for (const m of db().prepare("select m.*, r.name, r.kind rk from messages m join rooms r on r.id = m.room_id where m.deleted = 0 and m.kind = 'text'").all() as { id: number; room_id: number; body_text: string; author_id: number; created_at: number; name: string; rk: string }[]) {
@@ -241,10 +241,10 @@ export function reindexAll(): number {
     }
     for (const c of db().prepare("select * from comments").all() as { id: number; target_type: string; target_id: number; author_id: number; body_text: string; created_at: number }[]) {
       const table = c.target_type === "post" ? "posts" : c.target_type === "poll" ? "polls" : "events";
-      const t = db().prepare(`select * from ${table} where id = ?`).get(c.target_id) as { group_id: number | null; visibility?: string; author_id: number } | undefined;
+      const t = db().prepare(`select * from ${table} where id = ?`).get(c.target_id) as { group_id: number | null; visibility?: string; private?: number; author_id: number } | undefined;
       if (!t) continue;
-      // comments on an "only me" post stay with its author
-      const scope = t.visibility === "private" ? `u:${t.author_id}` : groupScope(t.group_id);
+      // comments on an "only me" post or event stay with its author
+      const scope = t.visibility === "private" || t.private ? `u:${t.author_id}` : groupScope(t.group_id);
       indexItem("comment", c.id, scope, c.author_id, c.created_at, tr("Comment"), c.body_text);
       n++;
     }

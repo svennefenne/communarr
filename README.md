@@ -30,7 +30,7 @@ or in a theme you make yourself.
   the headphones to talk (WebRTC, mute, deafen, who's talking glows), and the call stays up while you
   move around the site.
 - **Calendar**: month (dots on a phone), week and list views, events with time, place, colour, cover,
-  capacity and repeats, RSVPs (going, maybe, can't), comments, reminders a day and an hour before,
+  capacity and repeats, for everyone, a group or only you, RSVPs (going, maybe, can't), comments, reminders a day and an hour before,
   change and cancel notices, `.ics` downloads, and a private calendar feed for your phone's calendar app.
 - **Polls**: single or multiple choice (with a limit), anonymous or not, changeable votes, choices
   members can add, results always / after voting / after closing, closing times, live results.
@@ -53,10 +53,12 @@ or in a theme you make yourself.
   changed under Admin → Name & texts) is the default. Pages, notifications, messages and dates follow it,
   and the emoji picker searches Swedish names. Translations live in `src/i18n/<language>/`: English text
   is the key, so a missing one just shows the English. Admins can reword any text under Admin → Texts.
-- **Who's here**: the number of people online (you included) by the bell; open it for who they are.
+- **Who's here**: the number of people online (you included) by the bell; open it for who they are
+  (on a phone it's in the menu, ☰, with search).
+- **Send feedback** from the user menu: ideas, wishes and bugs go to the admins (Admin → Feedback).
 - **Admin**: a status board with a 30-day activity chart; members (roles, suspensions, closed accounts,
   password reset links, setting passwords, adding members, approving sign-ups); invite links (uses,
-  expiry, role, a group to join) and sign-up modes; reports; groups and chat rooms; announcement line and
+  expiry, role, a group to join) and sign-up modes; reports; feedback; groups and chat rooms; announcement line and
   word filter; forum categories; the site's name, language and texts, and **any built-in text in your
   own words** (per language); the default scheme, light/dark, background picture, frame, glass and
   backdrop, and a **library of uploaded backdrops** everyone can pick; switching features off and choosing who may start things; push

@@ -406,6 +406,21 @@ const MIGRATIONS: string[] = [
   /* 2: each member's own language (null: the site's) */ `
   alter table users add column lang text;
   `,
+  /* 3: events only the one who planned them sees ("Only me") */ `
+  alter table events add column private integer not null default 0;
+  `,
+  /* 4: feedback members send the admins (the user menu's "Send feedback") */ `
+  create table feedback (
+    id integer primary key,
+    user_id integer references users(id) on delete set null,
+    body text not null,
+    page text not null default '',
+    created_at integer not null,
+    done_at integer,
+    done_by integer references users(id) on delete set null
+  );
+  create index feedback_created on feedback(created_at);
+  `,
 ];
 
 function open(): Database.Database {

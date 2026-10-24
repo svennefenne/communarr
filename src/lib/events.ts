@@ -34,6 +34,8 @@ export interface EventRow {
   cancelled: number;
   created_at: number;
   edited_at: number | null;
+  /** 1: only the one who planned it sees it ("Only me") */
+  private: number;
 }
 
 export class EventError extends UserError {}
@@ -45,6 +47,7 @@ export function eventRow(id: number): EventRow | null {
 }
 
 export function canSeeEvent(u: User, e: EventRow) {
+  if (e.private) return e.author_id === u.id;
   if (!e.group_id) return true;
   const g = groupRow(e.group_id);
   return !!g && canReadGroup(u, g);
@@ -93,6 +96,7 @@ export function toEventViews(u: User, rows: EventRow[]): EventView[] {
       color: r.color || "#d65a2b",
       cover: r.cover,
       group: r.group_id ? groups.get(r.group_id) ?? null : null,
+      private: !!r.private,
       author: authors.get(r.author_id) ?? GHOST,
       repeat: r.repeat,
       repeatUntil: r.repeat_until,
@@ -119,8 +123,8 @@ export function getEvent(u: User, id: number): EventView | null {
 /** Every occurrence between from and to that someone can see. */
 export function eventsBetween(u: User, from: number, to: number, o: { groupId?: number; mineOnly?: boolean } = {}): EventView[] {
   const gf = groupFilter(u);
-  const where = [gf.sql, "start_at < ?", "((repeat = 'none' and end_at > ?) or (repeat != 'none' and (repeat_until is null or repeat_until >= ?)))"];
-  const params: unknown[] = [...gf.params, to, from, from];
+  const where = [gf.sql, "(private = 0 or author_id = ?)", "start_at < ?", "((repeat = 'none' and end_at > ?) or (repeat != 'none' and (repeat_until is null or repeat_until >= ?)))"];
+  const params: unknown[] = [...gf.params, u.id, to, from, from];
   if (o.groupId) {
     where.push("group_id = ?");
     params.push(o.groupId);
@@ -157,6 +161,8 @@ export interface EventInput {
   color?: string;
   cover?: string | null;
   groupId?: number | null;
+  /** only the one who planned it sees it (not with a group) */
+  private?: boolean;
   repeat?: EventRow["repeat"];
   repeatUntil?: number | null;
   capacity?: number | null;
@@ -192,20 +198,23 @@ export function createEvent(u: User, o: EventInput): number {
     if (!g || !canPostInGroup(u, g)) throw new EventError("You can only plan events in groups you're in.");
     groupId = g.id;
   }
+  const priv = !groupId && !!o.private;
   const t = now();
   const id = tx(() => {
     const id = Number(
       db()
         .prepare(
-          "insert into events (author_id, title, description_html, description_text, location, start_at, end_at, all_day, color, cover, group_id, repeat, repeat_until, capacity, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "insert into events (author_id, title, description_html, description_text, location, start_at, end_at, all_day, color, cover, group_id, repeat, repeat_until, capacity, private, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(u.id, v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, groupId, v.repeat, v.repeatUntil, v.capacity, t).lastInsertRowid,
+        .run(u.id, v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, groupId, v.repeat, v.repeatUntil, v.capacity, priv ? 1 : 0, t).lastInsertRowid,
     );
     // the one who plans it is going
     db().prepare("insert into event_rsvps (event_id, user_id, status, updated_at) values (?, ?, 'going', ?)").run(id, u.id, t);
-    indexItem("event", id, groupScope(groupId), u.id, t, v.title, `${v.location} ${v.c.text}`);
+    indexItem("event", id, eventScope(groupId, priv, u.id), u.id, t, v.title, `${v.location} ${v.c.text}`);
     return id;
   });
+  // only them: nobody to invite or tell
+  if (priv) return id;
   const url = `/events/${id}`;
   const row = eventRow(id)!;
   const vars = { name: u.name, title: v.title, when: when(v.start, !!v.allDay, serverT().locale) };
@@ -214,6 +223,11 @@ export function createEvent(u: User, o: EventInput): number {
   if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: "New event in {group}: {title}", body: "{when}", vars: { ...vars, group: groupRow(groupId)!.name }, url });
   broadcast("feed", { type: "event", id, by: u.id, group: groupId });
   return id;
+}
+
+/** Who finds an event in search: its group, everyone, or (private) only the one who planned it. */
+export function eventScope(groupId: number | null, priv: boolean, authorId: number) {
+  return priv ? `u:${authorId}` : groupScope(groupId);
 }
 
 function when(t: number, allDay: boolean, locale: string | undefined) {
@@ -234,14 +248,18 @@ export function updateEvent(u: User, id: number, o: EventInput) {
   if (!e) throw new EventError("That event is gone.");
   if (e.author_id !== u.id && !u.isMod) throw new EventError("Only the one who planned it can change the event.");
   const v = validate(o);
+  // "Only me" or everyone can change (a group's event stays the group's)
+  const priv = e.group_id ? false : o.private === undefined ? !!e.private : !!o.private;
   db()
-    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, repeat = ?, repeat_until = ?, capacity = ?, edited_at = ? where id = ?")
-    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, v.repeat, v.repeatUntil, v.capacity, now(), id);
-  indexItem("event", id, groupScope(e.group_id), e.author_id, e.created_at, v.title, `${v.location} ${v.c.text}`);
+    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, repeat = ?, repeat_until = ?, capacity = ?, private = ?, edited_at = ? where id = ?")
+    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, v.repeat, v.repeatUntil, v.capacity, priv ? 1 : 0, now(), id);
+  indexItem("event", id, eventScope(e.group_id, priv, e.author_id), e.author_id, e.created_at, v.title, `${v.location} ${v.c.text}`);
+  // comments follow the event (private: only its author finds them in search)
+  db().prepare("update search_index set scope = ? where kind = 'comment' and ref in (select id from comments where target_type = 'event' and target_id = ?)").run(eventScope(e.group_id, priv, e.author_id), id);
   // a new time or place is worth a ping; reminders go out again for the new time
   const moved = v.start !== e.start_at || v.end !== e.end_at;
   if (moved) db().prepare("delete from event_reminders where event_id = ?").run(id);
-  if (moved || v.location !== e.location) {
+  if ((moved || v.location !== e.location) && !priv) {
     // the body is one whole text, so it can be translated for each person
     const place = v.location !== e.location ? (v.location ? "at {place}" : "at a place to be decided") : "";
     const body = moved ? (place ? `Now {when}, ${place}` : "Now {when}") : place;
@@ -261,6 +279,7 @@ export function cancelEvent(u: User, id: number, cancelled: boolean) {
   if (!e) return;
   if (e.author_id !== u.id && !u.isMod) throw new EventError("Only the one who planned it can cancel the event.");
   db().prepare("update events set cancelled = ? where id = ?").run(cancelled ? 1 : 0, id);
+  if (e.private) return;
   notify(attendees(id), { kind: "event", actorId: u.id, title: cancelled ? "Cancelled: {title}" : "Back on: {title}", body: "{when}", vars: { title: e.title, when: when(e.start_at, !!e.all_day, serverT().locale) }, url: `/events/${id}` });
 }
 
@@ -310,7 +329,7 @@ export function sendReminders() {
         if (!due) continue;
         const r = db().prepare("insert or ignore into event_reminders (event_id, occurrence, kind) values (?, ?, ?)").run(e.id, occ, kind);
         if (!r.changes) continue;
-        const who = [...new Set([...attendees(e.id), e.author_id])];
+        const who = e.private ? [e.author_id] : [...new Set([...attendees(e.id), e.author_id])];
         notify(who, {
           kind: "event",
           title: kind === "1h" ? "Soon: {title}" : "Tomorrow: {title}",
@@ -396,7 +415,7 @@ export function feedEvents(userId: number, all: boolean): EventRow[] {
   if (all) {
     const u = { id: userId, isMod: false } as User;
     const gf = groupFilter(u);
-    return db().prepare(`select * from events where ${gf.sql} and (end_at > ? or repeat != 'none')`).all(...gf.params, t) as EventRow[];
+    return db().prepare(`select * from events where ${gf.sql} and (private = 0 or author_id = ?) and (end_at > ? or repeat != 'none')`).all(...gf.params, userId, t) as EventRow[];
   }
   return db().prepare("select * from events where (end_at > ? or repeat != 'none') and (author_id = ? or id in (select event_id from event_rsvps where user_id = ? and status in ('going','maybe')))").all(t, userId, userId) as EventRow[];
 }

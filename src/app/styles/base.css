@@ -861,12 +861,18 @@ input[type="radio"] {
   margin-top: 3px;
   flex: none;
 }
+/* a date and a time side by side, or the time below when there isn't room (phones) */
 .input-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .input-group .input {
-  flex: 1;
+  flex: 1 1 11.5rem;
+  min-width: 0;
+}
+.input-group .input[type="time"] {
+  flex: 1 1 7rem;
 }
 
 /* the switch (Deck Force's menu switch) */
@@ -909,20 +915,31 @@ input[type="radio"] {
   opacity: 0.45;
   cursor: default;
 }
+/* a setting and its control; on a narrow screen the control goes under the text */
 .setting-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px 16px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
 }
 .setting-row:last-child {
   border-bottom: 0;
 }
+.setting-row > .grow {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
 .setting-row .grow > b {
   display: block;
   font-weight: 700;
+}
+.field input[type="range"] {
+  width: 100%;
+  margin-inline: 0;
 }
 
 /* ── Avatars ── */

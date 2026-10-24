@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Ban, CalendarPlus, Clock, MapPin, Repeat, RotateCcw, Users } from "lucide-react";
+import { Ban, CalendarPlus, Clock, Lock, MapPin, Repeat, RotateCcw, Users } from "lucide-react";
 import type { EventView } from "@/lib/contentTypes";
 import { useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserChip, UserLink } from "@/components/ui/Avatar";
@@ -53,7 +53,7 @@ export function EventDetail({ event }: { event: EventView }) {
                 {e.cancelled ? <span className="badge danger">{t("Cancelled")}</span> : null}
                 <h1 className="display event-h1">{e.title}</h1>
                 <div className="small muted" style={{ marginTop: 6 }}>
-                  {t("Planned by")} <UserLink user={e.author} /> {e.group ? <>{t("for")} <GroupChip g={e.group} /></> : null} · <Time t={e.createdAt} />
+                  {t("Planned by")} <UserLink user={e.author} /> {e.group ? <>{t("for")} <GroupChip g={e.group} /></> : null}{e.private ? <> · <Lock size={12} style={{ verticalAlign: "-1px" }} /> {t("only you")}</> : null} · <Time t={e.createdAt} />
                 </div>
               </div>
               <ItemMenu

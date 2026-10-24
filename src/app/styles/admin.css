@@ -151,6 +151,15 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
+  /* long Swedish words (INBJUDNINGSLÄNKAR) break inside the tile */
+  hyphens: auto;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+@media (max-width: 480px) {
+  .stat-label {
+    letter-spacing: 0.04em;
+  }
 }
 .stat-value {
   font-family: var(--font-display);
