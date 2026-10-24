@@ -101,6 +101,46 @@ export function GroupsRooms({ groups, rooms }: { groups: AdminGroup[]; rooms: Ad
   );
 }
 
+/**
+ * The room /chat opens on a computer (value: the one it opens now; 0 for none, just the list). Only
+ * open rooms: a group's or a private room would only open for some.
+ */
+export function DefaultRoom({ rooms, value }: { rooms: AdminRoom[]; value: number }) {
+  const t = useT();
+  const toast = useToast();
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const open = rooms.filter((r) => r.kind === "room" && r.visibility === "open" && !r.archived);
+  return (
+    <div className="field" style={{ maxWidth: 420 }}>
+      <label htmlFor="default-room">{t("Default chat room")}</label>
+      <select
+        id="default-room"
+        className="select"
+        value={value}
+        disabled={pending}
+        onChange={(e) =>
+          start(async () => {
+            const r = await saveSettingsAction({ defaultRoom: Number(e.target.value) });
+            if (r.ok) toast(t("Saved."));
+            else toast(r.error, { kind: "err" });
+            router.refresh();
+          })
+        }
+      >
+        <option value={0}>{t("None: just the list of chats")}</option>
+        {open.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.emoji ? `${r.emoji} ` : "#"}
+            {r.name}
+          </option>
+        ))}
+      </select>
+      <span className="small muted">{t("Opens when someone goes to Chat on a computer. On a phone the list of chats comes first.")}</span>
+    </div>
+  );
+}
+
 export function NotifyVoice({ s, vapid, devices, timezones }: { s: SiteSettings; vapid: string; devices: number; timezones: string[] }) {
   const t = useT();
   const toast = useToast();

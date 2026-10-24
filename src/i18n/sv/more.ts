@@ -22,6 +22,9 @@ const sv: Record<string, string> = {
   "Move {name} up": "Flytta {name} uppåt",
   "Move {name} down": "Flytta {name} nedåt",
   "The rooms are in your order now, for everyone.": "Rummen ligger i din ordning nu, för alla.",
+  "Default chat room": "Förvalt chattrum",
+  "None: just the list of chats": "Inget: bara listan med chattar",
+  "Opens when someone goes to Chat on a computer. On a phone the list of chats comes first.": "Öppnas när någon går till Chatt på en dator. På mobilen kommer listan med chattar först.",
 
   // ── the site's clock (Admin) ──
   "Time format": "Tidsformat",
