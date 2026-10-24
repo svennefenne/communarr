@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { LinkPreview } from "@/lib/links";
 import { linksIn } from "@/lib/linksIn";
 
 /**
- * Previews of the links in written text (an event's details): a page's title, text and picture, or
- * the picture a link is. The site fetches them (/api/link-preview) and keeps them a while.
+ * Previews of the links in written text (under every RichText, and under an event's details as
+ * they're written): a page's title, text and picture, or the picture a link is. The site fetches
+ * them (/api/link-preview) and keeps them a while.
  */
+
+// cards come after the text is drawn: "hd:grew" lets a chat that was at its bottom stay there
+const grew = () => window.dispatchEvent(new Event("hd:grew"));
 
 // one request per link while the page is open, however many show it
 const asked = new Map<string, Promise<LinkPreview | null>>();
@@ -40,6 +44,9 @@ export function LinkPreviews({ html, initial, max = 3 }: { html: string; initial
     };
   }, [urls]);
   const shown = urls.map((u) => got[u]).filter((p): p is LinkPreview => !!p);
+  useLayoutEffect(() => {
+    if (shown.length) grew();
+  }, [shown.length]);
   if (!shown.length) return null;
   return (
     <div className="link-previews">
@@ -55,7 +62,7 @@ function LinkCard({ p }: { p: LinkPreview }) {
   if (p.kind === "image" && p.image)
     return (
       <a className="link-card pic-only" href={p.url} target="_blank" rel={rel} title={p.url}>
-        <img src={p.image} alt={p.title} loading="lazy" />
+        <img src={p.image} alt={p.title} loading="lazy" onLoad={grew} />
       </a>
     );
   return (

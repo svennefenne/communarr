@@ -260,6 +260,22 @@ html.app-page:not([data-frame="on"]) .site-footer {
 .msg-body .prose > :last-child {
   margin-bottom: 0;
 }
+/* a message's link previews: smaller cards */
+.msg-body .link-previews {
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+.msg-body .link-card {
+  max-width: 440px;
+  gap: 10px;
+  padding: 8px;
+}
+.msg-body .link-card-pic {
+  width: 110px;
+}
+.msg-body .link-card.pic-only img {
+  max-height: 300px;
+}
 .msg-edited {
   margin-left: 4px;
 }
