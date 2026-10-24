@@ -352,113 +352,119 @@ export function ChatRoom(p: Props) {
             {info.kind === "dm" ? (info.other?.statusText ? `${info.other.statusEmoji} ${info.other.statusText}` : t("Direct message")) : info.topic || t.n(info.memberCount, "{n} member", "{n} members")}
           </span>
         </button>
-        <span className="spacer" />
-        {isMember || info.visibility === "open" ? <VoiceButton room={id} name={info.name} compact /> : null}
-        <button
-          type="button"
-          className="icon-btn sm"
-          title={t("Pinned messages")}
-          aria-label={t("Pinned messages")}
-          onClick={async () => {
-            setPanel("pinned");
-            const r = await pinnedAction(id);
-            if (r.ok) setPinnedList(r.data);
-          }}
-        >
-          <Pin size={18} />
-        </button>
-        {info.kind !== "dm" ? (
-          <button type="button" className="icon-btn sm" title={t("Members")} aria-label={t("Members")} onClick={() => setPanel("members")}>
-            <Users size={18} />
+        {/* the buttons: beside the name on a computer, their own row under it on a phone */}
+        <div className="chat-actions">
+          {isMember || info.visibility === "open" ? (
+            <div className="chat-voice">
+              <VoiceButton room={id} name={info.name} compact />
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className="icon-btn sm"
+            title={t("Pinned messages")}
+            aria-label={t("Pinned messages")}
+            onClick={async () => {
+              setPanel("pinned");
+              const r = await pinnedAction(id);
+              if (r.ok) setPinnedList(r.data);
+            }}
+          >
+            <Pin size={18} />
           </button>
-        ) : null}
-        {isMember ? (
-          <Dropdown label={t("Room menu")} button={<Ellipsis size={18} />}>
-            <div className="menu-label">{t("Notify me about")}</div>
-            {(
-              [
-                ["all", Bell, "Every message"],
-                ["mentions", AtSign, "Only @mentions"],
-                ["none", BellOff, "Nothing"],
-              ] as const
-            ).map(([mode, Icon, label]) => (
-              <button
-                key={mode}
-                type="button"
-                className={`menu-item ${info.notify === mode ? "sel" : ""}`}
-                data-close
-                onClick={async () => {
-                  const r = await setNotifyAction(id, mode);
-                  if (r.ok) setInfo((i) => ({ ...i, notify: r.data }));
-                }}
-              >
-                <Icon size={16} /> {t(label)}
-              </button>
-            ))}
-            {info.kind !== "dm" ? (
-              <>
-                <div className="menu-sep" />
-                {info.kind === "room" ? (
-                  <button type="button" className="menu-item" data-close onClick={() => setPanel("invite")}>
-                    <UserPlus size={16} /> {t("Invite people")}
-                  </button>
-                ) : null}
-                {p.canManage ? (
-                  <button type="button" className="menu-item" data-close onClick={() => setPanel("settings")}>
-                    <Settings size={16} /> {t("Room settings")}
-                  </button>
-                ) : null}
-                {p.canManage ? (
-                  <button
-                    type="button"
-                    className="menu-item"
-                    data-close
-                    onClick={async () => {
-                      const r = await archiveRoomAction(id, !info.archived);
-                      if (r.ok) {
-                        toast(r.data ? t("Archived: it's hidden from the lists.") : t("Back from the archive."));
-                        router.push("/chat");
+          {info.kind !== "dm" ? (
+            <button type="button" className="icon-btn sm" title={t("Members")} aria-label={t("Members")} onClick={() => setPanel("members")}>
+              <Users size={18} />
+            </button>
+          ) : null}
+          {isMember ? (
+            <Dropdown label={t("Room menu")} button={<Ellipsis size={18} />}>
+              <div className="menu-label">{t("Notify me about")}</div>
+              {(
+                [
+                  ["all", Bell, "Every message"],
+                  ["mentions", AtSign, "Only @mentions"],
+                  ["none", BellOff, "Nothing"],
+                ] as const
+              ).map(([mode, Icon, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`menu-item ${info.notify === mode ? "sel" : ""}`}
+                  data-close
+                  onClick={async () => {
+                    const r = await setNotifyAction(id, mode);
+                    if (r.ok) setInfo((i) => ({ ...i, notify: r.data }));
+                  }}
+                >
+                  <Icon size={16} /> {t(label)}
+                </button>
+              ))}
+              {info.kind !== "dm" ? (
+                <>
+                  <div className="menu-sep" />
+                  {info.kind === "room" ? (
+                    <button type="button" className="menu-item" data-close onClick={() => setPanel("invite")}>
+                      <UserPlus size={16} /> {t("Invite people")}
+                    </button>
+                  ) : null}
+                  {p.canManage ? (
+                    <button type="button" className="menu-item" data-close onClick={() => setPanel("settings")}>
+                      <Settings size={16} /> {t("Room settings")}
+                    </button>
+                  ) : null}
+                  {p.canManage ? (
+                    <button
+                      type="button"
+                      className="menu-item"
+                      data-close
+                      onClick={async () => {
+                        const r = await archiveRoomAction(id, !info.archived);
+                        if (r.ok) {
+                          toast(r.data ? t("Archived: it's hidden from the lists.") : t("Back from the archive."));
+                          router.push("/chat");
+                        }
+                      }}
+                    >
+                      <Archive size={16} /> {info.archived ? t("Unarchive") : t("Archive")}
+                    </button>
+                  ) : null}
+                  {info.kind === "room" ? (
+                    <button
+                      type="button"
+                      className="menu-item"
+                      data-close
+                      onClick={() =>
+                        confirm(t("Leave {name}?", { name: info.name }), t("Leave"), async () => {
+                          await leaveRoomAction(id);
+                          router.push("/chat");
+                        })
                       }
-                    }}
-                  >
-                    <Archive size={16} /> {info.archived ? t("Unarchive") : t("Archive")}
-                  </button>
-                ) : null}
-                {info.kind === "room" ? (
-                  <button
-                    type="button"
-                    className="menu-item"
-                    data-close
-                    onClick={() =>
-                      confirm(t("Leave {name}?", { name: info.name }), t("Leave"), async () => {
-                        await leaveRoomAction(id);
-                        router.push("/chat");
-                      })
-                    }
-                  >
-                    <LogOut size={16} /> {t("Leave the room")}
-                  </button>
-                ) : null}
-                {p.isOwner || me.isAdmin ? (
-                  <button
-                    type="button"
-                    className="menu-item danger"
-                    data-close
-                    onClick={() =>
-                      confirm(t("Delete {name} and all its messages for everyone?", { name: info.name }), t("Delete"), async () => {
-                        const r = await deleteRoomAction(id);
-                        if (r.ok) router.push("/chat");
-                        else toast(r.error, { kind: "err" });
-                      })
-                    }
-                  >
-                    <Trash2 size={16} /> {t("Delete the room")}
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-          </Dropdown>
-        ) : null}
+                    >
+                      <LogOut size={16} /> {t("Leave the room")}
+                    </button>
+                  ) : null}
+                  {p.isOwner || me.isAdmin ? (
+                    <button
+                      type="button"
+                      className="menu-item danger"
+                      data-close
+                      onClick={() =>
+                        confirm(t("Delete {name} and all its messages for everyone?", { name: info.name }), t("Delete"), async () => {
+                          const r = await deleteRoomAction(id);
+                          if (r.ok) router.push("/chat");
+                          else toast(r.error, { kind: "err" });
+                        })
+                      }
+                    >
+                      <Trash2 size={16} /> {t("Delete the room")}
+                    </button>
+                  ) : null}
+                </>
+              ) : null}
+            </Dropdown>
+          ) : null}
+        </div>
       </header>
 
       <div className="chat-scroll" ref={scroller} onScroll={onScroll}>
