@@ -3,13 +3,12 @@
 import { redirect } from "next/navigation";
 import { db, now } from "@/lib/db";
 import { audit, clearFailures, clientInfo, hasAnyUser, hashPassword, noteFailure, startSession, tooManyAttempts, verifyPassword } from "@/lib/auth";
-import { createUser, inviteState, pendingUser, seedSite, redeemInvite, validateNewUser } from "@/lib/accounts";
+import { announceNewMember, createUser, inviteState, pendingUser, seedSite, redeemInvite, undoSignup, validateNewUser } from "@/lib/accounts";
 import { getSettings } from "@/lib/settings";
-import { notify } from "@/lib/notify";
 import { memberLang, requestT, setLangCookie } from "@/lib/t";
-import type { UserRow } from "@/lib/users";
-import { forgotPassword, setAllMail, startConfirmation } from "@/lib/accountMail";
-import { mailReady } from "@/lib/mail";
+import { isUnconfirmed, type UserRow } from "@/lib/users";
+import { emailTaken, forgotPassword, resendSignupLink, setAllMail, startConfirmation, throttled } from "@/lib/accountMail";
+import { mailReady, maskEmail, normEmail, validEmail } from "@/lib/mail";
 import { UserError } from "@/lib/errors";
 
 export interface FormState {
@@ -66,6 +65,13 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
     return { error: t("That username and password don't match.") };
   }
   if (row.banned) return { error: row.ban_reason ? t("This account has been closed: {reason}", { reason: row.ban_reason }) : t("This account has been closed.") };
+  // signed up but hasn't clicked the link yet: a new one (the right password shows it's them)
+  if (isUnconfirmed(row)) {
+    const to = await resendSignupLink(row);
+    return to
+      ? { ok: t("Your account opens when you confirm your email address. We've sent a new link to {email}: click it, then log in.", { email: maskEmail(to) }) }
+      : { error: t("Your account opens when you confirm your email address: click the link in the mail we sent (look in the spam folder too). No mail? Ask an admin to let you in.") };
+  }
   if (pendingUser(row)) return { error: t("Your account is waiting for an admin to let you in. Try again a bit later.") };
   if (row.suspended_until && row.suspended_until > now()) {
     return { error: t("This account is suspended until {date}.", { date: new Date(row.suspended_until).toLocaleString(t.locale ?? "en-GB", { dateStyle: "medium", timeStyle: "short" }) }) };
@@ -95,23 +101,32 @@ export async function signupAction(_: FormState, fd: FormData): Promise<FormStat
   const password = str(fd, "password");
   const err = validateNewUser(username, name, password, str(fd, "password2"));
   if (err) return { error: t(err) };
+  // with mail: an address is needed, and the account opens when the link mailed to it is clicked
+  const mail = mailReady();
+  const email = normEmail(str(fd, "email"));
+  if (mail) {
+    if (!validEmail(email)) return { error: t("Write your email address: your account opens when you click the link we send to it.") };
+    if (emailTaken(email)) return { error: t("Another account uses that address.") };
+    // (each sign-up sends a mail: not a way to fill someone's inbox)
+    if (throttled(`signup:${(await clientInfo()).ip || "?"}`, 5, 60 * 60_000)) return { error: t("That's a lot of mails: wait a while and try again.") };
+  }
   const pending = !invite && s.approveNew;
-  const id = await createUser({ username, name, password, role: invite?.role === "moderator" ? "moderator" : "member", invitedBy: invite?.created_by ?? null, pending });
+  const waiting = mail ? (pending ? "unconfirmed pending" : "unconfirmed") : pending ? "pending" : undefined;
+  const id = await createUser({ username, name, password, role: invite?.role === "moderator" ? "moderator" : "member", invitedBy: invite?.created_by ?? null, waiting });
   if (invite) redeemInvite(invite, id);
+  if (mail) {
+    try {
+      await startConfirmation({ id, username, name }, email, { signup: true });
+    } catch (e) {
+      // no mail, no way in: the sign-up is undone so they can try again
+      undoSignup(id, invite);
+      return { error: e instanceof UserError ? e.translated(t) : t("The mail couldn't be sent. Try again later, or tell an admin.") };
+    }
+    audit(id, "signup", username, invite ? `invite ${invite.code}` : "open");
+    return { ok: t("Almost there! We've sent a link to {email}. Click it to open your account (it works for 48 hours), then log in. Nothing there? Look in the spam folder.", { email }) };
+  }
   audit(id, "signup", username, invite ? `invite ${invite.code}` : "open");
-  // an address (optional): a link to confirm it; a bad one, or a mail that doesn't go, doesn't stop the sign-up
-  const email = str(fd, "email").trim();
-  if (email && mailReady()) await startConfirmation({ id, username, name }, email).catch(() => {});
-  // let the admins know someone joined (or is waiting)
-  const admins = (db().prepare("select id from users where role = 'admin'").all() as { id: number }[]).map((a) => a.id);
-  notify(admins, {
-    kind: "group",
-    actorId: id,
-    title: pending ? "{name} wants to join" : "{name} joined",
-    body: pending ? "Let them in under Admin → Members." : "Say hi to @{username}!",
-    vars: { name, username },
-    url: pending ? "/admin#members" : `/u/${encodeURIComponent(username)}`,
-  });
+  announceNewMember(id, pending);
   if (pending) return { ok: t("Thanks! An admin will let you in soon; then you can log in.") };
   await startSession(id);
   redirect("/?welcome=1");

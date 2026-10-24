@@ -95,8 +95,21 @@ interface Base {
   origin: string;
 }
 
-/** Confirm an address you added to your account (or changed to). */
-export function confirmMail(t: T, o: Base & { name: string; username: string; link: string; hours: number }): Mail {
+/** Confirm an address you added to your account (or changed to); signup: the welcome for a new account that opens with the link. */
+export function confirmMail(t: T, o: Base & { name: string; username: string; link: string; hours: number; signup?: boolean }): Mail {
+  if (o.signup)
+    return layout({
+      ...o,
+      t,
+      subject: t("Welcome to {site}: confirm your address", { site: o.site }),
+      heading: t("Welcome, {name}!", { name: o.name }),
+      lines: [
+        withBold(t("Your account {username} on {site} is almost ready.", { username: "\u0000", site: o.site }), o.username),
+        esc(t("Confirm your email address and it opens: then log in with your username and password.")),
+      ],
+      button: { label: t("Confirm and open my account"), href: o.link },
+      after: [esc(t("The link works for {n} hours. Logging in before you've clicked it sends a new one.", { n: o.hours })), esc(t("Didn't sign up? Then you can ignore this mail: the account is removed after a week."))],
+    });
   return layout({
     ...o,
     t,

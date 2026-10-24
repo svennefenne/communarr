@@ -113,13 +113,12 @@ export function SignupForm({ code, mail }: { code?: string; mail: boolean }) {
     <form action={action} className="stack">
       {code ? <input type="hidden" name="code" value={code} /> : null}
       <NewAccountFields />
+      {/* with mail, the account opens when the link mailed here is clicked */}
       {mail ? (
         <div className="field">
-          <label htmlFor="email">
-            {t("Email address")} <span className="muted">({t("optional")})</span>
-          </label>
-          <input id="email" name="email" type="email" className="input" maxLength={254} autoComplete="email" autoCapitalize="none" spellCheck={false} />
-          <span className="hint">{t("For a new password if you forget yours, and the notifications you choose. We'll send a link to confirm it.")}</span>
+          <label htmlFor="email">{t("Email address")}</label>
+          <input id="email" name="email" type="email" className="input" required maxLength={254} autoComplete="email" autoCapitalize="none" spellCheck={false} />
+          <span className="hint">{t("We'll send a link to it: your account opens when you click it. Also for a new password if you forget yours. Nobody else sees it.")}</span>
         </div>
       ) : null}
       <Messages state={state} />
