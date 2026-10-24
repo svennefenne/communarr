@@ -190,6 +190,44 @@
     border-radius: var(--radius-sm);
   }
 }
+/* the front page: a strip along the top of each card saying which part of the site it's from */
+.card-section {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: -16px -18px 14px;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(var(--text-rgb) / 0.025);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.card-section svg {
+  flex: none;
+  color: var(--accent-2);
+}
+.card-section.event svg {
+  color: var(--accent);
+}
+.card-section.thread svg {
+  color: var(--accent-3);
+}
+/* a news cover goes right under it */
+.card-section + .post-cover {
+  margin-top: -14px;
+}
+@media (max-width: 620px) {
+  .card-section {
+    margin: -14px -14px 12px;
+    padding: 7px 14px;
+  }
+  .card-section + .post-cover {
+    margin-top: -12px;
+  }
+}
 .post-card.pinned {
   border-color: rgb(var(--accent-2-rgb) / 0.4);
 }

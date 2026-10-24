@@ -24,6 +24,8 @@ export interface RoomInfo {
   other: UserSummary | null;
   invited: boolean;
   archived: boolean;
+  /** where an admin put it in the chat list (null: not placed) */
+  position: number | null;
 }
 
 export interface ChatMessage {
@@ -44,4 +46,15 @@ export interface ChatMessage {
 export interface RoomMember {
   user: UserSummary;
   role: MemberRole;
+}
+
+/**
+ * The order of rooms in the chat list: the ones an admin placed first, in their order, then the rest
+ * by their latest message (direct messages are always by their latest message).
+ */
+export function byPlace(a: Pick<RoomInfo, "position" | "lastMessageAt">, b: Pick<RoomInfo, "position" | "lastMessageAt">): number {
+  if (a.position != null && b.position != null) return a.position - b.position;
+  if (a.position != null) return -1;
+  if (b.position != null) return 1;
+  return (b.lastMessageAt ?? 0) - (a.lastMessageAt ?? 0);
 }

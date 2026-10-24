@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { Hash, Headphones, Lock, Mail, Plus, Search, UsersRound } from "lucide-react";
-import type { RoomInfo } from "@/lib/chatTypes";
+import { ArrowUpDown, Hash, Headphones, Lock, Mail, Plus, Search, UsersRound } from "lucide-react";
+import { byPlace, type RoomInfo } from "@/lib/chatTypes";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { useVoice } from "@/components/voice/VoiceProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { relative } from "@/components/ui/Time";
 import { NewChat } from "./NewChat";
+import { ArrangeRooms } from "./ArrangeRooms";
 import { declineInviteAction, joinRoomAction, roomsAction } from "@/app/actions/chat";
 
 export function RoomIcon({ r, size = 38 }: { r: Pick<RoomInfo, "kind" | "emoji" | "visibility" | "other">; size?: number }) {
@@ -55,7 +56,7 @@ function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unr
 
 /** The list of chats: invitations, your rooms and messages, and open rooms you could join. */
 export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: RoomInfo[]; invites: RoomInfo[] } }) {
-  const { counts, site } = useApp();
+  const { counts, site, me } = useApp();
   const t = useT();
   const voice = useVoice();
   const toast = useToast();
@@ -64,6 +65,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   const [data, setData] = useState(initial);
   const [q, setQ] = useState("");
   const [creating, setCreating] = useState<null | "dm" | "room">(null);
+  const [arranging, setArranging] = useState(false);
   const activeId = Number(pathname.split("/")[2]) || 0;
 
   const refresh = useCallback(async () => {
@@ -85,9 +87,23 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   });
 
   const match = (r: RoomInfo) => !q || r.name.toLowerCase().includes(q.toLowerCase()) || r.topic.toLowerCase().includes(q.toLowerCase());
-  const rooms = data.mine.filter((r) => r.kind !== "dm" && match(r));
+  // rooms in the order an admin gave them (a new message doesn't move them); DMs newest first
+  const rooms = data.mine.filter((r) => r.kind !== "dm" && match(r)).sort(byPlace);
   const dms = data.mine.filter((r) => r.kind === "dm" && match(r));
-  const open = data.open.filter(match);
+  const open = data.open.filter(match).sort(byPlace);
+
+  if (arranging)
+    return (
+      <aside className="panel chat-side">
+        <ArrangeRooms
+          rooms={[...data.mine.filter((r) => r.kind !== "dm"), ...data.open].sort(byPlace)}
+          onDone={async (saved) => {
+            setArranging(false);
+            if (saved) await refresh();
+          }}
+        />
+      </aside>
+    );
 
   return (
     <aside className="panel chat-side">
@@ -100,6 +116,11 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
         {site.can.rooms ? (
           <button type="button" className="icon-btn framed sm" onClick={() => setCreating("room")} title={t("New room")} aria-label={t("New room")}>
             <Plus size={17} />
+          </button>
+        ) : null}
+        {me?.isAdmin ? (
+          <button type="button" className="icon-btn framed sm" onClick={() => setArranging(true)} title={t("Arrange the rooms")} aria-label={t("Arrange the rooms")}>
+            <ArrowUpDown size={16} />
           </button>
         ) : null}
       </div>

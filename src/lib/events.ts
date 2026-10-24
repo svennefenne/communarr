@@ -1,4 +1,6 @@
 import "server-only";
+import { clockHour } from "./clock";
+import { cleanRule, rrule, ruleOccurrences, type Repeat, type RepeatRule } from "./repeat";
 import { UserError } from "./errors";
 import crypto from "node:crypto";
 import { db, now, tx } from "./db";
@@ -28,7 +30,9 @@ export interface EventRow {
   color: string | null;
   cover: string | null;
   group_id: number | null;
-  repeat: "none" | "daily" | "weekly" | "monthly" | "yearly";
+  repeat: Repeat;
+  /** a custom repeat's rule (repeat = 'custom'), as JSON */
+  repeat_rule: string | null;
   repeat_until: number | null;
   capacity: number | null;
   cancelled: number;
@@ -53,10 +57,24 @@ export function canSeeEvent(u: User, e: EventRow) {
   return !!g && canReadGroup(u, g);
 }
 
+/** A custom repeat's rule (null for the others, or one that doesn't read). */
+export function ruleOf(e: Pick<EventRow, "repeat" | "repeat_rule">): RepeatRule | null {
+  if (e.repeat !== "custom" || !e.repeat_rule) return null;
+  try {
+    return cleanRule(JSON.parse(e.repeat_rule));
+  } catch {
+    return null;
+  }
+}
+
 /** The starts of an event's occurrences between from and to (one for a one-off). */
-export function occurrences(e: Pick<EventRow, "start_at" | "end_at" | "repeat" | "repeat_until">, from: number, to: number, max = 400): number[] {
+export function occurrences(e: Pick<EventRow, "start_at" | "end_at" | "repeat" | "repeat_rule" | "repeat_until">, from: number, to: number, max = 400): number[] {
   const len = e.end_at - e.start_at;
-  if (e.repeat === "none") return e.start_at < to && e.start_at + len > from ? [e.start_at] : [];
+  if (e.repeat === "custom") {
+    const rule = ruleOf(e);
+    if (rule) return ruleOccurrences(e.start_at, len, rule, e.repeat_until, from, to, max, getSettings().weekStart);
+  }
+  if (e.repeat === "none" || e.repeat === "custom") return e.start_at < to && e.start_at + len > from ? [e.start_at] : [];
   const out: number[] = [];
   const d = new Date(e.start_at);
   const until = e.repeat_until ?? Infinity;
@@ -100,6 +118,7 @@ export function toEventViews(u: User, rows: EventRow[]): EventView[] {
       author: authors.get(r.author_id) ?? GHOST,
       repeat: r.repeat,
       repeatUntil: r.repeat_until,
+      repeatRule: ruleOf(r),
       capacity: r.capacity,
       cancelled: !!r.cancelled,
       createdAt: r.created_at,
@@ -164,6 +183,8 @@ export interface EventInput {
   /** only the one who planned it sees it (not with a group) */
   private?: boolean;
   repeat?: EventRow["repeat"];
+  /** repeat: 'custom': how */
+  repeatRule?: RepeatRule | null;
   repeatUntil?: number | null;
   capacity?: number | null;
 }
@@ -174,18 +195,31 @@ function validate(o: EventInput) {
   if (!Number.isFinite(o.startAt)) throw new EventError("When does it start?");
   let end = Number.isFinite(o.endAt) && o.endAt > o.startAt ? o.endAt : o.startAt + (o.allDay ? 86_400_000 - 1 : 2 * 3600_000);
   if (end - o.startAt > 60 * 86_400_000) end = o.startAt + 60 * 86_400_000;
-  const repeat = o.repeat && ["daily", "weekly", "monthly", "yearly"].includes(o.repeat) ? o.repeat : "none";
+  // a custom repeat needs a rule that reads; one that ends after so many times has no end date
+  const rule = o.repeat === "custom" ? cleanRule(o.repeatRule) : null;
+  const repeat: Repeat = o.repeat === "custom" ? (rule ? "custom" : "none") : o.repeat && ["daily", "weekly", "monthly", "yearly"].includes(o.repeat) ? o.repeat : "none";
+  // every Monday and Wednesday, from a Sunday: it starts on the first of them (as calendar apps do),
+  // so its date is a day it happens
+  let start = o.startAt;
+  if (rule?.freq === "weekly" && rule.days?.length && !rule.days.includes(new Date(start).getDay())) {
+    const first = ruleOccurrences(start, end - start, { ...rule, count: null }, null, start, start + (rule.interval + 1) * 7 * 86_400_000, 1, getSettings().weekStart)[0];
+    if (first) {
+      end += first - start;
+      start = first;
+    }
+  }
   return {
     title,
     c: cleanHtml(o.html || ""),
     location: cleanLine(o.location, 200),
-    start: o.startAt,
+    start,
     end,
     allDay: o.allDay ? 1 : 0,
     color: o.color && /^#[0-9a-f]{6}$/i.test(o.color) ? o.color : null,
     cover: o.cover && /^\/media\/[\w./-]+$/.test(o.cover) ? o.cover : null,
     repeat,
-    repeatUntil: repeat !== "none" && o.repeatUntil && o.repeatUntil > o.startAt ? o.repeatUntil : null,
+    repeatRule: rule ? JSON.stringify(rule) : null,
+    repeatUntil: repeat !== "none" && !rule?.count && o.repeatUntil && o.repeatUntil > start ? o.repeatUntil : null,
     capacity: o.capacity && o.capacity > 0 ? Math.min(10000, Math.round(o.capacity)) : null,
   };
 }
@@ -204,9 +238,9 @@ export function createEvent(u: User, o: EventInput): number {
     const id = Number(
       db()
         .prepare(
-          "insert into events (author_id, title, description_html, description_text, location, start_at, end_at, all_day, color, cover, group_id, repeat, repeat_until, capacity, private, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "insert into events (author_id, title, description_html, description_text, location, start_at, end_at, all_day, color, cover, group_id, repeat, repeat_rule, repeat_until, capacity, private, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(u.id, v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, groupId, v.repeat, v.repeatUntil, v.capacity, priv ? 1 : 0, t).lastInsertRowid,
+        .run(u.id, v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, groupId, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, t).lastInsertRowid,
     );
     // the one who plans it is going
     db().prepare("insert into event_rsvps (event_id, user_id, status, updated_at) values (?, ?, 'going', ?)").run(id, u.id, t);
@@ -233,7 +267,7 @@ export function eventScope(groupId: number | null, priv: boolean, authorId: numb
 function when(t: number, allDay: boolean, locale: string | undefined) {
   const tz = getSettings().timezone;
   try {
-    return new Intl.DateTimeFormat(locale ?? "en-GB", { weekday: "short", day: "numeric", month: "short", ...(allDay ? {} : { hour: "2-digit", minute: "2-digit" }), timeZone: tz }).format(new Date(t));
+    return new Intl.DateTimeFormat(locale ?? "en-GB", { weekday: "short", day: "numeric", month: "short", ...(allDay ? {} : { ...clockHour(getSettings()), minute: "2-digit" }), timeZone: tz }).format(new Date(t));
   } catch {
     return new Date(t).toUTCString();
   }
@@ -251,8 +285,8 @@ export function updateEvent(u: User, id: number, o: EventInput) {
   // "Only me" or everyone can change (a group's event stays the group's)
   const priv = e.group_id ? false : o.private === undefined ? !!e.private : !!o.private;
   db()
-    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, repeat = ?, repeat_until = ?, capacity = ?, private = ?, edited_at = ? where id = ?")
-    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, v.repeat, v.repeatUntil, v.capacity, priv ? 1 : 0, now(), id);
+    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, repeat = ?, repeat_rule = ?, repeat_until = ?, capacity = ?, private = ?, edited_at = ? where id = ?")
+    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, now(), id);
   indexItem("event", id, eventScope(e.group_id, priv, e.author_id), e.author_id, e.created_at, v.title, `${v.location} ${v.c.text}`);
   // comments follow the event (private: only its author finds them in search)
   db().prepare("update search_index set scope = ? where kind = 'comment' and ref in (select id from comments where target_type = 'event' and target_id = ?)").run(eventScope(e.group_id, priv, e.author_id), id);
@@ -397,7 +431,9 @@ export function icsFor(rows: EventRow[], name: string, baseUrl: string, t: T): s
     if (e.all_day) {
       lines.push(`DTSTART;VALUE=DATE:${icsDate(e.start_at)}`, `DTEND;VALUE=DATE:${icsDate(e.end_at + 1)}`);
     } else lines.push(`DTSTART:${icsTime(e.start_at)}`, `DTEND:${icsTime(e.end_at)}`);
-    if (e.repeat !== "none") lines.push(`RRULE:FREQ=${e.repeat.toUpperCase()}${e.repeat_until ? `;UNTIL=${icsTime(e.repeat_until)}` : ""}`);
+    const rule = ruleOf(e);
+    if (rule) lines.push(rrule(rule, e.start_at, e.repeat_until ? icsTime(e.repeat_until) : null));
+    else if (e.repeat !== "none" && e.repeat !== "custom") lines.push(`RRULE:FREQ=${e.repeat.toUpperCase()}${e.repeat_until ? `;UNTIL=${icsTime(e.repeat_until)}` : ""}`);
     lines.push(fold(`SUMMARY:${icsEsc(e.cancelled ? t("CANCELLED: {title}", { title: e.title }) : e.title)}`));
     if (e.location) lines.push(fold(`LOCATION:${icsEsc(e.location)}`));
     lines.push(fold(`DESCRIPTION:${icsEsc(e.description_text.slice(0, 2000))}`));

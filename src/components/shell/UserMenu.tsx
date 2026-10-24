@@ -56,15 +56,13 @@ export function UserMenu() {
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const router = useRouter();
   if (!me) return null;
+  // one switch for all of it: things that move, and the wipes between pages
   const toggleMotion = async (on: boolean) => {
     setMotion(on);
+    setWipe(on);
     if (on) delete document.documentElement.dataset.motion;
     else document.documentElement.dataset.motion = "off";
-    await setPrefsAction({ motion: on });
-  };
-  const toggleWipes = async (on: boolean) => {
-    setWipe(on);
-    await setPrefsAction({ wipes: on });
+    await setPrefsAction({ motion: on, wipes: on });
   };
   return (
     <div className="menu-wrap" ref={ref}>
@@ -136,11 +134,7 @@ export function UserMenu() {
           </div>
           <div className="menu-item" style={{ cursor: "default" }}>
             <span className="grow">{t("Animations")}</span>
-            <Switch on={motion} onChange={toggleMotion} label={t("Animations")} />
-          </div>
-          <div className="menu-item" style={{ cursor: "default" }}>
-            <span className="grow">{t("Page wipes")}</span>
-            <Switch on={wipe && motion} onChange={toggleWipes} label={t("Page wipes")} disabled={!motion} />
+            <Switch on={motion && wipe} onChange={toggleMotion} label={t("Animations")} />
           </div>
           <div className="menu-sep" />
           <form action={logoutAction}>

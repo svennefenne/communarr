@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { act } from "@/lib/act";
 import { UserError } from "@/lib/errors";
 import { currentSessionId, endSession } from "@/lib/auth";
-import { changePassword, changeUsername, deleteOwnAccount, endSessionById, setNotifyPrefs, updateProfile, type ProfileInput } from "@/lib/profile";
+import { changePassword, changeUsername, deleteOwnAccount, endSessionById, setAlias, setNotifyPrefs, updateProfile, type ProfileInput } from "@/lib/profile";
 import { saveTheme } from "@/lib/themes";
 import { cleanTheme, type ThemeData } from "@/lib/theme";
 import { getSettings } from "@/lib/settings";
@@ -109,5 +109,14 @@ export async function removeEmailAction() {
     removeEmail(u.id);
     revalidatePath("/settings/account");
     return true;
+  });
+}
+
+/** Your alias (Settings → Account): what everyone sees; empty shows your username. */
+export async function setAliasAction(alias: string) {
+  return act((u) => {
+    const a = setAlias(u, alias);
+    revalidatePath("/", "layout");
+    return a;
   });
 }

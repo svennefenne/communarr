@@ -39,13 +39,15 @@ export function IdentitySettings({ s }: { s: SiteSettings }) {
   const { save, pending } = useSave();
   const [v, setV] = useState({ siteName: s.siteName, tagline: s.tagline, welcome: s.welcome, footer: s.footer });
   const [switching, startSwitch] = useTransition();
-  // on its own (not with the texts below), and a full reload so every page and menu switches over
-  const setLanguage = (language: Lang) =>
+  // the language and the clock: on their own (not with the texts below), and a full reload so every
+  // page and menu switches over
+  const saveNow = (patch: Partial<SiteSettings>) =>
     startSwitch(async () => {
-      const r = await saveSettingsAction({ language });
+      const r = await saveSettingsAction(patch);
       if (!r.ok) toast(r.error, { kind: "err" });
       else window.location.reload();
     });
+  const setLanguage = (language: Lang) => saveNow({ language });
   return (
     <div className="stack">
       <div className="field">
@@ -59,6 +61,27 @@ export function IdentitySettings({ s }: { s: SiteSettings }) {
         </select>
         <span className="small muted">{t("The default for everyone who hasn't picked their own (Settings → Display, or the switch in their menu), for the log-in page and for what's saved for everyone, like chat notices. Changes straight away.")}</span>
       </div>
+      {/* the clock: for everyone, whatever their language; saved straight away, like the language */}
+      <div className="grid-2">
+        <div className="field">
+          <label htmlFor="site-clock">{t("Time format")}</label>
+          <select id="site-clock" className="select" value={s.timeFormat} disabled={switching} onChange={(e) => saveNow({ timeFormat: e.target.value as SiteSettings["timeFormat"] })}>
+            <option value="24h">{t("24-hour (19:30)")}</option>
+            <option value="12h">{t("12-hour (7:30 PM)")}</option>
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="site-week">{t("Weeks start on")}</label>
+          <select id="site-week" className="select" value={s.weekStart} disabled={switching} onChange={(e) => saveNow({ weekStart: Number(e.target.value) as SiteSettings["weekStart"] })}>
+            <option value={1}>{t("Monday")}</option>
+            <option value={0}>{t("Sunday")}</option>
+            <option value={6}>{t("Saturday")}</option>
+          </select>
+        </div>
+      </div>
+      <span className="small muted" style={{ marginTop: -6 }}>
+        {t("For everyone: times in posts, chat and the calendar, and the first column of the calendar.")}
+      </span>
       <div className="grid-2">
         <div className="field">
           <label>{t("The site's name")}</label>

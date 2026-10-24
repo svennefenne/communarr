@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import {
   archiveRoom,
+  arrangeRooms,
   canSee,
   createRoom,
   declineInvite,
@@ -181,6 +182,14 @@ export async function dmAction(userId: number) {
   return act((u) => {
     chatOn();
     return dmRoom(u, userId);
+  });
+}
+
+/** An admin's order for the rooms in everyone's chat list. */
+export async function arrangeRoomsAction(ids: number[]) {
+  return act((u) => {
+    arrangeRooms(u, ids);
+    return true;
   });
 }
 

@@ -73,13 +73,16 @@ function NewAccountFields() {
   return (
     <>
       <div className="field">
-        <label htmlFor="name">{t("Your name")}</label>
-        <input id="name" name="name" className="input" required maxLength={40} autoComplete="name" placeholder={t("What your friends call you")} />
-      </div>
-      <div className="field">
         <label htmlFor="username">{t("Username")}</label>
         <input id="username" name="username" className="input" required pattern="[A-Za-z0-9_.\-]{2,24}" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
         <span className="hint">{t("For logging in and @mentions: letters, numbers, dots, dashes, underscores.")}</span>
+      </div>
+      <div className="field">
+        <label htmlFor="alias">
+          {t("Alias")} <span className="muted">({t("optional")})</span>
+        </label>
+        <input id="alias" name="alias" className="input" maxLength={40} autoComplete="nickname" placeholder={t("What your friends call you")} />
+        <span className="hint">{t("The name everyone sees when you post, chat or plan something. Without one, your username shows. You can change it under Settings → Account.")}</span>
       </div>
       <Password name="password" label={t("Password")} autoComplete="new-password" />
       <Password name="password2" label={t("Password again")} autoComplete="new-password" />

@@ -1,3 +1,4 @@
+import type { Clock } from "./clock";
 import type { Lang, Own } from "./i18n";
 import type { Presence, ThemePrefs, UserSummary } from "./types";
 
@@ -34,6 +35,8 @@ export interface SiteInfo {
   maxUploadMb: number;
   announcement: { text: string; style: "info" | "warn" | "party"; id: number } | null;
   registration: "invite" | "open" | "closed";
+  /** 24-hour or 12-hour times, and the first day of the week */
+  clock: Clock;
 }
 
 export interface Boot {

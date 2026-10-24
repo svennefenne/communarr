@@ -1,3 +1,4 @@
+import type { Repeat, RepeatRule } from "./repeat";
 import type { Reaction, UserSummary } from "./types";
 
 export interface GroupRef {
@@ -122,7 +123,9 @@ export interface EventView {
   /** only the one who planned it sees it ("Only me") */
   private: boolean;
   author: UserSummary;
-  repeat: "none" | "daily" | "weekly" | "monthly" | "yearly";
+  repeat: Repeat;
+  /** repeat: 'custom': how */
+  repeatRule: RepeatRule | null;
   repeatUntil: number | null;
   capacity: number | null;
   cancelled: boolean;

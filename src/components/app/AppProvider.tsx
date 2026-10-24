@@ -6,6 +6,7 @@ import { CircleAlert, Sparkles } from "lucide-react";
 import type { Boot, Me, SiteInfo } from "@/lib/bootTypes";
 import type { LiveState, NotificationItem } from "@/lib/types";
 import { makeT, setClientLang, type T } from "@/lib/i18n";
+import { setClock } from "@/lib/clock";
 
 /**
  * Everything the pages share in the browser: who you are, the site's switches, unread counts,
@@ -68,6 +69,7 @@ export function usePresence(userId: number): LiveState {
 export function AppProvider({ boot, children }: { boot: Boot; children: React.ReactNode }) {
   // for the helpers outside components (clientT): the same for everyone, so safe to set here
   setClientLang(boot.site.lang, boot.site.texts);
+  setClock(boot.site.clock);
   const [counts, setCounts] = useState(boot.counts);
   const [presence, setPresence] = useState<Map<number, LiveState>>(new Map());
   const [conn, setConn] = useState<number | null>(null);

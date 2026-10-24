@@ -1,5 +1,6 @@
 "use client";
 
+import { CardSection } from "./CardSection";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,7 +25,7 @@ export function GroupChip({ g }: { g: { slug: string; name: string; color: strin
 }
 
 /** A post or news item, in the feed or on its own page (`full`). */
-export function PostCard({ post, full = false, onGone }: { post: PostView; full?: boolean; onGone?: () => void }) {
+export function PostCard({ post, full = false, onGone, section = false }: { post: PostView; full?: boolean; onGone?: () => void; section?: boolean }) {
   const me = useMe();
   const t = useT();
   const toast = useToast();
@@ -38,6 +39,7 @@ export function PostCard({ post, full = false, onGone }: { post: PostView; full?
   const news = p.kind === "news";
   return (
     <article className={`panel post-card ${news ? "news" : ""} ${p.pinned ? "pinned" : ""}`} id={`post-${p.id}`}>
+      {section ? <CardSection kind={news ? "news" : "post"} /> : null}
       {news && p.cover ? (
         <div className="post-cover" style={{ backgroundImage: `url("${p.cover}")` }} />
       ) : null}

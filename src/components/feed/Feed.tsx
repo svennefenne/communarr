@@ -21,16 +21,17 @@ const FILTERS: { id: FeedFilter; label: string; icon: React.ComponentType<{ size
   { id: "events", label: "Events", icon: CalendarDays, feature: "calendar" },
 ];
 
-export function FeedItemView({ item }: { item: FeedItem }) {
+/** One thing in the feed; section: a strip on top saying which part of the site it's from (the front page). */
+export function FeedItemView({ item, section = false }: { item: FeedItem; section?: boolean }) {
   switch (item.type) {
     case "post":
-      return <PostCard post={item.post} />;
+      return <PostCard post={item.post} section={section} />;
     case "poll":
-      return <PollCard poll={item.poll} />;
+      return <PollCard poll={item.poll} section={section} />;
     case "event":
-      return <EventCard event={item.event} />;
+      return <EventCard event={item.event} section={section} />;
     case "thread":
-      return <ThreadFeedCard thread={item.thread} />;
+      return <ThreadFeedCard thread={item.thread} section={section} />;
   }
 }
 
@@ -44,6 +45,7 @@ export function Feed({
   groupId,
   composer = true,
   showFilters = true,
+  sections = false,
   authorId,
 }: {
   initial: { items: FeedItem[]; next: number | null };
@@ -52,6 +54,8 @@ export function Feed({
   groupId?: number;
   composer?: boolean;
   showFilters?: boolean;
+  /** each card says which part of the site it's from (the front page) */
+  sections?: boolean;
   /** only what this member made (their profile) */
   authorId?: number;
 }) {
@@ -147,7 +151,7 @@ export function Feed({
         ) : null}
         <div className={`stack feed-list ${loading && !items.length ? "loading" : ""}`}>
           {items.map((i) => (
-            <FeedItemView key={keyOf(i)} item={i} />
+            <FeedItemView key={keyOf(i)} item={i} section={sections} />
           ))}
           {!items.length && !loading ? (
             <Empty icon={<Layers size={24} />} title={t("Nothing here yet")}>

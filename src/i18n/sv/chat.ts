@@ -243,7 +243,6 @@ const sv: Record<string, string> = {
   Profile: "Profil",
   "Theme & colours": "Tema & färger",
   Animations: "Animationer",
-  "Page wipes": "Sidövergångar",
   "Log out": "Logga ut",
 
   // your status (StatusDialog)

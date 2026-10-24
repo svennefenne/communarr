@@ -188,7 +188,7 @@ export async function addMember(by: User, o: { username: string; name: string; r
   const pw = randomToken(9);
   const err = validateNewUser(o.username, o.name, pw);
   if (err) throw new UserError(err);
-  await createUser({ username: o.username, name: o.name, password: pw, role: o.role, invitedBy: by.id });
+  await createUser({ username: o.username, alias: o.name, password: pw, role: o.role, invitedBy: by.id });
   audit(by.id, "add member", o.username);
   return pw;
 }
