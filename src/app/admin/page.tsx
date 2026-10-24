@@ -21,9 +21,10 @@ import { listFeedback, openFeedback } from "@/lib/feedback";
 import { AnnouncementSettings, FeatureSettings, IdentitySettings, LookSettings } from "@/components/admin/LookSettings";
 import { TextsEditor } from "@/components/admin/TextsEditor";
 import { ForumCategories } from "@/components/admin/ForumCategories";
-import { GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
+import { DefaultRoom, GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
 import { MailAdmin } from "@/components/admin/MailAdmin";
 import { getMailSettings, lastMailFailure, mailReady } from "@/lib/mail";
+import { firstOpenRoom } from "@/lib/chat";
 import { mailOrigin, rememberOrigin } from "@/lib/accountMail";
 
 export async function generateMetadata() {
@@ -148,7 +149,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           ) : null}
           {admin ? (
             <Section id="rooms" title={t("Groups & chat rooms")} icon={<LayoutGrid size={18} />}>
-              <GroupsRooms groups={groups} rooms={rooms} />
+              <div className="stack">
+                <DefaultRoom rooms={rooms} value={s.defaultRoom === -1 ? (firstOpenRoom()?.id ?? 0) : s.defaultRoom} />
+                <GroupsRooms groups={groups} rooms={rooms} />
+              </div>
             </Section>
           ) : null}
           <Section id="content" title={t("Announcement & word filter")} icon={<Type size={18} />}>

@@ -54,6 +54,8 @@ export interface SiteSettings {
   timeFormat: TimeFormat;
   /** the first day of the week (1 Monday, 0 Sunday, 6 Saturday) */
   weekStart: WeekStart;
+  /** the chat room /chat opens on a computer: a room's id, 0 for none (just the list), -1 for the site's first open room (the Lounge) */
+  defaultRoom: number;
 }
 
 export const DEFAULTS: SiteSettings = {
@@ -83,6 +85,7 @@ export const DEFAULTS: SiteSettings = {
   texts: {},
   timeFormat: "24h",
   weekStart: 1,
+  defaultRoom: -1,
 };
 
 /** The default texts in the other languages (until an admin writes their own). */
