@@ -1,5 +1,6 @@
 "use client";
 
+import { CardSection } from "./CardSection";
 import Link from "next/link";
 import { Eye, Lock, MessagesSquare, Pin } from "lucide-react";
 import type { ThreadCard as Thread } from "@/lib/contentTypes";
@@ -30,10 +31,11 @@ export function CategoryChip({ c, link = true }: { c: Thread["category"]; link?:
 }
 
 /** A new forum thread, in the feed. */
-export function ThreadFeedCard({ thread: t }: { thread: Thread }) {
+export function ThreadFeedCard({ thread: t, section = false }: { thread: Thread; section?: boolean }) {
   const tr = useT();
   return (
     <article className="panel thread-feed-card">
+      {section ? <CardSection kind="thread" /> : null}
       <header className="post-head">
         <span className="kind-icon forum">
           <MessagesSquare size={20} />

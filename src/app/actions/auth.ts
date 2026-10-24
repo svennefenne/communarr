@@ -8,6 +8,7 @@ import { getSettings } from "@/lib/settings";
 import { memberLang, requestT, setLangCookie } from "@/lib/t";
 import { isUnconfirmed, type UserRow } from "@/lib/users";
 import { emailTaken, forgotPassword, resendSignupLink, setAllMail, startConfirmation, throttled } from "@/lib/accountMail";
+import { hourCycle } from "@/lib/clock";
 import { mailReady, maskEmail, normEmail, validEmail } from "@/lib/mail";
 import { UserError } from "@/lib/errors";
 
@@ -32,11 +33,12 @@ function safeNext(next: string) {
 export async function setupAction(_: FormState, fd: FormData): Promise<FormState> {
   if (hasAnyUser()) redirect("/login");
   const username = str(fd, "username").trim();
-  const name = str(fd, "name").trim() || username;
+  // (optional: without one, the username shows)
+  const alias = str(fd, "alias").trim();
   const password = str(fd, "password");
-  const err = validateNewUser(username, name, password, str(fd, "password2"));
+  const err = validateNewUser(username, alias, password, str(fd, "password2"));
   if (err) return { error: (await requestT())(err) };
-  const id = await createUser({ username, name, password, role: "admin" });
+  const id = await createUser({ username, alias, password, role: "admin" });
   seedSite(id);
   // the admin joins the rooms made just now
   const t = now();
@@ -74,7 +76,7 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
   }
   if (pendingUser(row)) return { error: t("Your account is waiting for an admin to let you in. Try again a bit later.") };
   if (row.suspended_until && row.suspended_until > now()) {
-    return { error: t("This account is suspended until {date}.", { date: new Date(row.suspended_until).toLocaleString(t.locale ?? "en-GB", { dateStyle: "medium", timeStyle: "short" }) }) };
+    return { error: t("This account is suspended until {date}.", { date: new Date(row.suspended_until).toLocaleString(t.locale ?? "en-GB", { dateStyle: "medium", timeStyle: "short", ...hourCycle(getSettings()) }) }) };
   }
   if (key) clearFailures(key);
   await startSession(row.id);
@@ -97,9 +99,11 @@ export async function signupAction(_: FormState, fd: FormData): Promise<FormStat
     return { error: t("You need an invite link to join.") };
   }
   const username = str(fd, "username").trim();
-  const name = str(fd, "name").trim() || username;
+  // (optional: without one, the username shows)
+  const alias = str(fd, "alias").trim();
+  const name = alias || username;
   const password = str(fd, "password");
-  const err = validateNewUser(username, name, password, str(fd, "password2"));
+  const err = validateNewUser(username, alias, password, str(fd, "password2"));
   if (err) return { error: t(err) };
   // with mail: an address is needed, and the account opens when the link mailed to it is clicked
   const mail = mailReady();
@@ -112,7 +116,7 @@ export async function signupAction(_: FormState, fd: FormData): Promise<FormStat
   }
   const pending = !invite && s.approveNew;
   const waiting = mail ? (pending ? "unconfirmed pending" : "unconfirmed") : pending ? "pending" : undefined;
-  const id = await createUser({ username, name, password, role: invite?.role === "moderator" ? "moderator" : "member", invitedBy: invite?.created_by ?? null, waiting });
+  const id = await createUser({ username, alias, password, role: invite?.role === "moderator" ? "moderator" : "member", invitedBy: invite?.created_by ?? null, waiting });
   if (invite) redeemInvite(invite, id);
   if (mail) {
     try {

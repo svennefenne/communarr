@@ -9,7 +9,7 @@ import { cleanHtml, cleanLine, textToHtml } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { serverT } from "./t";
 import { GHOST, summaries, userByName, type User } from "./users";
-import type { ChatMessage, MemberRole, RoomInfo, RoomKind, RoomMember, RoomVisibility } from "./chatTypes";
+import { byPlace, type ChatMessage, type MemberRole, type RoomInfo, type RoomKind, type RoomMember, type RoomVisibility } from "./chatTypes";
 import type { UserSummary } from "./types";
 
 export interface RoomRow {
@@ -23,6 +23,8 @@ export interface RoomRow {
   group_id: number | null;
   last_message_at: number | null;
   archived: number;
+  /** where an admin put it in the chat list (null: not placed; after the placed ones, by activity) */
+  position: number | null;
   created_at: number;
 }
 
@@ -133,16 +135,22 @@ export function roomInfo(u: User, r: RoomRow): RoomInfo {
     other,
     invited,
     archived: !!r.archived,
+    position: r.kind === "dm" ? null : (r.position ?? null),
   };
 }
 
-/** Your rooms and DMs (newest activity first), the open rooms you could join, and invitations. */
+/**
+ * Your rooms and DMs, the open rooms you could join, and invitations. Rooms in the order an admin
+ * gave them (the rest by their latest message), DMs newest first.
+ */
 export function roomsFor(u: User): { mine: RoomInfo[]; open: RoomInfo[]; invites: RoomInfo[] } {
   const mine = (db().prepare("select r.* from rooms r join room_members m on m.room_id = r.id where m.user_id = ? and r.archived = 0").all(u.id) as RoomRow[]).map((r) => roomInfo(u, r));
-  mine.sort((a, b) => (b.lastMessageAt ?? 0) - (a.lastMessageAt ?? 0));
+  mine.sort(byPlace);
   const open = (
-    db().prepare("select * from rooms where kind = 'room' and visibility = 'open' and archived = 0 and id not in (select room_id from room_members where user_id = ?) order by last_message_at desc").all(u.id) as RoomRow[]
-  ).map((r) => roomInfo(u, r));
+    db().prepare("select * from rooms where kind = 'room' and visibility = 'open' and archived = 0 and id not in (select room_id from room_members where user_id = ?)").all(u.id) as RoomRow[]
+  )
+    .map((r) => roomInfo(u, r))
+    .sort(byPlace);
   const invites = (db().prepare("select r.* from rooms r join room_invites i on i.room_id = r.id where i.user_id = ? and r.archived = 0").all(u.id) as RoomRow[]).map((r) => roomInfo(u, r));
   return { mine, open, invites };
 }
@@ -202,6 +210,20 @@ export function updateRoom(u: User, id: number, o: { name?: string; topic?: stri
   if (vis !== r.visibility) changes.push(vis === "private" ? tr("made the room private (invite only)") : tr("opened the room to everyone"));
   if (changes.length) systemMessage(room(id)!, `${u.name} ${changes.join(", ")}.`);
   broadcast("rooms", { changed: id });
+}
+
+/**
+ * An admin's order for the chat list: these rooms first, in this order, for everyone (rooms not in
+ * the list go after them, by their latest message). Direct messages aren't placed.
+ */
+export function arrangeRooms(u: User, ids: number[]) {
+  if (!u.isAdmin) throw new ChatError("Only admins can arrange the chats.");
+  const list = [...new Set(ids.map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 500);
+  tx(() => {
+    const set = db().prepare("update rooms set position = ? where id = ? and kind != 'dm'");
+    list.forEach((id, i) => set.run(i + 1, id));
+  });
+  broadcast("rooms", { arranged: true });
 }
 
 export function archiveRoom(u: User, id: number, archived: boolean) {

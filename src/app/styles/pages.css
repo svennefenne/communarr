@@ -1119,3 +1119,18 @@ div.backdrop-tile {
   color: #fff;
   background: rgb(0 0 0 / 0.55);
 }
+
+/* the event form's custom repeat: an inset box under the Repeats field */
+.custom-repeat {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--field);
+}
+.custom-repeat-line {
+  gap: 8px;
+  align-items: center;
+}
+.custom-repeat-sum {
+  margin: 2px 0 0;
+}

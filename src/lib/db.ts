@@ -437,6 +437,13 @@ const MIGRATIONS: string[] = [
   );
   create index mail_tokens_user on mail_tokens(user_id);
   `,
+  /* 6: an alias (what's shown; display_name is the alias, or else the username), the order an admin
+        gives the chat rooms, and a custom repeat for events (repeat = 'custom', the rule as JSON) */ `
+  alter table users add column alias text;
+  update users set alias = display_name where display_name <> username;
+  alter table rooms add column position integer;
+  alter table events add column repeat_rule text;
+  `,
 ];
 
 function open(): Database.Database {

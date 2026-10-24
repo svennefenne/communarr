@@ -7,7 +7,7 @@ import { useT, useToast } from "@/components/app/AppProvider";
 import { clientT } from "@/lib/i18n";
 import { Time } from "@/components/ui/Time";
 import { Modal } from "@/components/ui/ui";
-import { changePasswordAction, changeUsernameAction, deleteAccountAction, endSessionAction } from "@/app/actions/settings";
+import { changePasswordAction, changeUsernameAction, deleteAccountAction, endSessionAction, setAliasAction } from "@/app/actions/settings";
 
 function device(ua: string) {
   const t = clientT();
@@ -16,10 +16,11 @@ function device(ua: string) {
   return { label: t("{browser} on {os}", { browser, os }), phone: /iPhone|Android|Mobile/.test(ua) };
 }
 
-export function AccountForm({ username, sessions, current }: { username: string; sessions: { id: string; createdAt: number; lastUsed: number; ua: string; ip: string }[]; current: string | null }) {
+export function AccountForm({ username, alias, sessions, current, email }: { username: string; alias: string | null; sessions: { id: string; createdAt: number; lastUsed: number; ua: string; ip: string }[]; current: string | null; email?: React.ReactNode }) {
   const t = useT();
   const toast = useToast();
   const router = useRouter();
+  const [aka, setAka] = useState(alias ?? "");
   const [name, setName] = useState(username);
   const [cur, setCur] = useState("");
   const [pw, setPw] = useState("");
@@ -30,6 +31,32 @@ export function AccountForm({ username, sessions, current }: { username: string;
   const [pending, start] = useTransition();
   return (
     <div className="stack loose">
+      {/* the name everyone sees: empty shows the username */}
+      <section className="panel panel-pad stack">
+        <h2 className="h2">{t("Alias")}</h2>
+        <p className="small muted" style={{ margin: 0 }}>
+          {t("The name everyone sees when you post, chat or plan something. Leave it empty and your username ({username}) shows instead.", { username })}
+        </p>
+        <form
+          className="input-group"
+          onSubmit={(e) => {
+            e.preventDefault();
+            start(async () => {
+              const r = await setAliasAction(aka);
+              if (r.ok) {
+                setAka(r.data ?? "");
+                toast(r.data ? t("Everyone sees you as {name} now.", { name: r.data }) : t("No alias: everyone sees your username."));
+                router.refresh();
+              } else toast(r.error, { kind: "err" });
+            });
+          }}
+        >
+          <input className="input" value={aka} onChange={(e) => setAka(e.target.value)} maxLength={40} placeholder={username} aria-label={t("Alias")} />
+          <button type="submit" className="btn" disabled={aka.trim() === (alias ?? "")}>
+            {t("Save")}
+          </button>
+        </form>
+      </section>
       <section className="panel panel-pad stack">
         <h2 className="h2">{t("Username")}</h2>
         <p className="small muted" style={{ margin: 0 }}>
@@ -55,6 +82,8 @@ export function AccountForm({ username, sessions, current }: { username: string;
           </button>
         </div>
       </section>
+      {/* (your email address, under your names) */}
+      {email}
       <section className="panel panel-pad stack">
         <h2 className="h2">{t("Password")}</h2>
         <form

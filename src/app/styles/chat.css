@@ -473,3 +473,35 @@ html.app-page:not([data-frame="on"]) .site-footer {
     bottom: 110px;
   }
 }
+
+/* admins: arranging the rooms (drag by the handle, or the arrows) */
+.arrange {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.arrange-hint {
+  margin: 0 14px 8px;
+}
+.arrange-list {
+  list-style: none;
+  margin: 0;
+}
+.arrange-row {
+  cursor: grab;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  margin-bottom: 6px;
+}
+.arrange-row.dragging {
+  opacity: 0.5;
+  border-style: dashed;
+}
+.arrange-grip {
+  flex: none;
+}
+.arrange-actions {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--line);
+}

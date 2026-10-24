@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { clientT } from "@/lib/i18n";
+import { clockHour, hourCycle } from "@/lib/clock";
 
 /** Dates in the reader's own time zone and words ("5 min ago"), formatted in the browser. */
 
@@ -34,15 +35,15 @@ export function dateLabel(t: number) {
 }
 
 export function timeLabel(t: number) {
-  return new Date(t).toLocaleTimeString(clientT().locale, { hour: "2-digit", minute: "2-digit" });
+  return new Date(t).toLocaleTimeString(clientT().locale, { ...clockHour(), minute: "2-digit" });
 }
 
 export function dateTimeLabel(t: number) {
-  return new Date(t).toLocaleString(clientT().locale, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(t).toLocaleString(clientT().locale, { weekday: "short", day: "numeric", month: "short", ...clockHour(), minute: "2-digit" });
 }
 
 export function fullLabel(t: number) {
-  return new Date(t).toLocaleString(clientT().locale, { dateStyle: "full", timeStyle: "short" });
+  return new Date(t).toLocaleString(clientT().locale, { dateStyle: "full", timeStyle: "short", ...hourCycle() });
 }
 
 type Mode = "relative" | "date" | "time" | "datetime" | "full" | "day";

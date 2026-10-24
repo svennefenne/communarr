@@ -8,6 +8,8 @@ import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile } from "@/components/ui/ui";
 import type { EventView } from "@/lib/contentTypes";
 import { createEventAction, updateEventAction } from "@/app/actions/content";
+import type { RepeatRule } from "@/lib/repeat";
+import { CustomRepeat, type RepeatEnds } from "./CustomRepeat";
 
 const COLORS = ["#d65a2b", "#e2a634", "#2f7088", "#4f8f50", "#9c5bb5", "#d4689a", "#5b7bd6", "#c8412f"];
 
@@ -42,6 +44,9 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
   const [cover, setCover] = useState<string | null>(event?.cover ?? null);
   const [repeat, setRepeat] = useState<EventView["repeat"]>(event?.repeat ?? "none");
   const [until, setUntil] = useState(event?.repeatUntil ? dateStr(new Date(event.repeatUntil)) : "");
+  // a custom repeat: to begin with, every week on the day it starts
+  const [rule, setRule] = useState<RepeatRule>(event?.repeatRule ?? { freq: "weekly", interval: 1, days: [s0.getDay()], count: null });
+  const [ends, setEnds] = useState<RepeatEnds>(event?.repeatRule?.count ? "after" : event?.repeatUntil ? "on" : "never");
   const [capacity, setCapacity] = useState(event?.capacity ? String(event.capacity) : "");
   // who it's for: everyone (""), only me ("me") or a group
   const [group, setGroup] = useState<number | "" | "me">(event ? (event.private ? "me" : event.group?.id ?? "") : groupId ?? "");
@@ -89,7 +94,9 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         color,
         cover,
         repeat,
-        repeatUntil: repeat !== "none" && until ? new Date(`${until}T23:59:59`).getTime() : null,
+        repeatRule: repeat === "custom" ? { ...rule, count: ends === "after" ? (rule.count ?? 1) : null } : null,
+        // (a custom repeat ends on a date only when that's what was picked)
+        repeatUntil: repeat !== "none" && (repeat !== "custom" || ends === "on") && until ? new Date(`${until}T23:59:59`).getTime() : null,
         capacity: capacity ? Number(capacity) : null,
         groupId: typeof group === "number" ? group : null,
         private: group === "me",
@@ -140,15 +147,17 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
               <option value="weekly">{t("Every week")}</option>
               <option value="monthly">{t("Every month")}</option>
               <option value="yearly">{t("Every year")}</option>
+              <option value="custom">{t("Custom…")}</option>
             </select>
           </div>
-          {repeat !== "none" ? (
+          {repeat !== "none" && repeat !== "custom" ? (
             <div className="field">
               <label htmlFor="ef-until">{t("Until (optional)")}</label>
               <input id="ef-until" type="date" className="input" value={until} min={sd} onChange={(e) => setUntil(e.target.value)} />
             </div>
           ) : null}
         </div>
+        {repeat === "custom" ? <CustomRepeat rule={rule} onRule={setRule} start={new Date(`${sd}T${allDay ? "00:00" : st}`)} ends={ends} onEnds={setEnds} until={until} onUntil={setUntil} minDate={sd} /> : null}
       </div>
       <div className="grid-2">
         <div className="field">
