@@ -130,36 +130,39 @@ export function Feed({
           })}
         </div>
       ) : null}
-      {fresh ? (
-        <button
-          type="button"
-          className="fresh-pill"
-          onClick={() => {
-            setFresh(0);
-            void load(filter);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        >
-          <ArrowUp size={15} /> {t.n(fresh, "{n} new thing", "{n} new things")}
-        </button>
-      ) : null}
-      <div className={`stack feed-list ${loading && !items.length ? "loading" : ""}`}>
-        {items.map((i) => (
-          <FeedItemView key={keyOf(i)} item={i} />
-        ))}
-        {!items.length && !loading ? (
-          <Empty icon={<Layers size={24} />} title={t("Nothing here yet")}>
-            {t(filter === "all" ? "Say something! Everything people post, plan and ask shows up here." : "Nothing of this kind yet.")}
-          </Empty>
+      {/* the items (with the "new things" pill over them): a page can line its side column up with this */}
+      <div className="feed-body">
+        {fresh ? (
+          <button
+            type="button"
+            className="fresh-pill"
+            onClick={() => {
+              setFresh(0);
+              void load(filter);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          >
+            <ArrowUp size={15} /> {t.n(fresh, "{n} new thing", "{n} new things")}
+          </button>
         ) : null}
-        {loading ? (
-          <div className="stack">
-            <div className="skeleton" style={{ height: 140 }} />
-            <div className="skeleton" style={{ height: 140 }} />
-          </div>
-        ) : null}
-        <div ref={sentinel} />
-        {!next && items.length > 4 ? <div className="feed-end mono small faint">· {t("THAT'S EVERYTHING")} ·</div> : null}
+        <div className={`stack feed-list ${loading && !items.length ? "loading" : ""}`}>
+          {items.map((i) => (
+            <FeedItemView key={keyOf(i)} item={i} />
+          ))}
+          {!items.length && !loading ? (
+            <Empty icon={<Layers size={24} />} title={t("Nothing here yet")}>
+              {t(filter === "all" ? "Say something! Everything people post, plan and ask shows up here." : "Nothing of this kind yet.")}
+            </Empty>
+          ) : null}
+          {loading ? (
+            <div className="stack">
+              <div className="skeleton" style={{ height: 140 }} />
+              <div className="skeleton" style={{ height: 140 }} />
+            </div>
+          ) : null}
+          <div ref={sentinel} />
+          {!next && items.length > 4 ? <div className="feed-end mono small faint">· {t("THAT'S EVERYTHING")} ·</div> : null}
+        </div>
       </div>
     </div>
   );
