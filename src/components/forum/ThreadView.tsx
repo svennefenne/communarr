@@ -91,7 +91,7 @@ function ForumPost({ r, threadId, isOpening, onQuote, title, onEdited, newSince 
         {editing ? (
           <div className="stack">
             {isOpening ? <input className="input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} maxLength={160} /> : null}
-            <RichEditor ref={ed} initial={r.html} minHeight={160} onSubmit={save} autoFocus />
+            <RichEditor ref={ed} initial={r.html} minHeight={160} onSubmit={save} autoFocus previews />
             <div className="row" style={{ justifyContent: "flex-end" }}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>
                 {t("Cancel")}
@@ -292,7 +292,7 @@ export function ThreadView(p: Props) {
             <b>{tr("Reply")}</b>
             {t.locked ? <span className="badge danger">{tr("Locked: moderators only")}</span> : null}
           </div>
-          <RichEditor ref={box} placeholder={tr("Write a reply… (select text in a post and press Quote to quote it)")} minHeight={130} draftKey={`reply-${t.id}`} onSubmit={send} />
+          <RichEditor ref={box} placeholder={tr("Write a reply… (select text in a post and press Quote to quote it)")} minHeight={130} draftKey={`reply-${t.id}`} onSubmit={send} previews />
           <div className="row" style={{ justifyContent: "flex-end", marginTop: 10 }}>
             <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={send}>
               <Send size={16} /> {tr("Post reply")}

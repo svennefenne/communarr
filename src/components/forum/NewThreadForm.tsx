@@ -48,7 +48,7 @@ export function NewThreadForm({ cats, initialCat }: { cats: { id: number; name: 
           <input id="nt-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} placeholder={t("What's it about?")} autoFocus />
         </div>
       </div>
-      <RichEditor ref={ed} placeholder={t("Say what's on your mind. Pictures, links, lists and tables all work.")} minHeight={240} draftKey="thread" onSubmit={submit} />
+      <RichEditor ref={ed} placeholder={t("Say what's on your mind. Pictures, links, lists and tables all work.")} minHeight={240} draftKey="thread" onSubmit={submit} previews />
       <div className="row" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-ghost" onClick={() => router.back()}>
           {t("Cancel")}

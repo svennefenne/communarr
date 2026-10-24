@@ -70,7 +70,7 @@ export function PostEditor({ post }: { post: PostView }) {
           <ImageLinkButton kind="cover" onImage={setCover} />
         </div>
       ) : null}
-      <RichEditor ref={ed} initial={post.html} minHeight={260} onSubmit={save} autoFocus />
+      <RichEditor ref={ed} initial={post.html} minHeight={260} onSubmit={save} autoFocus previews />
       <div className="composer-bar">
         {!news && !post.group ? (
           <label className="composer-to">
