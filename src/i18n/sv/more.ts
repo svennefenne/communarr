@@ -133,6 +133,18 @@ const sv: Record<string, string> = {
     "Den här webbläsaren kan inte justera mikrofonen: tryck för att prata och ingångskänslighet kräver en nyare.",
   "Stop the test": "Stoppa testet",
   "Test the microphone": "Testa mikrofonen",
+
+  // date and time fields (the week starts on the site's day)
+  "Pick a day": "Välj en dag",
+  "Previous month": "Föregående månad",
+  "Next month": "Nästa månad",
+  "No date": "Inget datum",
+  Hour: "Timme",
+  Minute: "Minut",
+  "Morning or afternoon": "För- eller eftermiddag",
+  "Doesn't close": "Stänger inte",
+  Time: "Tid",
+  "No end": "Inget slut",
 };
 
 export default sv;
