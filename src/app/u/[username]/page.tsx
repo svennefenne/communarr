@@ -34,8 +34,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       <ProfileHeader
         p={{ ...summary(p), banner: p.banner, pronouns: p.pronouns, location: p.location, website: p.website, birthday: p.birthday, createdAt: p.createdAt, lastSeen: p.lastSeen, stats: stats(p.id) }}
       />
-      <div className="with-side" style={{ marginTop: 18 }}>
-        <div className="stack" style={{ minWidth: 0 }}>
+      <div className="with-side profile-cols" style={{ marginTop: 18 }}>
+        <div className="stack profile-main" style={{ minWidth: 0 }}>
           <span className="eyebrow">{t("What {name} has been up to", { name: p.name.split(" ")[0] })}</span>
           <Feed initial={feed(u, { authorId: p.id })} groups={[]} composer={false} authorId={p.id} />
         </div>

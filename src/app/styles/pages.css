@@ -910,6 +910,32 @@
 }
 
 /* ── Profiles and members ── */
+/* side by side: the label and filters along the top, then the feed's first card and About start level
+   (the left column and the feed step aside, so their parts are the grid's own rows) */
+@media (min-width: 1061px) {
+  .profile-cols {
+    grid-template-rows: auto auto 1fr;
+    row-gap: 14px;
+  }
+  .profile-cols > .profile-main,
+  .profile-cols .feed {
+    display: contents;
+  }
+  .profile-cols > .profile-main > *,
+  .profile-cols .feed > * {
+    grid-column: 1;
+  }
+  .profile-cols .feed-filters {
+    justify-self: start;
+  }
+  .profile-cols .feed-body {
+    grid-row: 3;
+  }
+  .profile-cols > aside {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}
 .profile-head {
   overflow: hidden;
 }
