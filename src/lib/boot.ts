@@ -28,6 +28,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     maxUploadMb: s.maxUploadMb,
     announcement: a.on && a.text.trim() ? { text: a.text, style: a.style, id: a.id } : null,
     registration: s.registration,
+    clock: { timeFormat: s.timeFormat, weekStart: s.weekStart },
   };
 }
 

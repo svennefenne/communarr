@@ -8,13 +8,17 @@ import { EmailSettings } from "@/components/settings/EmailSettings";
 
 export const dynamic = "force-dynamic";
 
+/** Settings → Account: your alias and username first, then your email address, password and devices. */
 export default async function AccountSettings() {
   const u = await requireUser();
   const email = (db().prepare("select email from users where id = ?").get(u.id) as { email: string | null }).email;
   return (
-    <div className="stack loose">
-      <EmailSettings email={email} pending={pendingEmail(u.id)} ready={mailReady()} />
-      <AccountForm username={u.username} sessions={sessionsOf(u.id)} current={await currentSessionId()} />
-    </div>
+    <AccountForm
+      username={u.username}
+      alias={u.alias}
+      sessions={sessionsOf(u.id)}
+      current={await currentSessionId()}
+      email={<EmailSettings email={email} pending={pendingEmail(u.id)} ready={mailReady()} />}
+    />
   );
 }

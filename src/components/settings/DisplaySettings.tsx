@@ -71,30 +71,17 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
       <div className="setting-row">
         <div className="grow">
           <b>{t("Animations")}</b>
-          <span className="small muted">{t("Things lift and glide. Off: nothing moves.")}</span>
+          <span className="small muted">{t("Things lift and glide, and pages change with a wipe. Off: nothing moves.")}</span>
         </div>
+        {/* one switch for all of it (the same as in the menu) */}
         <Switch
-          on={p.motion}
+          on={p.motion && p.wipes}
           label={t("Animations")}
           onChange={(v) => {
             if (v) delete document.documentElement.dataset.motion;
             else document.documentElement.dataset.motion = "off";
-            void save({ motion: v });
-          }}
-        />
-      </div>
-      <div className="setting-row">
-        <div className="grow">
-          <b>{t("Page wipes")}</b>
-          <span className="small muted">{t("Scene-change wipes between pages, like in the old films.")}</span>
-        </div>
-        <Switch
-          on={p.wipes && p.motion}
-          disabled={!p.motion}
-          label={t("Page wipes")}
-          onChange={(v) => {
             setWipe(v);
-            void save({ wipes: v });
+            void save({ motion: v, wipes: v });
           }}
         />
       </div>

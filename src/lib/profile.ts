@@ -11,7 +11,6 @@ import { NOTIFY_KINDS, type NotifyKind, type NotifyPrefs } from "./types";
 const media = (s: unknown) => (typeof s === "string" && /^\/media\/[\w./-]+$/.test(s) ? s : null);
 
 export interface ProfileInput {
-  name?: string;
   pronouns?: string;
   bioHtml?: string;
   location?: string;
@@ -22,17 +21,15 @@ export interface ProfileInput {
   banner?: string | null;
 }
 
+/** The profile (the name shown is the alias: setAlias, under Settings → Account). */
 export function updateProfile(u: User, o: ProfileInput) {
-  const name = o.name !== undefined ? cleanLine(o.name, 40) : u.name;
-  if (!name) throw new UserError("Your name can't be empty.");
   const bio = o.bioHtml !== undefined ? cleanHtml(o.bioHtml, { maxLength: 20_000 }).html : u.bioHtml;
   let website = o.website !== undefined ? cleanLine(o.website, 200) : u.website;
   if (website && !/^https?:\/\//i.test(website)) website = `https://${website}`;
   const birthday = o.birthday === undefined ? u.birthday : o.birthday && /^\d{2}-\d{2}$/.test(o.birthday) ? o.birthday : null;
   db()
-    .prepare("update users set display_name = ?, pronouns = ?, bio_html = ?, location = ?, website = ?, birthday = ?, accent = ?, avatar = ?, banner = ? where id = ?")
+    .prepare("update users set pronouns = ?, bio_html = ?, location = ?, website = ?, birthday = ?, accent = ?, avatar = ?, banner = ? where id = ?")
     .run(
-      name,
       o.pronouns !== undefined ? cleanLine(o.pronouns, 30) : u.pronouns,
       bio,
       o.location !== undefined ? cleanLine(o.location, 80) : u.location,
@@ -43,8 +40,20 @@ export function updateProfile(u: User, o: ProfileInput) {
       o.banner !== undefined ? media(o.banner) : u.banner,
       u.id,
     );
-  indexItem("user", u.id, "members", u.id, u.createdAt, name, `${u.username} ${o.location ?? u.location}`);
+  indexItem("user", u.id, "members", u.id, u.createdAt, u.name, `${u.username} ${o.location ?? u.location}`);
   broadcast("profile", { id: u.id });
+}
+
+/**
+ * Your alias: the name everyone sees (on posts, in chat, on your profile). Empty: none, and your
+ * username shows instead. display_name always holds what's shown.
+ */
+export function setAlias(u: User, alias: string) {
+  const a = cleanLine(alias, 40) || null;
+  db().prepare("update users set alias = ?, display_name = ? where id = ?").run(a, a ?? u.username, u.id);
+  indexItem("user", u.id, "members", u.id, u.createdAt, a ?? u.username, `${u.username} ${u.location}`);
+  broadcast("profile", { id: u.id });
+  return a;
 }
 
 export async function changePassword(u: User, current: string, next: string, keepSession: string | null) {
@@ -61,8 +70,10 @@ export function changeUsername(u: User, username: string) {
   if (!USERNAME_RE.test(username)) throw new UserError("Usernames are 2–24 letters, numbers, dots, dashes or underscores.");
   const taken = db().prepare("select id from users where username = ?").get(username) as { id: number } | undefined;
   if (taken && taken.id !== u.id) throw new UserError("That username is taken.");
-  db().prepare("update users set username = ? where id = ?").run(username, u.id);
-  indexItem("user", u.id, "members", u.id, u.createdAt, u.name, username);
+  // without an alias, the new username is what's shown
+  db().prepare("update users set username = ?, display_name = coalesce(alias, ?) where id = ?").run(username, username, u.id);
+  const shown = (db().prepare("select display_name n from users where id = ?").get(u.id) as { n: string }).n;
+  indexItem("user", u.id, "members", u.id, u.createdAt, shown, username);
 }
 
 export function sessionsOf(userId: number) {

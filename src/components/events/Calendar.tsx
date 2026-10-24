@@ -8,6 +8,7 @@ import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/ui";
 import { eventsAction } from "@/app/actions/content";
+import { clockHour, daysIntoWeek } from "@/lib/clock";
 
 type View = "month" | "week" | "list";
 
@@ -16,8 +17,9 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 /** Monday-first weeks */
-const startOfWeek = (d: Date) => addDays(startOfDay(d), -((d.getDay() + 6) % 7));
-const timeLabel = (t: number, locale: string | undefined) => new Date(t).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+// (the first day is the site's: Monday, Sunday or Saturday)
+const startOfWeek = (d: Date) => addDays(startOfDay(d), -daysIntoWeek(d.getDay()));
+const timeLabel = (t: number, locale: string | undefined) => new Date(t).toLocaleTimeString(locale, { ...clockHour(), minute: "2-digit" });
 
 function rangeFor(view: View, anchor: Date): [Date, Date] {
   if (view === "month") {

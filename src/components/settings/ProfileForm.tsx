@@ -32,7 +32,7 @@ export function ProfileForm({ p }: { p: ProfileData }) {
   const router = useRouter();
   const toast = useToast();
   const ed = useRef<EditorHandle>(null);
-  const [name, setName] = useState(p.name);
+  const name = p.name;
   const [pronouns, setPronouns] = useState(p.pronouns);
   const [location, setLocation] = useState(p.location);
   const [website, setWebsite] = useState(p.website);
@@ -44,7 +44,7 @@ export function ProfileForm({ p }: { p: ProfileData }) {
   const [pending, start] = useTransition();
   const save = () =>
     start(async () => {
-      const r = await updateProfileAction({ name, pronouns, location, website, birthday: bday || null, accent, avatar, banner, bioHtml: ed.current?.getHTML() ?? "" });
+      const r = await updateProfileAction({ pronouns, location, website, birthday: bday || null, accent, avatar, banner, bioHtml: ed.current?.getHTML() ?? "" });
       if (!r.ok) toast(r.error, { kind: "err" });
       else {
         toast(t("Profile saved."));
@@ -74,24 +74,30 @@ export function ProfileForm({ p }: { p: ProfileData }) {
           <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="round" label={t("Profile picture")} />
           <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label={t("Banner on your profile")} />
         </div>
+        {/* (the name everyone sees is the alias, under Settings → Account) */}
         <div className="grid-2">
-          <div className="field">
-            <label htmlFor="pf-name">{t("Name")}</label>
-            <input id="pf-name" className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
-          </div>
           <div className="field">
             <label htmlFor="pf-pro">{t("Pronouns (optional)")}</label>
             <input id="pf-pro" className="input" value={pronouns} onChange={(e) => setPronouns(e.target.value)} maxLength={30} placeholder={t("she/her, they/them…")} />
           </div>
-        </div>
-        <div className="grid-2">
           <div className="field">
             <label htmlFor="pf-loc">{t("Where you are")}</label>
             <input id="pf-loc" className="input" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={80} />
           </div>
+        </div>
+        <div className="grid-2">
           <div className="field">
             <label htmlFor="pf-web">{t("Website")}</label>
             <input id="pf-web" className="input" value={website} onChange={(e) => setWebsite(e.target.value)} maxLength={200} inputMode="url" placeholder="https://…" />
+          </div>
+          <div className="field">
+            <span className="label">{t("Alias")}</span>
+            <p className="small muted" style={{ margin: "6px 0 0" }}>
+              {t("The name everyone sees is set under")}{" "}
+              <Link href="/settings/account" className="link">
+                {t("Settings → Account")}
+              </Link>
+            </p>
           </div>
         </div>
         <div className="grid-2">

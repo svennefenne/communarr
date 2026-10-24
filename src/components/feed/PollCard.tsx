@@ -1,5 +1,6 @@
 "use client";
 
+import { CardSection } from "./CardSection";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -17,7 +18,7 @@ import { GroupChip } from "./PostCard";
 import { addOptionAction, closePollAction, deletePollAction, pollAction, saveAction, voteAction } from "@/app/actions/content";
 
 /** A poll: vote right here, see how it's going, and talk about it. */
-export function PollCard({ poll, full = false }: { poll: PollView; full?: boolean }) {
+export function PollCard({ poll, full = false, section = false }: { poll: PollView; full?: boolean; section?: boolean }) {
   const me = useMe();
   const t = useT();
   const toast = useToast();
@@ -62,6 +63,7 @@ export function PollCard({ poll, full = false }: { poll: PollView; full?: boolea
 
   return (
     <article className="panel poll-card" id={`poll-${p.id}`}>
+      {section ? <CardSection kind="poll" /> : null}
       <header className="post-head">
         <span className="kind-icon poll">
           <Vote size={20} />

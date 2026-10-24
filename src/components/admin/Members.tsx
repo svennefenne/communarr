@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Ban, Check, Copy, KeyRound, LogOut, Mail, MailQuestion, Search, Timer, Trash2, UserPlus, X } from "lucide-react";
 import type { AdminMember } from "@/lib/admin";
 import type { Role } from "@/lib/types";
+import { hourCycle } from "@/lib/clock";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { UserChip } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
@@ -99,7 +100,7 @@ export function Members({ members, base, focus, mail }: { members: AdminMember[]
                 </span>
               ) : null}
               {suspended ? (
-                <span className="badge danger" title={t("Until {date}", { date: new Date(m.suspendedUntil!).toLocaleString(t.locale) })}>
+                <span className="badge danger" title={t("Until {date}", { date: new Date(m.suspendedUntil!).toLocaleString(t.locale, { dateStyle: "medium", timeStyle: "short", ...hourCycle() }) })}>
                   <Timer size={11} /> {t("Suspended")}
                 </span>
               ) : null}
@@ -308,12 +309,14 @@ export function Members({ members, base, focus, mail }: { members: AdminMember[]
           ) : (
             <div className="stack">
               <div className="field">
-                <label>{t("Name")}</label>
-                <input className="input" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} maxLength={40} autoFocus />
+                <label>{t("Username")}</label>
+                <input className="input" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} maxLength={24} autoCapitalize="none" autoFocus />
               </div>
               <div className="field">
-                <label>{t("Username")}</label>
-                <input className="input" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} maxLength={24} autoCapitalize="none" />
+                <label>
+                  {t("Alias")} <span className="muted">({t("optional")})</span>
+                </label>
+                <input className="input" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} maxLength={40} placeholder={newUser.username} />
               </div>
               <div className="field">
                 <label>{t("Role")}</label>

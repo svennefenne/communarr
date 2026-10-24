@@ -13,7 +13,9 @@ import { RichText } from "@/components/content/RichText";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
 import { ItemMenu } from "@/components/content/ItemMenu";
-import { DateTile, EventWhen, REPEAT_LABEL, RsvpButtons } from "@/components/feed/EventCard";
+import { DateTile, EventWhen, RsvpButtons } from "@/components/feed/EventCard";
+import { describeRepeat } from "@/lib/repeat";
+import { clock } from "@/lib/clock";
 import { GroupChip } from "@/components/feed/PostCard";
 import { cancelEventAction, deleteEventAction, saveAction } from "@/app/actions/content";
 
@@ -101,7 +103,7 @@ export function EventDetail({ event }: { event: EventView }) {
                   <EventWhen e={e} />
                   {e.repeat !== "none" ? (
                     <div className="small muted row" style={{ gap: 4 }}>
-                      <Repeat size={13} /> {t(REPEAT_LABEL[e.repeat])}
+                      <Repeat size={13} /> {describeRepeat(t, e, clock().weekStart)}
                       {e.repeatUntil ? <> {t("until")} <Time t={e.repeatUntil} mode="date" /></> : null}
                     </div>
                   ) : null}
