@@ -135,6 +135,7 @@ export async function saveSettingsAction(patch: Partial<SiteSettings>) {
     if (clean.language !== undefined && clean.language !== s.language) dropDefaultTexts();
     if (clean.timeFormat !== undefined && clean.timeFormat !== "24h" && clean.timeFormat !== "12h") delete clean.timeFormat;
     if (clean.weekStart !== undefined && ![0, 1, 6].includes(clean.weekStart)) delete clean.weekStart;
+    if (clean.defaultRoom !== undefined && !(Number.isInteger(clean.defaultRoom) && clean.defaultRoom >= -1)) delete clean.defaultRoom;
     if (clean.siteName !== undefined) clean.siteName = cleanLine(clean.siteName, 40) || s.siteName;
     if (clean.tagline !== undefined) clean.tagline = cleanLine(clean.tagline, 200);
     if (clean.welcome !== undefined) clean.welcome = cleanLine(clean.welcome, 400);

@@ -8,6 +8,7 @@ import { reactionsFor, reactionsRaw, clearReactions, toggleReaction } from "./re
 import { cleanHtml, cleanLine, textToHtml } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { serverT } from "./t";
+import { getSettings } from "./settings";
 import { GHOST, summaries, userByName, type User } from "./users";
 import { byPlace, type ChatMessage, type MemberRole, type RoomInfo, type RoomKind, type RoomMember, type RoomVisibility } from "./chatTypes";
 import type { UserSummary } from "./types";
@@ -54,6 +55,22 @@ export class ChatError extends UserError {}
 
 export function room(id: number): RoomRow | null {
   return (db().prepare("select * from rooms where id = ?").get(id) as RoomRow | undefined) ?? null;
+}
+
+/** The site's first open room (the Lounge, made at setup): the default room until an admin picks one. */
+export function firstOpenRoom(): RoomRow | null {
+  return (db().prepare("select * from rooms where kind = 'room' and visibility = 'open' and archived = 0 order by id limit 1").get() as RoomRow | undefined) ?? null;
+}
+
+/**
+ * The room /chat opens (Admin → Groups & chat rooms), if this member can open it: none when an admin
+ * chose none, or the room is gone, archived or not theirs to see.
+ */
+export function defaultRoomFor(u: User): number | null {
+  const pick = getSettings().defaultRoom;
+  if (pick === 0) return null;
+  const r = pick > 0 ? room(pick) : firstOpenRoom();
+  return r && !r.archived && r.kind !== "dm" && canSee(u, r) ? r.id : null;
 }
 
 function member(roomId: number, userId: number): MemberRow | null {
