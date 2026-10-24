@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/ui";
 import { eventsAction } from "@/app/actions/content";
 import { clockHour, daysIntoWeek } from "@/lib/clock";
+import { EventPeek, usePeek } from "./EventPeek";
 
 type View = "month" | "week" | "list";
 
@@ -44,10 +45,10 @@ function daysOf(e: EventView): string[] {
   return out.length ? out : [dayKey(new Date(e.startAt))];
 }
 
-function EventLine({ e, showDay = false }: { e: EventView; showDay?: boolean }) {
+function EventLine({ e, showDay = false, hover }: { e: EventView; showDay?: boolean; hover?: ReturnType<ReturnType<typeof usePeek>["bind"]> }) {
   const t = useT();
   return (
-    <Link href={`/events/${e.id}`} className={`cal-line ${e.cancelled ? "cancelled" : ""}`} style={{ ["--ec" as string]: e.color }}>
+    <Link href={`/events/${e.id}`} className={`cal-line ${e.cancelled ? "cancelled" : ""}`} style={{ ["--ec" as string]: e.color }} {...hover}>
       <span className="cal-line-time mono">
         {showDay ? new Date(e.startAt).toLocaleDateString(t.locale, { weekday: "short", day: "numeric" }) + " " : ""}
         {e.allDay ? t("All day") : timeLabel(e.startAt, t.locale)}
@@ -86,6 +87,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
   const [selected, setSelected] = useState(() => dayKey(new Date()));
   const [subscribe, setSubscribe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const peek = usePeek();
 
   const [from, to] = useMemo(() => rangeFor(view, anchor), [view, anchor]);
   const load = useCallback(async () => {
@@ -201,7 +203,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
                   <span className="cal-num">{d.getDate()}</span>
                   <span className="cal-chips">
                     {list.slice(0, 3).map((e) => (
-                      <Link key={`${e.id}-${e.startAt}`} href={`/events/${e.id}`} className={`cal-chip ${e.cancelled ? "cancelled" : ""} ${e.mine === "going" ? "going" : ""}`} style={{ ["--ec" as string]: e.color }} onClick={(ev) => ev.stopPropagation()} title={e.title}>
+                      <Link key={`${e.id}-${e.startAt}`} href={`/events/${e.id}`} className={`cal-chip ${e.cancelled ? "cancelled" : ""} ${e.mine === "going" ? "going" : ""}`} style={{ ["--ec" as string]: e.color }} {...peek.bind(e)} onClick={(ev) => ev.stopPropagation()}>
                         {!e.allDay && daysOf(e)[0] === k ? <span className="mono">{timeLabel(e.startAt, t.locale)}</span> : null} {e.title}
                       </Link>
                     ))}
@@ -228,7 +230,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
               ) : null}
             </div>
             <div className="list">
-              {selectedEvents.length ? selectedEvents.map((e) => <EventLine key={`${e.id}-${e.startAt}`} e={e} />) : <div className="panel-body small muted">{t("Nothing on this day.")}</div>}
+              {selectedEvents.length ? selectedEvents.map((e) => <EventLine key={`${e.id}-${e.startAt}`} e={e} hover={peek.bind(e)} />) : <div className="panel-body small muted">{t("Nothing on this day.")}</div>}
             </div>
           </div>
         </div>
@@ -251,7 +253,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
                     </Link>
                   ) : null}
                 </div>
-                <div className="list">{list.length ? list.map((e) => <EventLine key={`${e.id}-${e.startAt}`} e={e} />) : <div className="tiny faint" style={{ padding: "6px 12px 10px" }}>—</div>}</div>
+                <div className="list">{list.length ? list.map((e) => <EventLine key={`${e.id}-${e.startAt}`} e={e} hover={peek.bind(e)} />) : <div className="tiny faint" style={{ padding: "6px 12px 10px" }}>—</div>}</div>
               </div>
             );
           })}
@@ -271,7 +273,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
                 </div>
                 <div className="list">
                   {list.map((e) => (
-                    <EventLine key={`${e.id}-${e.startAt}`} e={e} />
+                    <EventLine key={`${e.id}-${e.startAt}`} e={e} hover={peek.bind(e)} />
                   ))}
                 </div>
               </div>
@@ -280,6 +282,7 @@ export function Calendar({ initial, feedUrl, canCreate, groupId }: { initial: Ev
         </div>
       )}
 
+      {peek.peek ? <EventPeek peek={peek.peek} /> : null}
       {subscribe ? (
         <Modal title={t("Subscribe in your calendar app")} onClose={() => setSubscribe(false)}>
           <div className="stack small">

@@ -3,12 +3,13 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
+import type { Transaction } from "@tiptap/pm/state";
 import { CircleHelp, ImagePlus, LoaderCircle, Type } from "lucide-react";
 import { buildExtensions } from "./extensions";
 import { Toolbar } from "./Toolbar";
-import { ImageBubble, LinkBubble, LinkDialog, TextBubble, VideoDialog } from "./Menus";
+import { ImageBubble, LinkBubble, LinkDialog, PictureDialog, TextBubble, VideoDialog } from "./Menus";
 import { mentionOpen } from "./mentionState";
-import { uploadFile, Modal } from "@/components/ui/ui";
+import { importImage, uploadFile, Modal } from "@/components/ui/ui";
 import { useT, useToast } from "@/components/app/AppProvider";
 
 export interface EditorHandle {
@@ -68,6 +69,19 @@ const SHORTCUTS: [string, string][] = [
   ["Send / post", "Ctrl + Enter"],
 ];
 
+const imageNode = (src: string, alt: string) => ({ type: "image", attrs: { src, alt: alt.slice(0, 120) } });
+
+/** A picture's name from its link ("summer-party.jpg" → "summer party"). */
+function altFrom(url: string) {
+  try {
+    return decodeURIComponent(new URL(url).pathname.split("/").pop() ?? "")
+      .replace(/\.[a-z0-9]+$/i, "")
+      .replace(/[-_]+/g, " ");
+  } catch {
+    return "";
+  }
+}
+
 function readDraft(key?: string) {
   if (!key) return "";
   try {
@@ -95,6 +109,9 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
   const toast = useToast();
   const [html, setHtml] = useState(initial);
   const [uploading, setUploading] = useState(0);
+  const [fetching, setFetching] = useState(0);
+  const fetchingRef = useRef(0);
+  const [picture, setPicture] = useState(false);
   const [link, setLink] = useState(false);
   const [video, setVideo] = useState(false);
   const [help, setHelp] = useState(false);
@@ -137,6 +154,77 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
     },
     [toast, t],
   );
+
+  // pictures from links: the site fetches them and keeps a copy
+  const counting = useCallback(async <T,>(work: () => Promise<T>): Promise<T> => {
+    fetchingRef.current += 1;
+    setFetching(fetchingRef.current);
+    try {
+      return await work();
+    } finally {
+      fetchingRef.current -= 1;
+      setFetching(fetchingRef.current);
+    }
+  }, []);
+
+  /** The picture button's link: the picture (or a page's own picture) where the cursor is; an error, or null. */
+  const fromLink = useCallback(
+    async (url: string, at?: number): Promise<string | null> => {
+      try {
+        const up = await counting(() => importImage(url, "image"));
+        const ed = editorRef.current;
+        if (up && ed) {
+          if (at !== undefined) ed.chain().focus().insertContentAt(at, imageNode(up.url, altFrom(url))).run();
+          else ed.chain().focus().insertContent(imageNode(up.url, altFrom(url))).run();
+        }
+        return null;
+      } catch (e) {
+        return e instanceof Error ? e.message : t("That picture couldn't be fetched.");
+      }
+    },
+    [counting, t],
+  );
+
+  /** A pasted link that turns out to be a picture becomes the picture (a link to a page stays a link). */
+  const pastedLink = useCallback(
+    (url: string) => {
+      const ed = editorRef.current;
+      if (!ed) return;
+      // where the pasted link ends, followed through whatever is typed meanwhile
+      let end = ed.state.selection.from;
+      let gone = false;
+      const follow = ({ transaction }: { transaction: Transaction }) => {
+        const r = transaction.mapping.mapResult(end, -1);
+        end = r.pos;
+        if (r.deleted) gone = true;
+      };
+      ed.on("transaction", follow);
+      void counting(() => importImage(url, "image", true))
+        .then((up) => {
+          if (!up || gone || ed.isDestroyed) return;
+          let from = end - url.length;
+          let to = end;
+          if (from < 0 || ed.state.doc.textBetween(from, to) !== url) return;
+          const $from = ed.state.doc.resolve(from);
+          // a link on a line of its own: the whole line becomes the picture
+          if ($from.parent.isTextblock && $from.parent.textContent.trim() === url) {
+            from = $from.before();
+            to = $from.after();
+          }
+          ed.chain().insertContentAt({ from, to }, imageNode(up.url, altFrom(url))).run();
+        })
+        .catch(() => {
+          /* it stays a link */
+        })
+        .finally(() => ed.off("transaction", follow));
+    },
+    [counting],
+  );
+  // (the editor's paste and drop handlers are made once; these keep them current)
+  const pastedRef = useRef(pastedLink);
+  pastedRef.current = pastedLink;
+  const fromLinkRef = useRef(fromLink);
+  fromLinkRef.current = fromLink;
 
   const extensions = useMemo(() => {
     const keys = Extension.create({
@@ -181,15 +269,25 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
           void upload(files);
           return true;
         }
+        // a link on its own goes in as a link; once it's in, see if it's a picture
+        const text = event.clipboardData?.getData("text/plain") ?? "";
+        if (/^https?:\/\/\S+$/i.test(text) && text.length < 2000) setTimeout(() => pastedRef.current(text), 0);
         return false;
       },
       handleDrop: (view, event, _slice, moved) => {
         if (moved) return false;
-        const files = [...(event.dataTransfer?.files ?? [])];
-        if (!files.some((f) => f.type.startsWith("image/"))) return false;
-        event.preventDefault();
         const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos;
-        void upload(files, at);
+        const files = [...(event.dataTransfer?.files ?? [])];
+        if (files.some((f) => f.type.startsWith("image/"))) {
+          event.preventDefault();
+          void upload(files, at);
+          return true;
+        }
+        // a picture dragged here from another web page
+        const src = /<img[^>]+src=["']([^"']+)["']/i.exec(event.dataTransfer?.getData("text/html") ?? "")?.[1]?.replace(/&amp;/g, "&");
+        if (!src || !/^https?:\/\//i.test(src)) return false;
+        event.preventDefault();
+        void fromLinkRef.current(src, at).then((problem) => problem && toast(problem, { kind: "err" }));
         return true;
       },
     },
@@ -249,7 +347,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
       insertText: (text: string) => {
         editor?.chain().focus().insertContent(text).run();
       },
-      busy: () => uploadingRef.current > 0,
+      busy: () => uploadingRef.current > 0 || fetchingRef.current > 0,
       pickImage: () => fileInput.current?.click(),
       addFiles: (files: File[]) => void upload(files),
       editor,
@@ -263,7 +361,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
     <div className={`editor ${compact ? "compact" : "full"} ${expanded ? "ed-full" : ""} ${className}`} style={minHeight ? ({ ["--ed-min" as string]: `${minHeight}px` } as React.CSSProperties) : undefined}>
       {name ? <input type="hidden" name={name} value={html} /> : null}
       {editor && toolbar ? (
-        <Toolbar editor={editor} compact={compact} expanded={expanded} onExpand={() => setExpanded((x) => !x)} onImage={() => fileInput.current?.click()} onLink={() => setLink(true)} onVideo={() => setVideo(true)} />
+        <Toolbar editor={editor} compact={compact} expanded={expanded} onExpand={() => setExpanded((x) => !x)} onImage={() => setPicture(true)} onLink={() => setLink(true)} onVideo={() => setVideo(true)} />
       ) : null}
       <div className="ed-body" onClick={(e) => e.target === e.currentTarget && editor?.commands.focus("end")}>
         {editor ? <EditorContent editor={editor} /> : <div className="prose ed-content ed-loading" dangerouslySetInnerHTML={{ __html: initial || `<p class="faint">${placeholder}</p>` }} />}
@@ -281,7 +379,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
             <button type="button" className={`tb-btn ${toolbar ? "on" : ""}`} title={t("Formatting")} aria-label={t("Formatting")} aria-pressed={toolbar} onMouseDown={(e) => e.preventDefault()} onClick={() => setToolbar((x) => !x)}>
               <Type size={17} />
             </button>
-            <button type="button" className="tb-btn" title={t("Add a picture")} aria-label={t("Add a picture")} onMouseDown={(e) => e.preventDefault()} onClick={() => fileInput.current?.click()}>
+            <button type="button" className="tb-btn" title={t("Add a picture")} aria-label={t("Add a picture")} onMouseDown={(e) => e.preventDefault()} onClick={() => setPicture(true)}>
               <ImagePlus size={17} />
             </button>
           </>
@@ -290,6 +388,10 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
           {uploading ? (
             <span className="row" style={{ gap: 6 }}>
               <LoaderCircle size={14} className="spin" /> {t.n(uploading, "Uploading {n} picture…", "Uploading {n} pictures…")}
+            </span>
+          ) : fetching ? (
+            <span className="row" style={{ gap: 6 }}>
+              <LoaderCircle size={14} className="spin" /> {t("Fetching the picture from the link…")}
             </span>
           ) : restored ? (
             <span>
@@ -330,6 +432,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
           void upload(files);
         }}
       />
+      {picture ? <PictureDialog onPick={() => fileInput.current?.click()} onLink={(url) => fromLink(url)} onClose={() => setPicture(false)} /> : null}
       {link && editor ? <LinkDialog editor={editor} onClose={() => setLink(false)} /> : null}
       {video && editor ? <VideoDialog editor={editor} onClose={() => setVideo(false)} /> : null}
       {help ? (

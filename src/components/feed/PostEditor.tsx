@@ -6,6 +6,7 @@ import { ImagePlus, Lock, Save, Users, X } from "lucide-react";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile } from "@/components/ui/ui";
+import { ImageLinkButton } from "@/components/ui/ImageLink";
 import type { PostView } from "@/lib/contentTypes";
 import { updatePostAction } from "@/app/actions/content";
 
@@ -66,6 +67,7 @@ export function PostEditor({ post }: { post: PostView }) {
               }}
             />
           </label>
+          <ImageLinkButton kind="cover" onImage={setCover} />
         </div>
       ) : null}
       <RichEditor ref={ed} initial={post.html} minHeight={260} onSubmit={save} autoFocus />

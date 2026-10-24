@@ -444,6 +444,18 @@ const MIGRATIONS: string[] = [
   alter table rooms add column position integer;
   alter table events add column repeat_rule text;
   `,
+  /* 7: link previews (what a link in an event's details shows: a page's title, text and picture, or the
+        picture a link is), fetched once and kept a while; their pictures are uploads of their own */ `
+  create table link_previews (
+    url text primary key,
+    kind text not null,
+    title text not null default '',
+    description text not null default '',
+    site text not null default '',
+    image text,
+    fetched_at integer not null
+  );
+  `,
 ];
 
 function open(): Database.Database {
