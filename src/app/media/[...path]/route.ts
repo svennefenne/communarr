@@ -3,7 +3,21 @@ import { getUser } from "@/lib/auth";
 import { mediaFile } from "@/lib/uploads";
 import { requestT } from "@/lib/t";
 
-const TYPES: Record<string, string> = { webp: "image/webp", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif" };
+const TYPES: Record<string, string> = {
+  webp: "image/webp",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  // sounds (Admin → Sounds)
+  mp3: "audio/mpeg",
+  ogg: "audio/ogg",
+  oga: "audio/ogg",
+  wav: "audio/wav",
+  m4a: "audio/mp4",
+  webm: "audio/webm",
+  flac: "audio/flac",
+};
 
 /** GET /media/…: an uploaded picture (members only, except backgrounds the log-in page shows). */
 export async function GET(_: Request, { params }: { params: Promise<{ path: string[] }> }) {

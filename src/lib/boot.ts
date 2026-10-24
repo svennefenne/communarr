@@ -6,9 +6,12 @@ import type { Lang } from "./i18n";
 import type { User } from "./users";
 import { summary } from "./users";
 import { vapidPublicKey } from "./push";
+import { withDefaults } from "./sounds";
 
 export function me(u: User): Me {
-  return { ...summary(u), isAdmin: u.isAdmin, isMod: u.isMod, presence: u.presence, theme: u.theme };
+  // (the groups they're in: a sound for a group's new post only plays for its members)
+  const groups = (db().prepare("select group_id from group_members where user_id = ?").all(u.id) as { group_id: number }[]).map((r) => r.group_id);
+  return { ...summary(u), isAdmin: u.isAdmin, isMod: u.isMod, presence: u.presence, theme: u.theme, groups };
 }
 
 export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
@@ -29,6 +32,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     announcement: a.on && a.text.trim() ? { text: a.text, style: a.style, id: a.id } : null,
     registration: s.registration,
     clock: { timeFormat: s.timeFormat, weekStart: s.weekStart },
+    sounds: u ? withDefaults(s.sounds) : null,
   };
 }
 

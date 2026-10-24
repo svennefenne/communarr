@@ -477,7 +477,8 @@ export function sendMessage(u: User, roomId: number, html: string, replyTo?: num
   const url = `/chat/${roomId}`;
   for (const m of ms) {
     if (isInRoom(m.user_id, roomId)) continue;
-    sendTo(m.user_id, "unread", { room: roomId, n: unreadFor(roomId, m.user_id) });
+    // (new: a new message, for the sound; quiet: a room they muted)
+    sendTo(m.user_id, "unread", { room: roomId, n: unreadFor(roomId, m.user_id), new: true, quiet: m.notify === "none" });
     if (mentioned.has(m.user_id)) continue;
     if (m.notify === "none" || m.notify === "mentions") continue;
     notify([m.user_id], { kind: r.kind === "dm" ? "dm" : "room", actorId: u.id, title, body, vars, url, pushOnly: true, tag: `room-${roomId}`, mailTitle: r.kind === "dm" ? "{name} sent you a message" : undefined });

@@ -12,6 +12,7 @@ import { useTransitions } from "./Transitions";
 import { StatusDialog } from "./StatusDialog";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { logoutAction, setPrefsAction } from "@/app/actions/me";
+import { setSoundsOn } from "@/components/app/sfx";
 import type { ThemePrefs } from "@/lib/types";
 
 /** Dark, light or the device's choice. */
@@ -54,6 +55,7 @@ export function UserMenu() {
   const [feedback, setFeedback] = useState(false);
   const { wipe, setWipe } = useTransitions();
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
+  const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
   const router = useRouter();
   if (!me) return null;
   // one switch for all of it: things that move, and the wipes between pages
@@ -63,6 +65,12 @@ export function UserMenu() {
     if (on) delete document.documentElement.dataset.motion;
     else document.documentElement.dataset.motion = "off";
     await setPrefsAction({ motion: on, wipes: on });
+  };
+  // the site's sounds (Admin → Sounds), not voice chat
+  const toggleSounds = async (on: boolean) => {
+    setSounds(on);
+    setSoundsOn(on);
+    await setPrefsAction({ sounds: on });
   };
   return (
     <div className="menu-wrap" ref={ref}>
@@ -135,6 +143,10 @@ export function UserMenu() {
           <div className="menu-item" style={{ cursor: "default" }}>
             <span className="grow">{t("Animations")}</span>
             <Switch on={motion && wipe} onChange={toggleMotion} label={t("Animations")} />
+          </div>
+          <div className="menu-item" style={{ cursor: "default" }}>
+            <span className="grow">{t("Sounds")}</span>
+            <Switch on={sounds} onChange={toggleSounds} label={t("Sounds")} />
           </div>
           <div className="menu-sep" />
           <form action={logoutAction}>
