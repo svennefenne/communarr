@@ -28,7 +28,11 @@ or in a theme you make yourself.
   replies, edits, deletes, pins, reactions, typing, "seen" marks, @mentions, pictures, per-room
   notification settings, owners and admins per room, archiving. **Every room has a voice channel**: press
   the headphones to talk (WebRTC, mute, deafen, who's talking glows), and the call stays up while you
-  move around the site.
+  move around the site. Per device: push to talk (your own key), input sensitivity with a live level meter,
+  and noise suppression (the browser's own, or strong: RNNoise, open source, in the browser).
+- **Sounds**: Admin → Sounds picks a sound and volume for someone coming online, joining or leaving your
+  voice chat, and new posts, chat messages, events and polls (built-in tones, or upload your own); everyone
+  can turn them off in their menu.
 - **Calendar**: month (dots on a phone), week and list views, events with time, place, colour, cover,
   capacity and repeats (every day, week, month or year, or custom: every few days, weeks or months, on chosen weekdays, the first Friday, until a date or so many times), for everyone, a group or only you, RSVPs (going, maybe, can't), comments, reminders a day and an hour before,
   change and cancel notices, `.ics` downloads, and a private calendar feed for your phone's calendar app.

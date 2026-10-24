@@ -23,6 +23,7 @@ import { Announcement } from "@/components/shell/Announcement";
 import { TransitionsProvider } from "@/components/shell/Transitions";
 import { VoiceProvider } from "@/components/voice/VoiceProvider";
 import { VoiceDock } from "@/components/voice/VoiceDock";
+import { SiteSounds } from "@/components/app/SiteSounds";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { Lightbox } from "@/components/content/Lightbox";
 
@@ -93,6 +94,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Footer />
               <BottomNav />
               <VoiceDock />
+              {user ? <SiteSounds /> : null}
               <SearchOverlay />
               <Lightbox />
             </VoiceProvider>

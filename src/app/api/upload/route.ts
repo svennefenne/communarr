@@ -1,6 +1,6 @@
 import { getUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
-import { saveUpload, type UploadKind } from "@/lib/uploads";
+import { saveSound, saveUpload, type UploadKind } from "@/lib/uploads";
 import { UserError } from "@/lib/errors";
 import { requestT } from "@/lib/t";
 
@@ -25,6 +25,11 @@ export async function POST(req: Request) {
     if (!(file instanceof File)) return Response.json({ error: t("No file.") }, { status: 400 });
     const max = getSettings().maxUploadMb * 1024 * 1024;
     if (file.size > max) return Response.json({ error: t("That picture is too big ({n} MB at most).", { n: getSettings().maxUploadMb }) }, { status: 413 });
+    // a sound for Admin → Sounds: admins only, kept as it is
+    if (String(fd?.get("kind")) === "sound") {
+      if (!user.isAdmin) return Response.json({ error: t("Only admins can do that.") }, { status: 403 });
+      return Response.json(saveSound(user.id, Buffer.from(await file.arrayBuffer()), file.name));
+    }
     const kind = (KINDS.includes(String(fd?.get("kind")) as UploadKind) ? String(fd?.get("kind")) : "image") as UploadKind;
     if (kind === "background" && !user.isAdmin && !getSettings().allowCustomThemes) return Response.json({ error: t("Custom backgrounds are switched off.") }, { status: 403 });
     const out = await saveUpload(user.id, Buffer.from(await file.arrayBuffer()), kind, file.name);

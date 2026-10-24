@@ -25,6 +25,7 @@ export async function setPrefsAction(patch: Partial<ThemePrefs>) {
   if (patch.mode === "dark" || patch.mode === "light" || patch.mode === "system") next.mode = patch.mode;
   if (typeof patch.wipes === "boolean") next.wipes = patch.wipes;
   if (typeof patch.motion === "boolean") next.motion = patch.motion;
+  if (typeof patch.sounds === "boolean") next.sounds = patch.sounds;
   if (typeof patch.textSize === "number") next.textSize = Math.max(85, Math.min(130, Math.round(patch.textSize)));
   if (patch.density === "comfy" || patch.density === "compact") next.density = patch.density;
   if (patch.custom === null) next.custom = null;
