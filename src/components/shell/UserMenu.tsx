@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { Bookmark, Languages, LogOut, MessageSquareText, Moon, Palette, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
 import { useApp, useT } from "@/components/app/AppProvider";
 import { LanguageToggle } from "@/components/app/LanguageToggle";
@@ -57,6 +57,20 @@ export function UserMenu() {
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
   const router = useRouter();
+  // a phone's screen can be shorter than the menu: it ends above the bottom bar and scrolls itself
+  // (--menu-top: where it starts), and the page behind it stays still while it's open
+  const menuRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!open || !el) return;
+    el.style.setProperty("--menu-top", `${Math.round(el.getBoundingClientRect().top)}px`);
+    if (!window.matchMedia("(max-width: 699px), (pointer: coarse)").matches) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
   if (!me) return null;
   // one switch for all of it: things that move, and the wipes between pages
   const toggleMotion = async (on: boolean) => {
@@ -79,7 +93,7 @@ export function UserMenu() {
         <span className="user-btn-name">{me.name}</span>
       </button>
       {open ? (
-        <div className="panel menu down right user-menu" role="menu" onClick={(e) => (e.target as HTMLElement).closest("a") && setOpen(false)}>
+        <div ref={menuRef} className="panel menu down right user-menu" role="menu" onClick={(e) => (e.target as HTMLElement).closest("a") && setOpen(false)}>
           <button
             type="button"
             className="user-menu-head"
