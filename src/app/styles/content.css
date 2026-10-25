@@ -431,8 +431,17 @@ html[data-density="compact"] .prose {
 }
 
 /* ── The user menu ── */
+/* (taller than a phone's screen: it ends above the bottom bar and scrolls itself, never the page
+   behind it; --menu-top is where it starts, set as it opens) */
 .user-menu {
   width: 300px;
+  max-height: calc(100vh - var(--menu-top, 64px) - var(--bottom-h) - 12px);
+  max-height: calc(100dvh - var(--menu-top, 64px) - var(--bottom-h) - env(safe-area-inset-bottom) - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.user-menu > * {
+  flex-shrink: 0;
 }
 .user-menu-head {
   display: flex;
