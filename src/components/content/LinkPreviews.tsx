@@ -15,7 +15,7 @@ const grew = () => window.dispatchEvent(new Event("hd:grew"));
 
 // one request per link while the page is open, however many show it
 const asked = new Map<string, Promise<LinkPreview | null>>();
-function load(url: string): Promise<LinkPreview | null> {
+export function loadPreview(url: string): Promise<LinkPreview | null> {
   let p = asked.get(url);
   if (!p) {
     p = fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
@@ -38,7 +38,7 @@ export function LinkPreviews({ html, initial, max = 3 }: { html: string; initial
   const [got, setGot] = useState<Record<string, LinkPreview | null>>(initial ?? {});
   useEffect(() => {
     let live = true;
-    for (const u of urls) void load(u).then((p) => live && setGot((x) => (u in x && x[u]?.title === p?.title ? x : { ...x, [u]: p })));
+    for (const u of urls) void loadPreview(u).then((p) => live && setGot((x) => (u in x && x[u]?.title === p?.title ? x : { ...x, [u]: p })));
     return () => {
       live = false;
     };
