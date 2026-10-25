@@ -89,7 +89,7 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
       <div className="setting-row">
         <div className="grow">
           <b>{t("Sounds")}</b>
-          <span className="small muted">{t("A sound when someone comes online, joins your voice chat, or posts. Voice chat itself isn't affected.")}</span>
+          <span className="small muted">{t("A sound when someone comes online, joins your voice chat, or posts, and when you mute or deafen yourself in a call. Voice chat itself isn't affected.")}</span>
         </div>
         <Switch
           on={p.sounds !== false}

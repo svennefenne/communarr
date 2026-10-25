@@ -2,15 +2,20 @@
  * The site's sounds (Admin → Sounds): for each trigger a sound and a volume. A sound is a built-in tone
  * (made in the browser, no file: "tone:chime") or one an admin uploaded ("file:<id>"); "" is none.
  * Each member can turn them all off (the menu's Sounds switch); voice chat isn't touched by any of it.
+ * They're for what others do, and for muting and deafening yourself in voice chat (that it took).
  */
 
-export type SoundTrigger = "online" | "voiceJoin" | "voiceLeave" | "post" | "message" | "event" | "poll";
+export type SoundTrigger = "online" | "voiceJoin" | "voiceLeave" | "mute" | "unmute" | "deafen" | "undeafen" | "post" | "message" | "event" | "poll";
 
 /** English, translated where shown. */
 export const SOUND_TRIGGERS: { id: SoundTrigger; label: string }[] = [
   { id: "online", label: "Someone comes online" },
   { id: "voiceJoin", label: "Someone joins the voice chat you're in" },
   { id: "voiceLeave", label: "Someone leaves the voice chat you're in" },
+  { id: "mute", label: "You mute yourself in voice chat" },
+  { id: "unmute", label: "You unmute yourself" },
+  { id: "deafen", label: "You deafen yourself (hear nothing)" },
+  { id: "undeafen", label: "You hear again (undeafen)" },
   { id: "post", label: "A new post (posts, news, forum threads)" },
   { id: "message", label: "A chat message in one of your rooms" },
   { id: "event", label: "A new event" },
@@ -18,7 +23,7 @@ export const SOUND_TRIGGERS: { id: SoundTrigger; label: string }[] = [
 ];
 
 /** The built-in tones (English names, translated where shown). */
-export const TONES = { chime: "Chime", pop: "Pop", blip: "Blip", bell: "Bell", knock: "Knock", join: "Rising", leave: "Falling" } as const;
+export const TONES = { chime: "Chime", pop: "Pop", blip: "Blip", bell: "Bell", knock: "Knock", join: "Rising", leave: "Falling", micOff: "Mic off", micOn: "Mic on", deafOn: "Deafen", deafOff: "Hear again" } as const;
 export type Tone = keyof typeof TONES;
 
 export interface SoundFile {
@@ -40,13 +45,17 @@ export interface SoundSettings {
   triggers: Record<SoundTrigger, TriggerSound>;
 }
 
-/** To begin with: a rising and a falling tone for voice chat, nothing else. */
+/** To begin with: voice chat's tones (someone coming and going, your microphone and hearing), nothing else. */
 export const DEFAULT_SOUNDS: SoundSettings = {
   library: [],
   triggers: {
     online: { sound: "", volume: 50 },
     voiceJoin: { sound: "tone:join", volume: 60 },
     voiceLeave: { sound: "tone:leave", volume: 60 },
+    mute: { sound: "tone:micOff", volume: 50 },
+    unmute: { sound: "tone:micOn", volume: 50 },
+    deafen: { sound: "tone:deafOn", volume: 50 },
+    undeafen: { sound: "tone:deafOff", volume: 50 },
     post: { sound: "", volume: 50 },
     message: { sound: "", volume: 50 },
     event: { sound: "", volume: 50 },

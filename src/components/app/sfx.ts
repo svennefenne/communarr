@@ -48,6 +48,12 @@ const TONE_NOTES: Record<Tone, { wave: OscillatorType; notes: [number, number, n
   knock: { wave: "triangle", notes: [[180, 0, 0.08], [160, 0.14, 0.08]] },
   join: { wave: "sine", notes: [[523.25, 0, 0.16], [659.25, 0.08, 0.16], [783.99, 0.16, 0.28]] },
   leave: { wave: "sine", notes: [[783.99, 0, 0.16], [659.25, 0.08, 0.16], [523.25, 0.16, 0.28]] },
+  // your microphone: a short high pair, down for off and up for on
+  micOff: { wave: "sine", notes: [[880, 0, 0.08], [587.33, 0.07, 0.14]] },
+  micOn: { wave: "sine", notes: [[587.33, 0, 0.08], [880, 0.07, 0.14]] },
+  // your hearing: a lower, softer pair with a longer tail
+  deafOn: { wave: "triangle", notes: [[392, 0, 0.1], [196, 0.09, 0.26]] },
+  deafOff: { wave: "triangle", notes: [[196, 0, 0.1], [392, 0.09, 0.26]] },
 };
 
 function playTone(c: AudioContext, tone: Tone, volume: number) {
