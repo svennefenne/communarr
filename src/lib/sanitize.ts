@@ -19,7 +19,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
     "ul", "ol", "li", "a", "img", "span", "mark", "hr", "table", "thead", "tbody", "tr", "th", "td", "colgroup", "col", "div", "iframe", "label", "input",
   ],
   allowedAttributes: {
-    a: ["href", "target", "rel", "class"],
+    a: ["href", "target", "rel", "class", "data-bgg"],
     img: ["src", "alt", "title", "width", "height", "data-align", "data-thumb", "data-emoji", "class"],
     span: ["style", "class", "data-type", "data-id", "data-label"],
     mark: ["style", "data-color", "class"],
@@ -55,7 +55,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
   },
   allowedClasses: {
     span: ["mention"],
-    a: ["mention"],
+    a: ["mention", "bgg-game"],
     img: ["emoji-custom"],
     code: ["language-*"],
     div: ["video-embed"],
@@ -70,7 +70,18 @@ const OPTIONS: sanitizeHtml.IOptions = {
     a: (tag, attribs) => {
       const href = attribs.href || "";
       const external = /^https?:\/\//i.test(href);
-      return { tagName: "a", attribs: { ...attribs, ...(external ? { target: "_blank", rel: "noopener noreferrer nofollow ugc" } : { target: "", rel: "" }) } };
+      const out: Record<string, string> = { ...attribs, ...(external ? { target: "_blank", rel: "noopener noreferrer nofollow ugc" } : { target: "", rel: "" }) };
+      // a board game (bgg:): its number on BoardGameGeek (or "search"), and only to BGG
+      const bgg = attribs["data-bgg"] ?? "";
+      if (bgg || /\bbgg-game\b/.test(attribs.class ?? "")) {
+        delete out["data-bgg"];
+        out.class = (out.class ?? "").replace(/\bbgg-game\b/g, "").trim();
+        if (/^(\d{1,9}|search)$/.test(bgg) && /^https:\/\/boardgamegeek\.com\//.test(href)) {
+          out["data-bgg"] = bgg;
+          out.class = `${out.class} bgg-game`.trim();
+        }
+      }
+      return { tagName: "a", attribs: out };
     },
     img: (tag, attribs): sanitizeHtml.Tag => {
       const src = attribs.src || "";

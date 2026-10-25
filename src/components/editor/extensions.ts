@@ -13,6 +13,8 @@ import { CharacterCount, Placeholder } from "@tiptap/extensions";
 import type { Extensions } from "@tiptap/core";
 import { mentionSuggestion } from "./mention";
 import { CustomEmoji, EmojiSuggest } from "./emoji";
+import { BggGameNode, BggSuggest } from "./bgg";
+import type { BggMode } from "@/lib/types";
 
 /** Pictures can be resized by their corner and set left, centre or right. */
 export const SiteImage = Image.extend({
@@ -35,6 +37,8 @@ export interface ExtensionOptions {
   limit?: number;
   /** Enter sends (chat); Shift+Enter makes a new line */
   onEnter?: () => boolean;
+  /** bgg: (board games on BoardGameGeek): the site's mode; "off" leaves the suggestions out */
+  bgg?: BggMode;
 }
 
 export function buildExtensions(o: ExtensionOptions): Extensions {
@@ -70,6 +74,9 @@ export function buildExtensions(o: ExtensionOptions): Extensions {
     }),
     CustomEmoji,
     EmojiSuggest,
+    // (games already in the text show whether bgg: is on or not)
+    BggGameNode,
+    ...(o.bgg && o.bgg !== "off" ? [BggSuggest.configure({ mode: o.bgg })] : []),
     Placeholder.configure({ placeholder: o.placeholder }),
     CharacterCount.configure({ limit: o.limit }),
   ];
