@@ -320,10 +320,10 @@
   text-decoration: underline;
 }
 
-/* popovers from the toolbar */
+/* popovers from the toolbar (the popups' layer: see .modal-back) */
 .popover {
   position: fixed;
-  z-index: 260;
+  z-index: 270;
   min-width: 160px;
   max-width: calc(100vw - 16px);
   padding: 4px;

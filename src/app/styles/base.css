@@ -1216,10 +1216,12 @@ input[type="radio"] {
   text-transform: uppercase;
   color: var(--muted);
 }
+/* dialogs, popovers, @mention lists and the emoji picker share one layer (above the full-screen
+   editor): each is put at the end of the page when it opens, so the one opened last is on top */
 .modal-back {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 270;
   display: grid;
   place-items: center;
   padding: 16px;
