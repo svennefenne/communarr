@@ -13,19 +13,22 @@ export function ImagePick({
   kind,
   shape = "wide",
   label,
+  whole = false,
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
-  kind: "avatar" | "banner" | "cover" | "background";
+  kind: "avatar" | "banner" | "cover" | "background" | "logo";
   shape?: "round" | "square" | "wide" | "tall";
   label: string;
+  /** show all of it (a logo) instead of filling the box */
+  whole?: boolean;
 }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   return (
     <div className="image-pick">
-      <label className={`image-pick-box ${shape}`} style={value ? { backgroundImage: `url("${value}")` } : undefined} title={label}>
+      <label className={`image-pick-box ${shape}`} style={value ? { backgroundImage: `url("${value}")`, ...(whole ? { backgroundSize: "contain" } : {}) } : undefined} title={label}>
         {busy ? <LoaderCircle size={22} className="spin" /> : !value ? <ImagePlus size={22} /> : null}
         <input
           type="file"

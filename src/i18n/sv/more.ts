@@ -183,6 +183,12 @@ const sv: Record<string, string> = {
   "It's shown in the top left corner, in the browser tab and as the app's name on phones. You can change it, and add your own logo, under Admin → Name & texts.":
     "Det syns uppe till vänster, i webbläsarens flik och som appens namn i mobilen. Du kan byta det, och lägga till en egen logga, under Admin → Namn & texter.",
   "In the top left:": "Uppe till vänster:",
+
+  // the site's own logo
+  Logo: "Logga",
+  "Your own logo instead of the stripes": "Din egen logga i stället för ränderna",
+  "Shown next to the name in the top left and on the log-in page, as the browser tab's icon and as the app's icon on phones. A square picture with a see-through background works best. Without one, the stripes.":
+    "Syns bredvid namnet uppe till vänster och på inloggningssidan, som ikon i webbläsarens flik och som appens ikon i mobilen. En kvadratisk bild med genomskinlig bakgrund blir bäst. Utan en: ränderna.",
 };
 
 export default sv;

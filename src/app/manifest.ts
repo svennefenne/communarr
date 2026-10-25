@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { defaultTextIn, getSettings } from "@/lib/settings";
 import { palette } from "@/lib/palettes";
+import { siteIcons } from "@/lib/siteIcons";
 import { requestT } from "@/lib/t";
 
 // the site's name and colours come from the admin's settings, so never baked in at build time
@@ -11,6 +12,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const t = await requestT();
   const s = getSettings();
   const p = palette(s.defaultScheme);
+  const ic = siteIcons();
   return {
     id: "/",
     name: s.siteName,
@@ -23,16 +25,17 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     background_color: p.dark.bg,
     theme_color: p.dark.bg,
     categories: ["social"],
+    // the stripes, or the admin's logo (Admin → Name & texts)
     icons: [
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-      { src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml" },
+      { src: ic.icon192, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: ic.icon512, sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: ic.maskable, sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ...(ic.svg ? [{ src: ic.svg, sizes: "any", type: "image/svg+xml" }] : []),
     ],
     shortcuts: [
-      { name: t("Chat"), url: "/chat", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: t("Calendar"), url: "/calendar", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: t("Notifications"), url: "/notifications", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: t("Chat"), url: "/chat", icons: [{ src: ic.icon192, sizes: "192x192" }] },
+      { name: t("Calendar"), url: "/calendar", icons: [{ src: ic.icon192, sizes: "192x192" }] },
+      { name: t("Notifications"), url: "/notifications", icons: [{ src: ic.icon192, sizes: "192x192" }] },
     ],
   };
 }

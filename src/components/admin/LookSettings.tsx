@@ -37,7 +37,7 @@ export function IdentitySettings({ s }: { s: SiteSettings }) {
   const t = useT();
   const toast = useToast();
   const { save, pending } = useSave();
-  const [v, setV] = useState({ siteName: s.siteName, tagline: s.tagline, welcome: s.welcome, footer: s.footer });
+  const [v, setV] = useState({ siteName: s.siteName, logo: s.logo, tagline: s.tagline, welcome: s.welcome, footer: s.footer });
   const [switching, startSwitch] = useTransition();
   // the language and the clock: on their own (not with the texts below), and a full reload so every
   // page and menu switches over
@@ -91,6 +91,11 @@ export function IdentitySettings({ s }: { s: SiteSettings }) {
           <label>{t("In a few words")}</label>
           <input className="input" value={v.tagline} onChange={(e) => setV({ ...v, tagline: e.target.value })} maxLength={200} />
         </div>
+      </div>
+      <div className="field">
+        <span className="label">{t("Logo")}</span>
+        <ImagePick value={v.logo || null} onChange={(u) => setV({ ...v, logo: u ?? "" })} kind="logo" shape="square" whole label={t("Your own logo instead of the stripes")} />
+        <span className="small muted">{t("Shown next to the name in the top left and on the log-in page, as the browser tab's icon and as the app's icon on phones. A square picture with a see-through background works best. Without one, the stripes.")}</span>
       </div>
       <div className="field">
         <label>{t("Welcome on the log-in page")}</label>

@@ -2,6 +2,7 @@ import "server-only";
 import webpush from "web-push";
 import { db, now } from "./db";
 import { getMeta, getSettings, setMeta } from "./settings";
+import { siteIcons } from "./siteIcons";
 
 /**
  * Web Push: notifications on phones, tablets and computers, even with the site closed. The VAPID
@@ -101,7 +102,8 @@ export async function pushTo(userId: number, payload: PushPayload): Promise<{ se
   const subs = db().prepare("select id, endpoint, p256dh, auth, fails from push_subs where user_id = ?").all(userId) as SubRow[];
   if (!subs.length) return { sent: 0, failed: 0 };
   const k = keys();
-  const body = JSON.stringify(payload);
+  // (the site's icon goes along: the stripes, or the admin's logo)
+  const body = JSON.stringify({ ...payload, icon: siteIcons().icon192 });
   let sent = 0;
   let failed = 0;
   await Promise.all(
