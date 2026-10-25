@@ -189,6 +189,15 @@ const sv: Record<string, string> = {
   "Your own logo instead of the stripes": "Din egen logga i stället för ränderna",
   "Shown next to the name in the top left and on the log-in page, as the browser tab's icon and as the app's icon on phones. A square picture with a see-through background works best. Without one, the stripes.":
     "Syns bredvid namnet uppe till vänster och på inloggningssidan, som ikon i webbläsarens flik och som appens ikon i mobilen. En kvadratisk bild med genomskinlig bakgrund blir bäst. Utan en: ränderna.",
+
+  // screenshots with feedback
+  "Screenshot {n}": "Skärmbild {n}",
+  "Up to {n} screenshots.": "Högst {n} skärmbilder.",
+  Screenshots: "Skärmbilder",
+  "Remove screenshot {n}": "Ta bort skärmbild {n}",
+  "Uploading…": "Laddar upp…",
+  "Add a screenshot": "Lägg till en skärmbild",
+  "Paste a screenshot (Ctrl+V), drop one here or add one: up to {n}.": "Klistra in en skärmbild (Ctrl+V), släpp en här eller lägg till en: högst {n}.",
 };
 
 export default sv;

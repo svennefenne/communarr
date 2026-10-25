@@ -467,6 +467,9 @@ const MIGRATIONS: string[] = [
     select 'footer', case when (select value from settings where key = 'language') = '"sv"' then '"HOODEN · ETT STÄLLE FÖR VÄNNER"' else '"HOODEN · A PLACE FOR FRIENDS"' end
     where exists (select 1 from users) and not exists (select 1 from settings where key = 'footer');
   `,
+  /* 9: screenshots with feedback: the sender's uploads, as JSON [{ url, thumb }] */ `
+  alter table feedback add column images text not null default '[]';
+  `,
 ];
 
 function open(): Database.Database {
