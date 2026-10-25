@@ -51,8 +51,8 @@ export interface EditorProps {
   className?: string;
   label?: string;
   onFocus?: () => void;
-  /** cards for the links under the editor as they're written (a moment after typing stops) */
-  previews?: boolean;
+  /** cards for the links as they're written (a moment after typing stops): under the editor, or above it (chat) */
+  previews?: boolean | "above";
 }
 
 const SHORTCUTS: [string, string][] = [
@@ -368,6 +368,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
 
   return (
     <>
+      {previews === "above" ? <LinkPreviews html={settled} /> : null}
       <div className={`editor ${compact ? "compact" : "full"} ${expanded ? "ed-full" : ""} ${className}`} style={minHeight ? ({ ["--ed-min" as string]: `${minHeight}px` } as React.CSSProperties) : undefined}>
         {name ? <input type="hidden" name={name} value={html} /> : null}
         {editor && toolbar ? (
@@ -461,7 +462,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
           </Modal>
         ) : null}
       </div>
-      {previews ? <LinkPreviews html={settled} /> : null}
+      {previews === true ? <LinkPreviews html={settled} /> : null}
     </>
   );
 });

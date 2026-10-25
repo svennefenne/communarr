@@ -575,6 +575,7 @@ export function ChatRoom(p: Props) {
             onChange={onType}
             label={t("Message")}
             className="chat-editor"
+            previews="above"
             actions={
               <button type="button" className={`btn btn-primary btn-sm chat-send ${sending ? "loading" : ""}`} onClick={send} aria-label={t("Send")} title={t("Send (Enter)")}>
                 <Send size={16} />
