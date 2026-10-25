@@ -21,6 +21,10 @@ const EmojiCtx = createContext<EmojiState>({ list: [], byName: new Map(), set: (
 /** The same list for code outside React (the editor's :name:); EmojiProvider keeps it current. */
 export const siteEmojis: { byName: Map<string, CustomEmoji> } = { byName: new Map() };
 
+/** Google's animated Noto Emoji, some of which can be the site's own: credited where they show (CC BY 4.0) */
+export const NOTO_PAGE = "https://googlefonts.github.io/noto-emoji-animation/";
+export const NOTO_LICENSE = "https://creativecommons.org/licenses/by/4.0/";
+
 /** ":party_parrot:" → "party_parrot" (one of the site's own, by its look; null for an emoji) */
 export function customName(e: string): string | null {
   return /^:([a-z0-9_]{2,32}):$/.exec(e)?.[1] ?? null;

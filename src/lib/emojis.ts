@@ -30,9 +30,9 @@ export function emojiName(s: string): string {
 
 export function listEmojis(): CustomEmoji[] {
   const rows = db()
-    .prepare("select e.name, e.url, e.animated, e.user_id byId, u.display_name byName from emojis e left join users u on u.id = e.user_id order by e.name")
-    .all() as { name: string; url: string; animated: number; byId: number | null; byName: string | null }[];
-  return rows.map((r) => ({ name: r.name, url: r.url, animated: !!r.animated, by: r.byId, byName: r.byName }));
+    .prepare("select e.name, e.url, e.animated, e.source, e.user_id byId, u.display_name byName from emojis e left join users u on u.id = e.user_id order by e.name")
+    .all() as { name: string; url: string; animated: number; source: string; byId: number | null; byName: string | null }[];
+  return rows.map((r) => ({ name: r.name, url: r.url, animated: !!r.animated, by: r.byId, byName: r.byName, noto: r.source === "noto" }));
 }
 
 export function emojiExists(name: string): boolean {
@@ -56,8 +56,8 @@ function checkName(name: string, except?: string) {
   if (other && other.name !== except) throw new UserError("There's already an emoji called :{name}:.", { name });
 }
 
-/** Add one: its name, and a picture they uploaded for it (kind "emoji"). */
-export async function addEmoji(u: User, rawName: string, url: string): Promise<CustomEmoji[]> {
+/** Add one: its name, and a picture they uploaded for it (kind "emoji"); noto: picked from Google's animated emoji. */
+export async function addEmoji(u: User, rawName: string, url: string, noto = false): Promise<CustomEmoji[]> {
   if (!canAddEmoji(u)) throw new UserError("Only moderators can add emoji.");
   const name = emojiName(rawName);
   checkName(name);
@@ -66,7 +66,8 @@ export async function addEmoji(u: User, rawName: string, url: string): Promise<C
   const up = id ? (db().prepare("select path from uploads where id = ? and user_id = ? and kind = 'emoji'").get(id, u.id) as { path: string } | undefined) : undefined;
   if (!up) throw new UserError("Pick a picture for it first.");
   const meta = await sharp(path.join(UPLOAD_DIR, up.path), { animated: true }).metadata();
-  db().prepare("insert into emojis (name, url, animated, user_id, created_at) values (?, ?, ?, ?, ?)").run(name, url, (meta.pages ?? 1) > 1 ? 1 : 0, u.id, now());
+  const source = noto && getSettings().emojiLibrary ? "noto" : "";
+  db().prepare("insert into emojis (name, url, animated, source, user_id, created_at) values (?, ?, ?, ?, ?, ?)").run(name, url, (meta.pages ?? 1) > 1 ? 1 : 0, source, u.id, now());
   return changed();
 }
 

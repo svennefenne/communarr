@@ -23,6 +23,9 @@ or in a theme you make yourself.
   the emoji picker; write it `:name:` (after `:` and two letters a list suggests them, and the emoji's
   own names like `:thumbs_up:`), use it in anything written and as a reaction. A chat message of only
   emoji shows them big. Admin → Emoji lists them; whether everyone or only moderators can add them is
+  under Features & permissions. Adding one can also be a pick from Google's 611 animated
+  [Noto Emoji](https://googlefonts.github.io/noto-emoji-animation/) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/),
+  credited where they're listed): the site keeps its own small copy. An admin can switch that off
   under Features & permissions.
 - **Posts and news**: for everyone, a group, or only you; reactions, threaded comments, pinning, closing
   comments, saving for later, reporting. News (admins and moderators) gets a headline, a cover picture
@@ -220,7 +223,8 @@ docker build -t communarr .
 Next.js 16 (App Router, server actions) with React 19, SQLite through better-sqlite3 (one file, with
 full-text search), Tiptap 3 for the editor, sharp for pictures, web-push for notifications; live updates
 over Server-Sent Events and voice over WebRTC, all in the one Node process. `node scripts/icons.mjs`
-redraws the app icons; `node scripts/emoji.mjs` rebuilds the emoji list.
+redraws the app icons; `node scripts/emoji.mjs` rebuilds the emoji list and `node scripts/noto-emoji.mjs`
+the list of Google's animated emoji.
 
 ## Credits
 

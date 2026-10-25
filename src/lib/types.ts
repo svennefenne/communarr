@@ -78,4 +78,6 @@ export interface CustomEmoji {
   /** who added it (null: they're gone) */
   by: number | null;
   byName: string | null;
+  /** one of Google's animated Noto Emoji (CC BY 4.0: the site credits them) */
+  noto: boolean;
 }

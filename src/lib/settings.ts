@@ -43,6 +43,8 @@ export interface SiteSettings {
   features: { forum: boolean; polls: boolean; calendar: boolean; groups: boolean; chat: boolean; voice: boolean; news: boolean };
   /** who may create these (members or only moderators/admins) */
   canCreate: { groups: "members" | "mods"; rooms: "members" | "mods"; events: "members" | "mods"; polls: "members" | "mods"; emojis: "members" | "mods" };
+  /** Google's animated emoji (Noto, CC BY 4.0) to pick from when adding one of the site's own */
+  emojiLibrary: boolean;
   maxUploadMb: number;
   voice: { ice: IceServer[]; max: number };
   /** the time zone for reminders and calendar feeds, e.g. Europe/Stockholm */
@@ -83,6 +85,7 @@ export const DEFAULTS: SiteSettings = {
   announcement: { text: "", style: "info", on: false, id: 0 },
   features: { forum: true, polls: true, calendar: true, groups: true, chat: true, voice: true, news: true },
   canCreate: { groups: "members", rooms: "members", events: "members", polls: "members", emojis: "members" },
+  emojiLibrary: true,
   maxUploadMb: 20,
   voice: { ice: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }], max: 10 },
   timezone: process.env.TZ || "Europe/Stockholm",
