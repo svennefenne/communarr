@@ -155,6 +155,31 @@
 .ed-content img {
   cursor: default;
 }
+/* the site's own emoji (:name:): the size of the text around them, like an emoji */
+img.emoji-custom,
+.prose img.emoji-custom,
+.msg-body .prose img.emoji-custom {
+  display: inline-block;
+  width: auto;
+  height: 1.375em;
+  max-width: 3em;
+  max-height: none;
+  margin: 0 0.05em;
+  vertical-align: -0.3em;
+  object-fit: contain;
+  border-radius: 0;
+  background: none;
+  cursor: default;
+}
+/* a chat message of only emoji shows them big */
+.msg-body .prose.jumbo {
+  font-size: 2.625rem;
+  line-height: 1.2;
+}
+.msg-body .prose.jumbo img.emoji-custom {
+  height: 1.15em;
+  vertical-align: -0.2em;
+}
 .prose mark {
   border-radius: 3px;
   padding: 0 0.15em;

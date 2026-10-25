@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, AtSign, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Sparkles, Type, Users, Volume2 } from "lucide-react";
+import { Activity, AtSign, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Smile, Sparkles, Type, Users, Volume2 } from "lucide-react";
 import { requireMod } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { activity, adminMembers, auditLog, overview, system } from "@/lib/admin";
@@ -23,6 +23,7 @@ import { TextsEditor } from "@/components/admin/TextsEditor";
 import { ForumCategories } from "@/components/admin/ForumCategories";
 import { DefaultRoom, GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
 import { MailAdmin } from "@/components/admin/MailAdmin";
+import { EmojiManager } from "@/components/emoji/EmojiDialogs";
 import { SoundsAdmin } from "@/components/admin/SoundsAdmin";
 import { withDefaults } from "@/lib/sounds";
 import { getMailSettings, lastMailFailure, mailReady } from "@/lib/mail";
@@ -96,7 +97,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         ...(admin ? [{ id: "rooms", label: t("Groups & chat rooms") }] : []),
       ],
     },
-    { label: t("Content"), items: [{ id: "content", label: t("Announcement & filter") }, { id: "forum", label: t("Forum categories") }] },
+    { label: t("Content"), items: [{ id: "content", label: t("Announcement & filter") }, { id: "forum", label: t("Forum categories") }, { id: "emojis", label: t("Emoji") }] },
     ...(admin
       ? [
           { label: t("Look"), items: [{ id: "identity", label: t("Name & texts") }, { id: "texts", label: t("Texts") }, { id: "look", label: t("Colours & background") }] },
@@ -163,6 +164,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </Section>
           <Section id="forum" title={t("Forum categories")} icon={<MessagesSquare size={18} />}>
             <ForumCategories cats={categories(u)} groups={groups.map((g) => ({ id: g.id, name: g.name }))} />
+          </Section>
+          <Section id="emojis" title={t("Emoji")} icon={<Smile size={18} />} hint={t("The site's own, that members add")}>
+            <EmojiManager />
           </Section>
           {admin ? (
             <>

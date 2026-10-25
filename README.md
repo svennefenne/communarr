@@ -19,6 +19,11 @@ or in a theme you make yourself.
   link; select words and paste a link over them), and pictures by button, drag-and-drop or paste,
   resized by dragging a corner and set left, centre or right. Select text for a quick formatting bubble.
   Drafts are kept on the device until you post. Full screen on a phone. Markdown shortcuts work too.
+- **The site's own emoji**, Discord style: members add a picture with a name (a GIF stays animated) from
+  the emoji picker; write it `:name:` (after `:` and two letters a list suggests them, and the emoji's
+  own names like `:thumbs_up:`), use it in anything written and as a reaction. A chat message of only
+  emoji shows them big. Admin → Emoji lists them; whether everyone or only moderators can add them is
+  under Features & permissions.
 - **Posts and news**: for everyone, a group, or only you; reactions, threaded comments, pinning, closing
   comments, saving for later, reporting. News (admins and moderators) gets a headline, a cover picture
   and a notification for everyone.
