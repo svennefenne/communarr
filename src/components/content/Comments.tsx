@@ -36,6 +36,7 @@ function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCance
       draftKey={draftKey}
       initial={initial}
       onSubmit={send}
+      previews
       actions={
         <>
           {onCancel ? (
