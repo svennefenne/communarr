@@ -71,18 +71,15 @@ or in a theme you make yourself.
 
 ## Phones and HTTPS
 
-Phones only allow **push notifications and voice chat over HTTPS**, so put Communarr behind HTTPS (both
+Phones only allow **push notifications and voice chat over HTTPS**, so put the site behind HTTPS (both
 setups below show how). On an **iPhone or iPad**, open the site in Safari, tap Share → *Add to Home
-Screen*, open it from the home screen and turn notifications on (Settings → Notifications in Communarr).
-On Android, Chrome offers *Install app*. Communarr asks on the front page once per device.
+Screen*, open it from the home screen and turn notifications on (Settings → Notifications on the site).
+On Android, Chrome offers *Install app*. The site asks on the front page once per device.
 
 ## Install on the NUC (Docker Compose)
 
 The image is built by GitHub Actions and published as `ghcr.io/svennefenne/communarr:latest` on every
 push to `main` (and `:<version>` for `v*` tags). It's `linux/amd64`, which is what the NUC7i5BNK runs.
-
-**New to servers?** The [install guide (PDF)](docs/Communarr-install-guide.pdf) walks through it all
-from a bare NUC: Ubuntu Server 26.04 LTS, SSH, Docker, Communarr, HTTPS, phones, updates and backups.
 
 ```sh
 sudo mkdir -p /opt/communarr && sudo chown $USER: /opt/communarr && cd /opt/communarr
@@ -130,17 +127,33 @@ With the **Compose Manager** plugin you can also use `docker-compose.yml` as is:
 If the image ever needs a login to pull (GitHub makes new packages private until you change it):
 GitHub → your profile → Packages → communarr → Package settings → *Change visibility* → Public.
 
+## Set up when it was called Communarr?
+
+The project used to be called Communarr. A site set up back then carries on as it is: it keeps its name,
+texts and colour scheme (they're saved in its database), its database file (`communarr.db`), everyone's
+log-ins, installed apps, push notifications and calendar feeds.
+
+- **The image** is now `ghcr.io/svennefenne/communarr`. `ghcr.io/svennefenne/communarr` gets the same
+  updates for a while, so nothing breaks; change the `image:` line in your `docker-compose.yml` to the
+  new name when it suits you, then `docker compose pull && docker compose up -d`.
+- **Your `.env`** keeps working: `COMMUNARR_DATA`, `COMMUNARR_PORT` and `COMMUNARR_DOMAIN` are read when the
+  `COMMUNARR_` ones aren't set.
+- **If you swap in the new `docker-compose.yml`** instead of editing yours, the service is now called
+  `communarr`: point a Cloudflare Tunnel's public hostname at `http://communarr:3000`, and note the
+  containers are named `communarr`, `communarr-tunnel` and so on.
+
 ## First start
 
-Open the site and you're asked to make the **admin** account (and name the site). The site starts with
-forum categories, a Lounge and a Gaming chat room and a welcome news post. After that Communarr is
-invite-only: **Admin → Invites & sign-up** makes invite links (for one person or several, for a while
+Open the site and you're asked to **name the site** (the name in the top left corner, the browser tab and
+the app on phones), then to make the **admin** account. The site starts with forum categories, a Lounge
+and a Gaming chat room and a welcome news post. Admin → Name & texts changes the name later and takes
+**your own logo** instead of the stripes. After that the site is invite-only: **Admin → Invites & sign-up** makes invite links (for one person or several, for a while
 or forever, optionally into a group or as moderators). You can also open a sign-up page (optionally with
 approval), or add members yourself with a made-up password.
 
 ## Mail
 
-With a mail server (Admin → Mail, or the `SMTP_*` variables below; the Admin page wins) Communarr can:
+With a mail server (Admin → Mail, or the `SMTP_*` variables below; the Admin page wins) the site can:
 
 - **verify sign-ups**: signing up (invite link or open sign-up) needs an email address, and the account
   opens when the link mailed to it is clicked (48 hours; logging in before that sends a new one). With
@@ -194,7 +207,7 @@ Everything else is on the Admin page.
 ```sh
 npm install
 npm run dev                         # http://localhost:3000, data in ./.data
-COMMUNARR_DEV_SEED=1 npm run dev       # then: curl -X POST localhost:3000/api/dev/seed   (demo friends and content)
+COMMUNARR_DEV_SEED=1 npm run dev    # then: curl -X POST localhost:3000/api/dev/seed   (demo friends and content)
 npx tsc --noEmit && npx eslint src && npm run build
 docker build -t communarr .
 ```
