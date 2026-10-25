@@ -17,7 +17,7 @@ export function ImagePick({
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
-  kind: "avatar" | "banner" | "cover" | "background" | "logo";
+  kind: "avatar" | "banner" | "cover" | "background" | "logo" | "emoji";
   shape?: "round" | "square" | "wide" | "tall";
   label: string;
   /** show all of it (a logo) instead of filling the box */

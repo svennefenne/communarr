@@ -456,6 +456,112 @@
 .emoji-grid button:hover {
   background: var(--hover);
 }
+/* the site's own emoji: their pictures, and the tiles that add and manage them */
+.emoji-grid button img,
+.emoji-groups button img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+.emoji-groups button {
+  display: inline-grid;
+  place-items: center;
+}
+.emoji-groups button img {
+  width: 20px;
+  height: 20px;
+}
+.emoji-grid button.add {
+  display: grid;
+  place-items: center;
+  margin: 3px;
+  height: 32px;
+  border: 1px dashed var(--line-strong);
+  color: var(--muted);
+}
+.emoji-grid button.add:hover {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.emoji-none {
+  grid-column: 1 / -1;
+  padding: 8px 6px;
+}
+.emoji-suggest-glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  font-size: 20px;
+  line-height: 1;
+}
+.emoji-suggest-glyph img.emoji-custom {
+  height: 22px;
+  margin: 0;
+  vertical-align: middle;
+}
+.emoji-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+.emoji-name .input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+}
+.emoji-preview {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.emoji-preview img.emoji-custom.big {
+  height: 48px;
+  margin-left: auto;
+  vertical-align: middle;
+}
+.emoji-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.emoji-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.emoji-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+.emoji-list li:hover {
+  background: var(--hover);
+}
+.emoji-list li > img.emoji-custom {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  vertical-align: middle;
+}
+.emoji-list .danger:hover {
+  color: var(--err);
+}
 
 @media (max-width: 620px) {
   .ed-toolbar {

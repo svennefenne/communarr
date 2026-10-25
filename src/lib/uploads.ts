@@ -12,9 +12,9 @@ import { UserError } from "./errors";
  * for. Files live under DATA_DIR/uploads and are served by /media/….
  */
 
-export type UploadKind = "image" | "avatar" | "banner" | "cover" | "background" | "preview" | "logo";
+export type UploadKind = "image" | "avatar" | "banner" | "cover" | "background" | "preview" | "logo" | "emoji";
 
-const DIRS: Record<UploadKind, string> = { image: "img", avatar: "avatar", banner: "banner", cover: "cover", background: "bg", preview: "preview", logo: "logo" };
+const DIRS: Record<UploadKind, string> = { image: "img", avatar: "avatar", banner: "banner", cover: "cover", background: "bg", preview: "preview", logo: "logo", emoji: "emoji" };
 
 export interface Uploaded {
   id: string;
@@ -30,7 +30,7 @@ const ALLOWED = new Set(["jpeg", "png", "webp", "gif", "avif", "heif", "tiff"]);
 export async function saveUpload(userId: number, buf: Buffer, kind: UploadKind, name: string): Promise<Uploaded> {
   const meta = await sharp(buf, { animated: true, limitInputPixels: 120_000_000 }).metadata();
   if (!meta.format || !ALLOWED.has(meta.format)) throw new UserError("That isn't a picture we can use (JPEG, PNG, WebP, GIF or AVIF).");
-  const animated = (meta.pages ?? 1) > 1 && (kind === "image" || kind === "avatar");
+  const animated = (meta.pages ?? 1) > 1 && (kind === "image" || kind === "avatar" || kind === "emoji");
   const id = crypto.randomBytes(12).toString("base64url");
   const d = new Date();
   const rel = path.join(/*turbopackIgnore: true*/ DIRS[kind], String(d.getUTCFullYear()), String(d.getUTCMonth() + 1).padStart(2, "0"));
@@ -57,10 +57,14 @@ export async function saveUpload(userId: number, buf: Buffer, kind: UploadKind, 
       // (transparency kept; the app icons are cut from it at their own sizes)
       img = img.resize(512, 512, { fit: "inside", withoutEnlargement: true });
       break;
+    case "emoji":
+      // the site's own emoji: small, see-through kept, animated ones stay animated
+      img = img.resize(128, 128, { fit: "inside", withoutEnlargement: true });
+      break;
     default:
       img = img.resize(2048, 2048, { fit: "inside", withoutEnlargement: true });
   }
-  const out = await img.webp({ quality: kind === "background" ? 85 : 82, effort: 4, loop: 0 }).toBuffer({ resolveWithObject: true });
+  const out = await img.webp({ quality: kind === "background" ? 85 : kind === "emoji" ? 90 : 82, effort: 4, loop: 0 }).toBuffer({ resolveWithObject: true });
   const file = path.join(rel, `${id}.webp`);
   fs.writeFileSync(path.join(UPLOAD_DIR, file), out.data);
   const height = animated && out.info.pageHeight ? out.info.pageHeight : out.info.height;
@@ -152,6 +156,7 @@ export function cleanOrphans(): { removed: number; bytes: number } {
     "select value h from settings",
     "select image h from link_previews where image is not null",
     "select images h from feedback",
+    "select url h from emojis",
   ];
   // (the sounds in Admin → Sounds are in the settings: kept like a picture in a post)
   for (const sql of sources) for (const r of db().prepare(sql).all() as { h: string }[]) for (const m of (r.h || "").matchAll(/\/media\/[\w/-]+\/([\w-]+)(\.t)?\.(?:webp|mp3|ogg|oga|wav|m4a|webm|flac)/g)) used.add(m[1]);

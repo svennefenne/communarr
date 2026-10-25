@@ -8,14 +8,17 @@ import { Popover } from "@/components/ui/Popover";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { reactAction } from "@/app/actions/content";
 import type { ReactTarget } from "@/lib/reactions";
+import { Emoji } from "@/components/emoji/Emojis";
 
 /** Apply a reaction locally right away (the server's answer replaces it). */
 export function applyReaction(list: Reaction[], emoji: string, myName: string): Reaction[] {
-  const i = list.findIndex((r) => r.emoji === emoji);
-  if (i < 0) return [...list, { emoji, count: 1, mine: true, users: [myName] }];
-  const r = list[i];
-  const next = r.mine ? { ...r, count: r.count - 1, mine: false, users: r.users.filter((u) => u !== myName) } : { ...r, count: r.count + 1, mine: true, users: [...r.users, myName] };
-  return next.count ? list.map((x, j) => (j === i ? next : x)) : list.filter((_, j) => j !== i);
+  // one reaction per person: the one you have goes either way, and another one takes its place
+  const had = list.find((r) => r.mine)?.emoji;
+  const without = list.map((r) => (r.mine ? { ...r, count: r.count - 1, mine: false, users: r.users.filter((u) => u !== myName) } : r)).filter((r) => r.count > 0);
+  if (had === emoji) return without;
+  const i = without.findIndex((r) => r.emoji === emoji);
+  if (i < 0) return [...without, { emoji, count: 1, mine: true, users: [myName] }];
+  return without.map((r, j) => (j === i ? { ...r, count: r.count + 1, mine: true, users: [...r.users, myName] } : r));
 }
 
 /** The emoji under something: tap one to add yours, the smiley for more. */
@@ -46,7 +49,9 @@ export function Reactions({ type, id, initial, myName, onReact, small = false, r
     <div className={`reactions ${small ? "small" : ""}`}>
       {list.map((r) => (
         <button key={r.emoji} type="button" className={`react-chip ${r.mine ? "mine" : ""}`} onClick={() => toggle(r.emoji)} title={r.count > r.users.length ? t("{names} and {n} more", { names: r.users.join(", "), n: r.count - r.users.length }) : r.users.join(", ")}>
-          <span className="react-emoji">{r.emoji}</span>
+          <span className="react-emoji">
+            <Emoji e={r.emoji} />
+          </span>
           <span className="react-n">{r.count}</span>
         </button>
       ))}
@@ -85,6 +90,7 @@ export function Reactions({ type, id, initial, myName, onReact, small = false, r
       {full ? (
         <EmojiPopover
           anchor={btn.current}
+          custom
           onPick={(e) => {
             setFull(false);
             void toggle(e);

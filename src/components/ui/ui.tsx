@@ -145,7 +145,7 @@ export function useConfirm() {
 }
 
 /** Uploads a file to /api/upload; resolves to its URL and size. */
-export async function uploadFile(file: File, kind: "image" | "avatar" | "banner" | "background" | "cover" | "logo" | "sound" = "image"): Promise<{ id?: string; url: string; width: number; height: number; thumb?: string }> {
+export async function uploadFile(file: File, kind: "image" | "avatar" | "banner" | "background" | "cover" | "logo" | "emoji" | "sound" = "image"): Promise<{ id?: string; url: string; width: number; height: number; thumb?: string }> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("kind", kind);
@@ -159,7 +159,7 @@ export async function uploadFile(file: File, kind: "image" | "avatar" | "banner"
  * A picture from a link, fetched by the site and kept like an upload. A link to a page uses the
  * page's own picture; with onlyImage, a page link gives null instead (it stays a link).
  */
-export async function importImage(url: string, kind: "image" | "avatar" | "banner" | "background" | "cover" | "logo" = "image", onlyImage = false): Promise<{ url: string; width: number; height: number; thumb?: string } | null> {
+export async function importImage(url: string, kind: "image" | "avatar" | "banner" | "background" | "cover" | "logo" | "emoji" = "image", onlyImage = false): Promise<{ url: string; width: number; height: number; thumb?: string } | null> {
   const fd = new FormData();
   fd.append("url", url);
   fd.append("kind", kind);

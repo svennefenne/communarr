@@ -182,7 +182,7 @@ export function Comments({ type, id, initial, locked = false, onCount }: { type:
           <Avatar user={me} size={34} />
           <div className="comment-main">
             <CommentBox
-              placeholder={t(list?.length ? "Write a comment…" : "Be the first to comment…")}
+              placeholder={t(list && !list.length ? "Be the first to comment…" : "Write a comment…")}
               draftKey={`c-${type}-${id}`}
               onSend={async (html) => {
                 const r = await addCommentAction(type, id, html);

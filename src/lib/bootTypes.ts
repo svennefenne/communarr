@@ -1,7 +1,7 @@
 import type { Clock } from "./clock";
 import type { SoundSettings } from "./sounds";
 import type { Lang, Own } from "./i18n";
-import type { Presence, ThemePrefs, UserSummary } from "./types";
+import type { CustomEmoji, Presence, ThemePrefs, UserSummary } from "./types";
 
 export interface Me extends UserSummary {
   isAdmin: boolean;
@@ -33,8 +33,10 @@ export interface SiteInfo {
   tagline: string;
   footer: string;
   features: Features;
-  /** what this member may start */
-  can: { groups: boolean; rooms: boolean; events: boolean; polls: boolean; news: boolean };
+  /** what this member may start (emojis: add the site's own) */
+  can: { groups: boolean; rooms: boolean; events: boolean; polls: boolean; news: boolean; emojis: boolean };
+  /** the site's own emoji (logged in only) */
+  emojis: CustomEmoji[];
   allowCustomThemes: boolean;
   vapidKey: string | null;
   maxUploadMb: number;
