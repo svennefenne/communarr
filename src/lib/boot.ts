@@ -8,6 +8,7 @@ import { summary } from "./users";
 import { vapidPublicKey } from "./push";
 import { withDefaults } from "./sounds";
 import { listEmojis } from "./emojis";
+import { bggMode } from "./bgg";
 
 export function me(u: User): Me {
   // (the groups they're in: a sound for a group's new post only plays for its members)
@@ -30,6 +31,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod, emojis: may(s.canCreate.emojis) },
     emojis: u ? listEmojis() : [],
     emojiLibrary: s.emojiLibrary,
+    bgg: u ? bggMode() : "off",
     allowCustomThemes: s.allowCustomThemes,
     vapidKey: u ? vapidPublicKey() : null,
     maxUploadMb: s.maxUploadMb,

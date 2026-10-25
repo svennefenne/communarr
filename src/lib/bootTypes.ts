@@ -1,7 +1,7 @@
 import type { Clock } from "./clock";
 import type { SoundSettings } from "./sounds";
 import type { Lang, Own } from "./i18n";
-import type { CustomEmoji, Presence, ThemePrefs, UserSummary } from "./types";
+import type { BggMode, CustomEmoji, Presence, ThemePrefs, UserSummary } from "./types";
 
 export interface Me extends UserSummary {
   isAdmin: boolean;
@@ -39,6 +39,8 @@ export interface SiteInfo {
   emojis: CustomEmoji[];
   /** Google's animated emoji to pick from when adding one (Admin → Features & permissions) */
   emojiLibrary: boolean;
+  /** bgg: in the editor (board games on BoardGameGeek) */
+  bgg: BggMode;
   allowCustomThemes: boolean;
   vapidKey: string | null;
   maxUploadMb: number;

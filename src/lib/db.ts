@@ -491,6 +491,31 @@ const MIGRATIONS: string[] = [
          so the site says so) */ `
   alter table emojis add column source text not null default '';
   `,
+  /* 13: BoardGameGeek (bgg: in the editor): games looked up there and searches made, kept a while so the
+         site asks BGG as little as it can */ `
+  create table bgg_games (
+    id integer primary key,
+    name text not null,
+    year integer,
+    thumb text,
+    image text,
+    min_players integer,
+    max_players integer,
+    min_time integer,
+    max_time integer,
+    min_age integer,
+    weight real,
+    rating real,
+    users_rated integer,
+    rank integer,
+    fetched_at integer not null
+  );
+  create table bgg_searches (
+    query text primary key,
+    ids text not null,
+    fetched_at integer not null
+  );
+  `,
 ];
 
 function open(): Database.Database {

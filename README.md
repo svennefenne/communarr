@@ -21,6 +21,13 @@ or in a theme you make yourself.
   Drafts are kept on the device until you post. Full screen on a phone. Markdown shortcuts work too.
   Links get preview cards under the text (the page's title, text and picture, or the picture itself),
   and resting the pointer on a link shows a quick look at it with where it really goes.
+- **Board games from BoardGameGeek**: type `bgg:` and a few letters of a game's name to pick it from
+  BGG's games (best fit, then the most played, with their boxes); it goes in as a link to its BGG page,
+  and resting the pointer on it shows its players, time, complexity, rating and rank. BGG's API needs a
+  token: register the site at [boardgamegeek.com/applications](https://boardgamegeek.com/applications)
+  (free when it isn't commercial) and paste it in Admin → Features & permissions. Without one, `bgg:`
+  links to a search on BGG instead. The site keeps what it learns from BGG a while, so BGG is asked
+  little.
 - **The site's own emoji**, Discord style: members add a picture with a name (a GIF stays animated) from
   the emoji picker; write it `:name:` (after `:` and two letters a list suggests them, and the emoji's
   own names like `:thumbs_up:`), use it in anything written and as a reaction. A chat message of only

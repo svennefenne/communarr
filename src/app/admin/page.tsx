@@ -24,6 +24,7 @@ import { ForumCategories } from "@/components/admin/ForumCategories";
 import { DefaultRoom, GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
 import { MailAdmin } from "@/components/admin/MailAdmin";
 import { EmojiManager } from "@/components/emoji/EmojiDialogs";
+import { bggToken } from "@/lib/bgg";
 import { SoundsAdmin } from "@/components/admin/SoundsAdmin";
 import { withDefaults } from "@/lib/sounds";
 import { getMailSettings, lastMailFailure, mailReady } from "@/lib/mail";
@@ -180,7 +181,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <LookSettings s={s} />
               </Section>
               <Section id="features" title={t("Features & permissions")} icon={<SlidersHorizontal size={18} />}>
-                <FeatureSettings s={s} />
+                <FeatureSettings s={s} bggToken={!!bggToken()} />
               </Section>
               <Section id="notifications" title={t("Notifications & voice")} icon={<Bell size={18} />}>
                 <NotifyVoice s={s} vapid={vapidPublicKey()} devices={o.devices} timezones={tzs} />
