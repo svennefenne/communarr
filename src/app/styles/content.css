@@ -664,6 +664,16 @@ html[data-density="compact"] .prose {
     width: 100%;
   }
 }
+/* a link to a board game on BoardGameGeek: its box beside it (on a phone too) */
+.link-card.bgg-card {
+  flex-direction: row;
+  align-items: center;
+}
+.link-card.bgg-card .link-card-pic {
+  width: 84px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
 
 /* a quick look at a link (resting the pointer on it): the popups' layer, see .modal-back */
 .link-peek {
@@ -728,6 +738,11 @@ html[data-density="compact"] .prose {
   -webkit-line-clamp: 3;
   font-size: 0.8125rem;
   color: var(--text-dim);
+}
+/* a site that gives no preview (or BGG not answering) */
+.link-peek-none {
+  font-size: 0.8125rem;
+  color: var(--muted);
 }
 /* where it really goes (the words of a link can say anything) */
 .link-peek-url {

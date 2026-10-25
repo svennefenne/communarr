@@ -6,14 +6,17 @@ import { Clock, Scale, Star, Trophy, Users } from "lucide-react";
 import type { LinkPreview } from "@/lib/links";
 import type { BggGame } from "@/lib/types";
 import { useSite, useT } from "@/components/app/AppProvider";
+import { bggIdOf } from "@/lib/bggUrl";
 import { loadPreview } from "./LinkPreviews";
+import { loadGame } from "./bggCards";
 
 /**
  * A quick look at a link in what someone wrote: resting the pointer on it (or tabbing to it) shows a
  * card with the page's picture, title and a bit of its text (or the picture a link is), and always
- * where it really goes. One for the whole page: it watches the links in written text (.prose, not
- * the editor). Only where there's a pointer that hovers; the card can be clicked too. A board game
- * (bgg:) gets its own card: its picture, players, time, complexity and rating on BoardGameGeek.
+ * where it really goes; a site that gives no preview says so. One for the whole page: it watches the
+ * links in written text (.prose, not the editor). Only where there's a pointer that hovers; the card
+ * can be clicked too. A board game (a bgg: chip, or a link to its page on BoardGameGeek) gets its own
+ * card: its picture, players, time, complexity and rating on BGG.
  */
 
 interface Peek {
@@ -23,26 +26,6 @@ interface Peek {
   p: LinkPreview | null | undefined;
   /** a board game: its number on BGG, its name in the text, and (undefined while it's fetched) its details */
   bgg?: { id: number; name: string; game: BggGame | null | undefined };
-}
-
-// one request per game while the page is open
-const games = new Map<number, Promise<BggGame | null>>();
-function loadGame(id: number): Promise<BggGame | null> {
-  let p = games.get(id);
-  if (!p) {
-    p = fetch(`/api/bgg/game/${id}`)
-      .then((r) => r.json() as Promise<{ game?: BggGame | null; error?: string }>)
-      .then((d) => {
-        if (d.error) games.delete(id);
-        return d.game ?? null;
-      })
-      .catch(() => {
-        games.delete(id);
-        return null;
-      });
-    games.set(id, p);
-  }
-  return p;
 }
 
 /** a link someone wrote that leaves the site (not a mention, not in an editor) */
@@ -55,6 +38,15 @@ function linkOf(target: EventTarget | null): HTMLAnchorElement | null {
     return new URL(href).origin === location.origin ? null : a;
   } catch {
     return null;
+  }
+}
+
+/** "https://www.example.com/a/b" → "example.com" */
+function host(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
   }
 }
 
@@ -92,8 +84,8 @@ export function LinkPeekHost() {
       if (!a.isConnected) return;
       const url = a.getAttribute("href")!;
       cur.current = a;
-      // a board game: its own card (with the site's BGG token)
-      const id = a.classList.contains("bgg-game") && /^\d{1,9}$/.test(a.dataset.bgg ?? "") ? Number(a.dataset.bgg) : 0;
+      // a board game (a bgg: chip, or a link to its page): its own card (with the site's BGG token)
+      const id = (a.classList.contains("bgg-game") && /^\d{1,9}$/.test(a.dataset.bgg ?? "") ? Number(a.dataset.bgg) : 0) || bggIdOf(url) || 0;
       if (id && bggRef.current === "full") {
         setPeek({ url, at: a.getBoundingClientRect(), p: null, bgg: { id, name: a.textContent ?? "", game: undefined } });
         void loadGame(id).then((game) => setPeek((x) => (x?.bgg?.id === id ? { ...x, bgg: { ...x.bgg, game } } : x)));
@@ -243,6 +235,14 @@ export function LinkPeekHost() {
             {p.description ? <span className="link-peek-desc">{p.description}</span> : null}
           </>
         ) : null}
+        {/* (many sites turn away fetching a page for a preview: say so, rather than look broken) */}
+        {!bgg && p === null ? (
+          <>
+            <span className="link-peek-site">{host(url)}</span>
+            <span className="link-peek-none">{t("This site doesn't give a preview.")}</span>
+          </>
+        ) : null}
+        {bgg && game === null ? <span className="link-peek-none">{t("BoardGameGeek didn't say more about it just now.")}</span> : null}
         <span className="link-peek-url">{shown(url)}</span>
         {bgg ? <span className="bgg-powered">{t("Powered by BGG")}</span> : null}
       </span>
