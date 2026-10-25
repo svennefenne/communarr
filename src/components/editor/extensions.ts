@@ -28,7 +28,8 @@ export const SiteImage = Image.extend({
 });
 
 export interface ExtensionOptions {
-  placeholder: string;
+  /** (a function: read each time it's drawn, so it can change) */
+  placeholder: string | (() => string);
   compact: boolean;
   limit?: number;
   /** Enter sends (chat); Shift+Enter makes a new line */
