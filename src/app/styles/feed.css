@@ -375,6 +375,11 @@ a.event-title:hover {
   font-size: 1rem;
   line-height: 1;
 }
+.react-emoji img.emoji-custom {
+  height: 1.25em;
+  margin: 0;
+  vertical-align: middle;
+}
 .react-add {
   display: inline-grid;
   place-items: center;

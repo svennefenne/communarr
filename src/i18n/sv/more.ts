@@ -204,6 +204,40 @@ const sv: Record<string, string> = {
   "Uploading…": "Laddar upp…",
   "Add a screenshot": "Lägg till en skärmbild",
   "Paste a screenshot (Ctrl+V), drop one here or add one: up to {n}.": "Klistra in en skärmbild (Ctrl+V), släpp en här eller lägg till en: högst {n}.",
+
+  // the site's own emoji
+  "A name is 2 to 32 letters (a–z), digits or _.": "Ett namn är 2 till 32 bokstäver (a–z), siffror eller _.",
+  "There's already an emoji called :{name}:.": "Det finns redan en emoji som heter :{name}:.",
+  "Only moderators can add emoji.": "Bara moderatorer kan lägga till emoji.",
+  "This site has {n} emoji already. Delete some first.": "Sajten har redan {n} emoji. Ta bort några först.",
+  "Pick a picture for it first.": "Välj en bild till den först.",
+  "That emoji is gone.": "Den emojin finns inte längre.",
+  "Only the one who added it, or a moderator, can do that.": "Bara den som lade till den, eller en moderator, kan göra det.",
+  "The emoji's name": "Emojins namn",
+  "Added :{name}:": ":{name}: är tillagd",
+  "Add an emoji": "Lägg till en emoji",
+  "Written :{name}: in posts, comments and chat.": "Skrivs :{name}: i inlägg, kommentarer och chatten.",
+  "Like this": "Så här",
+  "in a sentence,": "i en mening,",
+  "A GIF or animated WebP stays animated. It's made at most 128 pixels; square pictures with a see-through background look best.":
+    "En GIF eller animerad WebP förblir animerad. Den görs högst 128 pixlar; kvadratiska bilder med genomskinlig bakgrund blir bäst.",
+  "{n} emoji": "{n} emoji",
+  "None yet. Add the first: a picture and a name, and everyone can use it.": "Inga än. Lägg till den första: en bild och ett namn, så kan alla använda den.",
+  "None yet.": "Inga än.",
+  "Added by {name}": "Tillagd av {name}",
+  "Added by someone who left": "Tillagd av någon som har gått",
+  Animated: "Animerad",
+  "Rename :{name}:": "Byt namn på :{name}:",
+  Rename: "Byt namn",
+  "Delete :{name}:": "Ta bort :{name}:",
+  "Delete :{name}:? It goes from the picker and from reactions; where someone wrote it, it stays.":
+    "Ta bort :{name}:? Den försvinner från väljaren och från reaktioner; där någon har skrivit den finns den kvar.",
+  "The site's emoji": "Sajtens emoji",
+  "The site's own": "Sajtens egna",
+  "None of the site's own yet. Add one: a picture and a name, and a GIF stays animated.": "Inga egna än. Lägg till en: en bild och ett namn, och en GIF förblir animerad.",
+  "None of the site's own yet.": "Inga egna än.",
+  "The site's own, that members add": "Sajtens egna, som medlemmarna lägger till",
+  "Who can add emoji": "Vem kan lägga till emoji",
 };
 
 export default sv;

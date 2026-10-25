@@ -257,6 +257,17 @@ export function FeatureSettings({ s }: { s: SiteSettings }) {
             </div>
           </div>
         ))}
+        <div className="setting-row">
+          <span className="grow">{t("Who can add emoji")}</span>
+          <div className="pills">
+            <button type="button" className={`pill ${can.emojis === "members" ? "active" : ""}`} onClick={() => setCan({ ...can, emojis: "members" })}>
+              {t("Everyone")}
+            </button>
+            <button type="button" className={`pill ${can.emojis === "mods" ? "active" : ""}`} onClick={() => setCan({ ...can, emojis: "mods" })}>
+              {t("Moderators")}
+            </button>
+          </div>
+        </div>
       </div>
       <label className="row">
         <span className="grow">{t("Biggest picture upload")}</span>

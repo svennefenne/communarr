@@ -55,8 +55,9 @@ export function RichText({
       router.push(`/u/${encodeURIComponent(mention.dataset.id!)}`);
       return;
     }
-    if (t.tagName === "IMG" && !t.closest("a")) {
-      const imgs = [...(ref.current?.querySelectorAll("img") ?? [])];
+    // (the site's own emoji are text, not pictures to open)
+    if (t.tagName === "IMG" && !t.closest("a") && !t.classList.contains("emoji-custom")) {
+      const imgs = [...(ref.current?.querySelectorAll<HTMLImageElement>("img:not(.emoji-custom)") ?? [])];
       openLightbox(
         imgs.map((i) => ({ src: i.getAttribute("src") || "", alt: i.alt })),
         imgs.indexOf(t as HTMLImageElement),
