@@ -260,21 +260,40 @@ html.app-page:not([data-frame="on"]) .site-footer {
 .msg-body .prose > :last-child {
   margin-bottom: 0;
 }
-/* a message's link previews: smaller cards */
-.msg-body .link-previews {
+/* a message's link previews (and while it's edited): smaller cards */
+.msg-body .link-previews,
+.msg-edit .link-previews {
   gap: 6px;
   margin: 6px 0 2px;
 }
-.msg-body .link-card {
+.msg-body .link-card,
+.msg-edit .link-card,
+.chat-foot .link-card {
   max-width: 440px;
   gap: 10px;
   padding: 8px;
 }
-.msg-body .link-card-pic {
+.msg-body .link-card-pic,
+.msg-edit .link-card-pic {
   width: 110px;
 }
-.msg-body .link-card.pic-only img {
+.msg-body .link-card.pic-only img,
+.msg-edit .link-card.pic-only img {
   max-height: 300px;
+}
+/* above the message being written: smaller still, so the box stays near the conversation */
+.chat-foot > .link-previews {
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.chat-foot .link-card-pic {
+  width: 84px;
+}
+.chat-foot .link-card-desc {
+  -webkit-line-clamp: 1;
+}
+.chat-foot .link-card.pic-only img {
+  max-height: 120px;
 }
 .msg-edited {
   margin-left: 4px;

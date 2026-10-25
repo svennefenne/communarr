@@ -100,6 +100,7 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
               initial={m.html}
               autoFocus
               enterSends
+              previews
               onSubmit={async () => {
                 if (await h.onEdit(m, ed.current?.getHTML() ?? "")) setEditing(false);
               }}
