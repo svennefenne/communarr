@@ -300,7 +300,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         if (!local.current) await openMic();
         // a click starts the call: the audio may play now (iPhone)
         void actx.current?.resume();
-        setMuted(false);
+        // (moving to another room keeps the microphone as it was: say so)
+        setMuted(!(local.current?.getAudioTracks()[0]?.enabled ?? true));
         setRoomName(name);
         await enter(r);
       } catch (e) {
@@ -344,22 +345,41 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("pagehide", bye);
   }, []);
 
+  const setMic = useCallback((on: boolean) => {
+    const t = local.current?.getAudioTracks()[0];
+    if (!t || t.enabled === on) return;
+    t.enabled = on;
+    setMuted(!on);
+    if (roomRef.current != null) void post({ action: "mute", room: roomRef.current, conn: connRef.current, muted: !on }).catch(() => {});
+  }, []);
+
+  const setDeaf = useCallback((deaf: boolean) => {
+    deafRef.current = deaf;
+    setDeafened(deaf);
+    for (const a of audios.current.values()) a.muted = deaf;
+  }, []);
+
+  // like Discord: deafened means muted too, hearing again puts the microphone back as it was, and
+  // unmuting while deafened hears again as well
+  const micBeforeDeaf = useRef(true);
+
   const toggleMute = useCallback(() => {
     const t = local.current?.getAudioTracks()[0];
     if (!t) return;
-    t.enabled = !t.enabled;
-    setMuted(!t.enabled);
-    if (roomRef.current != null) void post({ action: "mute", room: roomRef.current, conn: connRef.current, muted: !t.enabled }).catch(() => {});
-  }, []);
+    if (!t.enabled && deafRef.current) setDeaf(false);
+    setMic(!t.enabled);
+  }, [setMic, setDeaf]);
 
   const toggleDeafen = useCallback(() => {
-    deafRef.current = !deafRef.current;
-    setDeafened(deafRef.current);
-    for (const a of audios.current.values()) a.muted = deafRef.current;
-    // deafened means muted too
-    const t = local.current?.getAudioTracks()[0];
-    if (t && deafRef.current && t.enabled) toggleMute();
-  }, [toggleMute]);
+    if (!deafRef.current) {
+      micBeforeDeaf.current = local.current?.getAudioTracks()[0]?.enabled ?? true;
+      setDeaf(true);
+      setMic(false);
+    } else {
+      setDeaf(false);
+      if (micBeforeDeaf.current) setMic(true);
+    }
+  }, [setMic, setDeaf]);
 
   /**
    * New voice settings: kept on this device, and in a call they apply at once (a new kind of noise
