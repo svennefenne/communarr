@@ -133,9 +133,9 @@ The project used to be called Hooden. A site set up back then carries on as it i
 texts and colour scheme (they're saved in its database), its database file (`hooden.db`), everyone's
 log-ins, installed apps, push notifications and calendar feeds.
 
-- **The image** is now `ghcr.io/svennefenne/communarr`. `ghcr.io/svennefenne/hooden` gets the same
-  updates for a while, so nothing breaks; change the `image:` line in your `docker-compose.yml` to the
-  new name when it suits you, then `docker compose pull && docker compose up -d`.
+- **The image** is now `ghcr.io/svennefenne/communarr`. The old `ghcr.io/svennefenne/hooden` stopped
+  getting updates on 25 October 2026 (it stays at that version): change the `image:` line in your
+  `docker-compose.yml` to the new name, then `docker compose pull && docker compose up -d`.
 - **Your `.env`** keeps working: `HOODEN_DATA`, `HOODEN_PORT` and `HOODEN_DOMAIN` are read when the
   `COMMUNARR_` ones aren't set.
 - **If you swap in the new `docker-compose.yml`** instead of editing yours, the service is now called

@@ -40,10 +40,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v6
         with:
-          # the second name is the one sites set up as Hooden pull: published too until they've switched
-          images: |
-            ghcr.io/${{ github.repository_owner }}/communarr
-            ghcr.io/${{ github.repository_owner }}/hooden
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
