@@ -86,16 +86,20 @@ const sv: Record<string, string> = {
   Uploaded: "Uppladdade",
   "Volume for: {what}": "Volym för: {what}",
   Listen: "Lyssna",
-  "Never for what you do yourself. Everyone can turn sounds off for themselves in their menu; voice chat isn't affected.":
-    "Aldrig för det du själv gör. Alla kan stänga av ljuden för sig själva i sin meny; röstchatten påverkas inte.",
+  "For what others do, and for muting and deafening yourself in voice chat. Everyone can turn sounds off for themselves in their menu; voice chat isn't affected.":
+    "För det andra gör, och när du stänger av mikrofonen eller ljudet i röstchatten. Alla kan stänga av ljuden för sig själva i sin meny; röstchatten påverkas inte.",
   "Sounds ({n})": "Ljud ({n})",
-  "A sound when someone comes online, joins your voice chat, or posts. Voice chat itself isn't affected.":
-    "Ett ljud när någon kommer online, går med i din röstchatt eller skriver något. Själva röstchatten påverkas inte.",
+  "A sound when someone comes online, joins your voice chat, or posts, and when you mute or deafen yourself in a call. Voice chat itself isn't affected.":
+    "Ett ljud när någon kommer online, går med i din röstchatt eller skriver något, och när du stänger av mikrofonen eller ljudet i ett samtal. Själva röstchatten påverkas inte.",
   "That sound is too big ({n} MB at most).": "Det ljudet är för stort (högst {n} MB).",
   "That isn't a sound file we can play (MP3, OGG, WAV, FLAC, M4A or WebM).": "Det är ingen ljudfil vi kan spela (MP3, OGG, WAV, FLAC, M4A eller WebM).",
   "Someone comes online": "Någon kommer online",
   "Someone joins the voice chat you're in": "Någon går med i röstchatten du är i",
   "Someone leaves the voice chat you're in": "Någon lämnar röstchatten du är i",
+  "You mute yourself in voice chat": "Du stänger av mikrofonen i röstchatten",
+  "You unmute yourself": "Du slår på mikrofonen igen",
+  "You deafen yourself (hear nothing)": "Du stänger av ljudet (hör ingenting)",
+  "You hear again (undeafen)": "Du hör igen (slår på ljudet)",
   "A new post (posts, news, forum threads)": "Ett nytt inlägg (inlägg, nyheter, forumtrådar)",
   "A chat message in one of your rooms": "Ett chattmeddelande i något av dina rum",
   "A new event": "Ett nytt evenemang",
@@ -107,6 +111,8 @@ const sv: Record<string, string> = {
   Knock: "Knack",
   Rising: "Stigande",
   Falling: "Fallande",
+  "Mic off": "Mikrofon av",
+  "Mic on": "Mikrofon på",
 
   // ── voice settings ──
   "For this device. The same settings are behind the gear in a call.": "För den här enheten. Samma inställningar finns bakom kugghjulet i ett samtal.",
