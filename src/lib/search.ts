@@ -153,6 +153,7 @@ export function search(userId: number, q: string, opts: { kinds?: SearchKind[]; 
 export function plain(html: string): string {
   return html
     .replace(/<(br|\/p|\/h\d|\/li|\/blockquote|\/tr|\/td|\/th|\/pre|hr)[^>]*>/gi, "\n")
+    .replace(/<img[^>]*data-emoji="([^"]*)"[^>]*>/gi, ":$1:")
     .replace(/<img[^>]*alt="([^"]*)"[^>]*>/gi, " $1 ")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")

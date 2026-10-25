@@ -7,6 +7,7 @@ import type { User } from "./users";
 import { summary } from "./users";
 import { vapidPublicKey } from "./push";
 import { withDefaults } from "./sounds";
+import { listEmojis } from "./emojis";
 
 export function me(u: User): Me {
   // (the groups they're in: a sound for a group's new post only plays for its members)
@@ -26,7 +27,8 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     tagline: defaultTextIn("tagline", s.tagline, lang ?? s.language),
     footer: defaultTextIn("footer", s.footer, lang ?? s.language),
     features: s.features,
-    can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod },
+    can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod, emojis: may(s.canCreate.emojis) },
+    emojis: u ? listEmojis() : [],
     allowCustomThemes: s.allowCustomThemes,
     vapidKey: u ? vapidPublicKey() : null,
     maxUploadMb: s.maxUploadMb,

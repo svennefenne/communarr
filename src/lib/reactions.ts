@@ -1,6 +1,7 @@
 import "server-only";
 import { db, now, tx } from "./db";
 import type { Reaction } from "./types";
+import { emojiExists } from "./emojis";
 
 export type ReactTarget = "post" | "comment" | "message" | "thread" | "reply" | "poll" | "event";
 
@@ -28,8 +29,10 @@ export function reactionsFor(type: ReactTarget, ids: number[], me: number): Map<
  * one takes its place. Returns the thing's reactions afterwards.
  */
 export function toggleReaction(userId: number, type: ReactTarget, id: number, emoji: string): { added: boolean; reactions: Reaction[] } {
-  const e = [...emoji].slice(0, 8).join("");
-  if (!e.trim()) return { added: false, reactions: reactionsFor(type, [id], userId).get(id) ?? [] };
+  // one of the site's own emoji (":name:", while it's there), or an emoji
+  const custom = /^:([a-z0-9_]{2,32}):$/.exec(emoji);
+  const e = custom ? emoji : [...emoji].slice(0, 8).join("");
+  if (!e.trim() || (custom && !emojiExists(custom[1]))) return { added: false, reactions: reactionsFor(type, [id], userId).get(id) ?? [] };
   const exists = db().prepare("select 1 from reactions where target_type = ? and target_id = ? and user_id = ? and emoji = ?").get(type, id, userId, e);
   tx(() => {
     db().prepare("delete from reactions where target_type = ? and target_id = ? and user_id = ?").run(type, id, userId);

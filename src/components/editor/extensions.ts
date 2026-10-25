@@ -12,6 +12,7 @@ import Mention from "@tiptap/extension-mention";
 import { CharacterCount, Placeholder } from "@tiptap/extensions";
 import type { Extensions } from "@tiptap/core";
 import { mentionSuggestion } from "./mention";
+import { CustomEmoji, EmojiSuggest } from "./emoji";
 
 /** Pictures can be resized by their corner and set left, centre or right. */
 export const SiteImage = Image.extend({
@@ -67,6 +68,8 @@ export function buildExtensions(o: ExtensionOptions): Extensions {
       renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id}`,
       renderHTML: ({ options, node }) => ["span", { ...options.HTMLAttributes, "data-type": "mention", "data-id": node.attrs.id, "data-label": node.attrs.label }, `@${node.attrs.label ?? node.attrs.id}`],
     }),
+    CustomEmoji,
+    EmojiSuggest,
     Placeholder.configure({ placeholder: o.placeholder }),
     CharacterCount.configure({ limit: o.limit }),
   ];
