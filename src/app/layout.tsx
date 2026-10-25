@@ -28,6 +28,7 @@ import { VoiceDock } from "@/components/voice/VoiceDock";
 import { SiteSounds } from "@/components/app/SiteSounds";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { Lightbox } from "@/components/content/Lightbox";
+import { LinkPeekHost } from "@/components/content/LinkPeek";
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = getSettings();
@@ -100,6 +101,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <BottomNav />
                 <VoiceDock />
                 {user ? <SiteSounds /> : null}
+                {user ? <LinkPeekHost /> : null}
                 <SearchOverlay />
                 <Lightbox />
               </VoiceProvider>
