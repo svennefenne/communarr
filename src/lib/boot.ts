@@ -29,6 +29,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     features: s.features,
     can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod, emojis: may(s.canCreate.emojis) },
     emojis: u ? listEmojis() : [],
+    emojiLibrary: s.emojiLibrary,
     allowCustomThemes: s.allowCustomThemes,
     vapidKey: u ? vapidPublicKey() : null,
     maxUploadMb: s.maxUploadMb,

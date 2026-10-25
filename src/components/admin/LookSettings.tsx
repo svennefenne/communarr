@@ -221,6 +221,7 @@ export function FeatureSettings({ s }: { s: SiteSettings }) {
   const { save, pending } = useSave();
   const [f, setF] = useState(s.features);
   const [can, setCan] = useState(s.canCreate);
+  const [lib, setLib] = useState(s.emojiLibrary);
   const [maxUp, setMaxUp] = useState(s.maxUploadMb);
   return (
     <div className="stack loose">
@@ -268,12 +269,19 @@ export function FeatureSettings({ s }: { s: SiteSettings }) {
             </button>
           </div>
         </div>
+        <div className="setting-row">
+          <span className="grow">
+            <b>{t("Google's animated emoji")}</b>
+            <span className="small muted">{t("Animated emoji to pick from when adding one (Noto Emoji by Google, CC BY 4.0). The site keeps its own copy of each one picked.")}</span>
+          </span>
+          <Switch on={lib} onChange={setLib} label={t("Google's animated emoji")} />
+        </div>
       </div>
       <label className="row">
         <span className="grow">{t("Biggest picture upload")}</span>
         <input type="number" className="input sm" style={{ width: 90 }} min={1} max={200} value={maxUp} onChange={(e) => setMaxUp(Number(e.target.value))} /> MB
       </label>
-      <SaveBar pending={pending} onSave={() => save({ features: f, canCreate: can, maxUploadMb: maxUp })} />
+      <SaveBar pending={pending} onSave={() => save({ features: f, canCreate: can, emojiLibrary: lib, maxUploadMb: maxUp })} />
     </div>
   );
 }

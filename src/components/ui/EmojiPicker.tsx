@@ -4,45 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Search, Settings2, Sparkles, X } from "lucide-react";
 import { useSite, useT } from "@/components/app/AppProvider";
-import type { Lang } from "@/lib/i18n";
-import { customName, useEmojis } from "@/components/emoji/Emojis";
+import { customName, NOTO_LICENSE, NOTO_PAGE, useEmojis } from "@/components/emoji/Emojis";
 import { AddEmojiDialog, EmojiManagerDialog } from "@/components/emoji/EmojiDialogs";
+import { GROUPS, loadEmoji, loadedEmoji, SITE, type Emoji } from "./emojiData";
 
-type Emoji = [string, string, number, string];
-
-/** the site's own emoji (custom: those pickers only) */
-const SITE = -2;
-
-const GROUPS: { id: number; icon: string; label: string }[] = [
-  { id: -1, icon: "🕘", label: "Recent" },
-  { id: SITE, icon: "", label: "The site's own" },
-  { id: 0, icon: "😀", label: "Smileys" },
-  { id: 1, icon: "👋", label: "People" },
-  { id: 3, icon: "🐻", label: "Animals & nature" },
-  { id: 4, icon: "🍔", label: "Food & drink" },
-  { id: 5, icon: "✈️", label: "Travel & places" },
-  { id: 6, icon: "⚽", label: "Activities" },
-  { id: 7, icon: "💡", label: "Objects" },
-  { id: 8, icon: "❤️", label: "Symbols" },
-  { id: 9, icon: "🏁", label: "Flags" },
-];
+export { loadEmoji, loadedEmoji } from "./emojiData";
 
 export const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🎉", "🔥", "👀"];
-
-// names and search words in the reader's language (scripts/emoji.mjs)
-const cache = new Map<Lang, Emoji[]>();
-export async function loadEmoji(lang: Lang): Promise<Emoji[]> {
-  let list = cache.get(lang);
-  if (!list) {
-    list = ((lang === "sv" ? await import("@/lib/emoji.sv.json") : await import("@/lib/emoji.json")).default as unknown) as Emoji[];
-    cache.set(lang, list);
-  }
-  return list;
-}
-/** the list if it's here already (the editor's :name: can't wait for it) */
-export function loadedEmoji(lang: Lang): Emoji[] | null {
-  return cache.get(lang) ?? null;
-}
 
 const RECENT_KEY = "hd.recentEmoji";
 function recent(): string[] {
@@ -68,7 +36,7 @@ export function EmojiPanel({ onPick, onClose, autoFocus = true, custom = false }
   const t = useT();
   const site = useSite();
   const { list: own, byName } = useEmojis();
-  const [all, setAll] = useState<Emoji[] | null>(() => cache.get(t.lang) ?? null);
+  const [all, setAll] = useState<Emoji[] | null>(() => loadedEmoji(t.lang));
   const [q, setQ] = useState("");
   const [picked, setGroup] = useState(() => (typeof window !== "undefined" && recent().length ? -1 : 0));
   const [recents, setRecents] = useState<string[]>([]);
@@ -155,6 +123,20 @@ export function EmojiPanel({ onPick, onClose, autoFocus = true, custom = false }
               </button>
             ) : null}
             {!own.length ? <div className="muted small emoji-none">{site.can.emojis ? t("None of the site's own yet. Add one: a picture and a name, and a GIF stays animated.") : t("None of the site's own yet.")}</div> : null}
+            {/* (Google's are CC BY 4.0: said where they're shown) */}
+            {own.some((e) => e.noto) ? (
+              <div className="muted tiny emoji-none">
+                {t("Some are")}{" "}
+                <a href={NOTO_PAGE} target="_blank" rel="noopener noreferrer">
+                  {t("Google's Noto Emoji")}
+                </a>{" "}
+                (
+                <a href={NOTO_LICENSE} target="_blank" rel="noopener noreferrer">
+                  CC BY 4.0
+                </a>
+                ).
+              </div>
+            ) : null}
           </>
         ) : (
           <>
