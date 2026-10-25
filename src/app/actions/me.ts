@@ -31,10 +31,7 @@ export async function setPrefsAction(patch: Partial<ThemePrefs>) {
   if (patch.custom === null) next.custom = null;
   else if (typeof patch.custom === "number") {
     const t = themeFor(patch.custom, u.id);
-    if (t) {
-      next.custom = t.id;
-      if (!t.mine) db().prepare("update themes set uses = uses + 1 where id = ?").run(t.id);
-    }
+    if (t) next.custom = t.id;
   }
   db().prepare("update users set theme_json = ? where id = ?").run(JSON.stringify(next), u.id);
   revalidatePath("/", "layout");
