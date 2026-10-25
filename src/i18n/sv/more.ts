@@ -250,6 +250,41 @@ const sv: Record<string, string> = {
   "Google's animated emoji": "Googles animerade emoji",
   "Animated emoji to pick from when adding one (Noto Emoji by Google, CC BY 4.0). The site keeps its own copy of each one picked.":
     "Animerade emoji att välja bland när man lägger till en (Noto Emoji av Google, CC BY 4.0). Sajten sparar en egen kopia av varje som väljs.",
+
+  // board games from BoardGameGeek (bgg:)
+  "Board games on BoardGameGeek": "Brädspel på BoardGameGeek",
+  "Looking on BoardGameGeek…": "Letar på BoardGameGeek…",
+  "BoardGameGeek didn't accept the site's token.": "BoardGameGeek godtog inte sajtens token.",
+  "BoardGameGeek isn't answering just now.": "BoardGameGeek svarar inte just nu.",
+  "No games by that name.": "Inga spel med det namnet.",
+  "Search BoardGameGeek for “{q}”": "Sök på BoardGameGeek efter ”{q}”",
+  "A board game from BoardGameGeek": "Ett brädspel från BoardGameGeek",
+  "bgg: and its name": "bgg: och dess namn",
+  "{n} player": "{n} spelare",
+  "{n} players": "{n} spelare",
+  "{n} min": "{n} min",
+  "Weight {n} / 5": "Tyngd {n} / 5",
+  "How heavy it is to learn and play, 1–5": "Hur tungt det är att lära sig och spela, 1–5",
+  "{n} rating": "{n} betyg",
+  "{n} ratings": "{n} betyg",
+  "Board game rank on BoardGameGeek": "Placering bland brädspel på BoardGameGeek",
+  "Age {n}+": "Från {n} år",
+  "Board games with bgg:": "Brädspel med bgg:",
+  "Typing bgg: and a game's name in what you write suggests games from BoardGameGeek and links the one picked; resting the pointer on it shows its players, time and rating.":
+    "Skriver man bgg: och ett spels namn föreslås spel från BoardGameGeek och det man väljer länkas; håller man pekaren över det syns antal spelare, speltid och betyg.",
+  "Token removed.": "Token borttagen.",
+  "Token saved: BoardGameGeek accepted it.": "Token sparad: BoardGameGeek godtog den.",
+  "Token saved. BoardGameGeek didn't answer just now to try it.": "Token sparad. BoardGameGeek svarade inte just nu, så den kunde inte provas.",
+  "A token is saved: games are suggested and shown.": "En token är sparad: spel föreslås och visas.",
+  "No token yet: bgg: links to a search on BoardGameGeek instead.": "Ingen token än: bgg: länkar till en sökning på BoardGameGeek i stället.",
+  "Paste a new token": "Klistra in en ny token",
+  "Paste the token": "Klistra in din token",
+  "BoardGameGeek token": "Token för BoardGameGeek",
+  "Save token": "Spara token",
+  "Get one by registering the site as an application on BoardGameGeek (free when it isn't commercial):":
+    "Du får en genom att registrera sajten som en applikation på BoardGameGeek (gratis när den inte är kommersiell):",
+  "That doesn't look like a token.": "Det där ser inte ut som en token.",
+  "BoardGameGeek didn't accept that token.": "BoardGameGeek godtog inte den token.",
 };
 
 export default sv;

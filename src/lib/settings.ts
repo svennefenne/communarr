@@ -45,6 +45,8 @@ export interface SiteSettings {
   canCreate: { groups: "members" | "mods"; rooms: "members" | "mods"; events: "members" | "mods"; polls: "members" | "mods"; emojis: "members" | "mods" };
   /** Google's animated emoji (Noto, CC BY 4.0) to pick from when adding one of the site's own */
   emojiLibrary: boolean;
+  /** bgg: in the editor links board games on BoardGameGeek (its token is kept apart: lib/bgg.ts) */
+  bggLinks: boolean;
   maxUploadMb: number;
   voice: { ice: IceServer[]; max: number };
   /** the time zone for reminders and calendar feeds, e.g. Europe/Stockholm */
@@ -86,6 +88,7 @@ export const DEFAULTS: SiteSettings = {
   features: { forum: true, polls: true, calendar: true, groups: true, chat: true, voice: true, news: true },
   canCreate: { groups: "members", rooms: "members", events: "members", polls: "members", emojis: "members" },
   emojiLibrary: true,
+  bggLinks: true,
   maxUploadMb: 20,
   voice: { ice: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }], max: 10 },
   timezone: process.env.TZ || "Europe/Stockholm",

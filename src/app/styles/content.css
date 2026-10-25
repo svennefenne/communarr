@@ -244,6 +244,25 @@ img.emoji-custom,
 .prose .mention.me {
   background: rgb(var(--accent-2-rgb) / 0.25);
 }
+/* a board game (bgg:), a link to it on BoardGameGeek */
+.prose a.bgg-game {
+  display: inline-block;
+  padding: 0 0.35em 0 0.25em;
+  border-radius: 6px;
+  background: rgb(var(--accent-2-rgb) / 0.14);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+.prose a.bgg-game::before {
+  content: "🎲";
+  margin-right: 0.2em;
+  font-size: 0.9em;
+  font-weight: 400;
+}
+.prose a.bgg-game:hover {
+  background: rgb(var(--accent-2-rgb) / 0.26);
+}
 .prose sub,
 .prose sup {
   font-size: 0.75em;
@@ -728,6 +747,69 @@ html[data-density="compact"] .prose {
   background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
   background-size: 200% 100%;
   animation: shimmer 1.1s linear infinite;
+}
+/* a board game's card: its box, and what BoardGameGeek says about it */
+.bgg-peek .link-peek-pic {
+  max-height: 200px;
+  object-fit: contain;
+  background: var(--surface-3);
+}
+.bgg-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+.bgg-facts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.bgg-facts svg {
+  color: var(--muted);
+}
+.bgg-powered {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* bgg: in the editor: the games found */
+.bgg-list {
+  width: 340px;
+  max-width: calc(100vw - 16px);
+}
+.bgg-item {
+  gap: 10px;
+}
+.bgg-thumb {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.bgg-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+}
+.bgg-list .bgg-powered {
+  display: block;
+  padding: 6px 10px 4px;
+  text-align: right;
+  text-decoration: none;
+}
+.bgg-list .bgg-powered:hover {
+  color: var(--accent-2);
 }
 
 /* screenshots with feedback: small tiles in the dialog (with a remove button), bigger in Admin → Feedback */

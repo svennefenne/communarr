@@ -70,6 +70,29 @@ export interface Reaction {
   users: string[];
 }
 
+/** A board game on BoardGameGeek (bgg: in the editor). */
+export interface BggGame {
+  id: number;
+  name: string;
+  year: number | null;
+  /** BGG's pictures (their image server) */
+  thumb: string | null;
+  image: string | null;
+  players: [number, number] | null;
+  /** playing time in minutes, from–to */
+  time: [number, number] | null;
+  age: number | null;
+  /** complexity, 1–5 */
+  weight: number | null;
+  /** average rating, 1–10 */
+  rating: number | null;
+  usersRated: number;
+  rank: number | null;
+}
+
+/** bgg: in the editor: off, a link to a search on BGG (no token yet), or games suggested and shown */
+export type BggMode = "off" | "search" | "full";
+
 /** One of the site's own emoji: written :name:, shown as its picture. */
 export interface CustomEmoji {
   name: string;
