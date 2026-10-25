@@ -620,3 +620,57 @@ html[data-density="compact"] .prose {
     width: 100%;
   }
 }
+
+/* screenshots with feedback: small tiles in the dialog (with a remove button), bigger in Admin → Feedback */
+.fb-shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fb-shot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--field);
+  color: var(--muted);
+}
+.fb-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fb-shot.add {
+  border-style: dashed;
+  border-color: var(--line-strong);
+  cursor: pointer;
+}
+.fb-shot.add:hover {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+.fb-shot-x {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  cursor: pointer;
+}
+.fb-shots.big .fb-shot {
+  width: 132px;
+  height: 92px;
+  cursor: zoom-in;
+}

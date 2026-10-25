@@ -9,6 +9,7 @@ import { useT, useToast } from "@/components/app/AppProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { Empty, useConfirm } from "@/components/ui/ui";
+import { openLightbox } from "@/components/content/RichText";
 import { deleteFeedbackAction, feedbackDoneAction } from "@/app/actions/admin";
 
 /** Admin → Feedback: what members sent from the user menu, open ones first. */
@@ -50,7 +51,22 @@ export function Feedback({ items }: { items: FeedbackView[] }) {
             ) : null}
             {f.done ? <span className="badge">{f.doneBy ? t("handled by {name}", { name: f.doneBy.name }) : t("Handled")}</span> : null}
           </div>
-          <p style={{ margin: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.body}</p>
+          {f.body ? <p style={{ margin: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{f.body}</p> : null}
+          {f.images.length ? (
+            <div className="fb-shots big">
+              {f.images.map((img, i) => (
+                <button
+                  key={img.url}
+                  type="button"
+                  className="fb-shot"
+                  onClick={() => openLightbox(f.images.map((x, n) => ({ src: x.url, alt: t("Screenshot {n}", { n: n + 1 }) })), i)}
+                  aria-label={t("Screenshot {n}", { n: i + 1 })}
+                >
+                  <img src={img.thumb ?? img.url} alt="" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="row wrap" style={{ gap: 6 }}>
             <button type="button" className="btn btn-sm" disabled={pending} onClick={() => run(() => feedbackDoneAction(f.id, !f.done))}>
               {f.done ? <RotateCcw size={14} /> : <Check size={14} />} {f.done ? t("Open again") : t("Mark as handled")}
