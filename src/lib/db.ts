@@ -477,6 +477,16 @@ const MIGRATIONS: string[] = [
       and (r2.created_at > reactions.created_at or (r2.created_at = reactions.created_at and r2.rowid > reactions.rowid))
   );
   `,
+  /* 11: the site's own emoji (Discord style): a name for :name: and a small picture, animated or not */ `
+  create table emojis (
+    id integer primary key,
+    name text not null unique collate nocase,
+    url text not null,
+    animated integer not null default 0,
+    user_id integer references users(id) on delete set null,
+    created_at integer not null
+  );
+  `,
 ];
 
 function open(): Database.Database {

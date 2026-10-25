@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { PopButton } from "@/components/ui/Popover";
 import { EmojiPopover } from "@/components/ui/EmojiPicker";
+import { insertEmoji } from "./emoji";
 import { CONTENT_FONTS, FONT_SIZES } from "@/lib/fontChoices";
 import { useT } from "@/components/app/AppProvider";
 
@@ -323,9 +324,8 @@ export function Toolbar({
       {emoji ? (
         <EmojiPopover
           anchor={emojiBtn.current}
-          onPick={(e) => {
-            editor.chain().focus().insertContent(e).run();
-          }}
+          custom
+          onPick={(e) => insertEmoji(editor, e)}
           onClose={() => setEmoji(false)}
         />
       ) : null}

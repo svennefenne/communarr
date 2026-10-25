@@ -8,6 +8,7 @@ import { Popover } from "@/components/ui/Popover";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { reactAction } from "@/app/actions/content";
 import type { ReactTarget } from "@/lib/reactions";
+import { Emoji } from "@/components/emoji/Emojis";
 
 /** Apply a reaction locally right away (the server's answer replaces it). */
 export function applyReaction(list: Reaction[], emoji: string, myName: string): Reaction[] {
@@ -48,7 +49,9 @@ export function Reactions({ type, id, initial, myName, onReact, small = false, r
     <div className={`reactions ${small ? "small" : ""}`}>
       {list.map((r) => (
         <button key={r.emoji} type="button" className={`react-chip ${r.mine ? "mine" : ""}`} onClick={() => toggle(r.emoji)} title={r.count > r.users.length ? t("{names} and {n} more", { names: r.users.join(", "), n: r.count - r.users.length }) : r.users.join(", ")}>
-          <span className="react-emoji">{r.emoji}</span>
+          <span className="react-emoji">
+            <Emoji e={r.emoji} />
+          </span>
           <span className="react-n">{r.count}</span>
         </button>
       ))}
@@ -87,6 +90,7 @@ export function Reactions({ type, id, initial, myName, onReact, small = false, r
       {full ? (
         <EmojiPopover
           anchor={btn.current}
+          custom
           onPick={(e) => {
             setFull(false);
             void toggle(e);

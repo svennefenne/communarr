@@ -70,7 +70,7 @@ const MentionList = forwardRef<ListHandle, SuggestionProps<Item>>(function Menti
   );
 });
 
-function place(el: HTMLElement, rect: DOMRect | null | undefined) {
+export function place(el: HTMLElement, rect: DOMRect | null | undefined) {
   if (!rect) return;
   const w = el.offsetWidth || 260;
   const h = el.offsetHeight || 200;

@@ -11,6 +11,7 @@ import { Dropdown, Modal } from "@/components/ui/ui";
 import { EmojiPopover, QUICK_REACTIONS } from "@/components/ui/EmojiPicker";
 import { RichText } from "@/components/content/RichText";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
+import { Emoji, onlyEmoji } from "@/components/emoji/Emojis";
 
 /** the reactions chat suggests: the usual ones without 😂 (the picker still has every emoji) */
 const CHAT_REACTIONS = QUICK_REACTIONS.filter((e) => e !== "😂");
@@ -124,7 +125,7 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
           </div>
         ) : (
           <div className="msg-body">
-            <RichText html={m.html} />
+            <RichText html={m.html} className={onlyEmoji(m.html) ? "jumbo" : ""} />
             {m.editedAt ? <span className="tiny faint msg-edited">{t("(edited)")}</span> : null}
           </div>
         )}
@@ -132,7 +133,9 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
           <div className="reactions small msg-reacts">
             {m.reactions.map((r) => (
               <button key={r.emoji} type="button" className={`react-chip ${r.mine ? "mine" : ""}`} onClick={() => h.onReact(m, r.emoji)} title={r.users.join(", ")}>
-                <span className="react-emoji">{r.emoji}</span>
+                <span className="react-emoji">
+                  <Emoji e={r.emoji} />
+                </span>
                 <span className="react-n">{r.count}</span>
               </button>
             ))}
@@ -174,6 +177,7 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
       {picker ? (
         <EmojiPopover
           anchor={reactBtn.current}
+          custom
           onPick={(e) => {
             setPicker(false);
             h.onReact(m, e);
