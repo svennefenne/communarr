@@ -34,9 +34,9 @@ export function publicIp(ip: string): boolean {
   return fam === 4 ? !blocked.check(ip, "ipv4") : fam === 6 ? !blocked.check(ip, "ipv6") : false;
 }
 
-// tests on a computer: "host:port"s in HOODEN_DEV_FETCH_ALLOW may be fetched (a local test server);
-// never in production
-const devAllow = new Set(process.env.NODE_ENV === "production" ? [] : (process.env.HOODEN_DEV_FETCH_ALLOW ?? "").split(",").map((s) => s.trim()).filter(Boolean));
+// tests on a computer: "host:port"s in COMMUNARR_DEV_FETCH_ALLOW (or HOODEN_DEV_FETCH_ALLOW) may be
+// fetched (a local test server); never in production
+const devAllow = new Set(process.env.NODE_ENV === "production" ? [] : (process.env.COMMUNARR_DEV_FETCH_ALLOW ?? process.env.HOODEN_DEV_FETCH_ALLOW ?? "").split(",").map((s) => s.trim()).filter(Boolean));
 const hostPort = (u: URL) => `${u.hostname}:${u.port || (u.protocol === "https:" ? "443" : "80")}`;
 
 type LookupCb = (err: NodeJS.ErrnoException | null, address?: string | dns.LookupAddress[], family?: number) => void;
@@ -123,7 +123,7 @@ function once(url: URL, o: FetchOptions, deadline: number): Promise<Fetched | { 
       agent: false,
       lookup: devAllow.has(hostPort(url)) ? undefined : (guardedLookup as unknown as net.LookupFunction),
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; HoodenBot/1.0; +https://github.com/svennefenne/hooden)",
+        "User-Agent": "Mozilla/5.0 (compatible; CommunarrBot/1.0; +https://github.com/svennefenne/communarr)",
         Accept: o.accept,
         "Accept-Language": o.lang ?? "en",
         "Accept-Encoding": "gzip, deflate, br",

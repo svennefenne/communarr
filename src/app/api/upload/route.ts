@@ -8,7 +8,7 @@ import { baseUrl } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
 
-const KINDS: UploadKind[] = ["image", "avatar", "banner", "cover", "background"];
+const KINDS: UploadKind[] = ["image", "avatar", "banner", "cover", "background", "logo"];
 
 // a few uploads at once per member, so a phone dropping 30 photos doesn't swamp the NUC
 const g = globalThis as typeof globalThis & { __hdUploads?: Map<number, number> };
@@ -25,10 +25,12 @@ export async function POST(req: Request) {
     const fd = await req.formData().catch(() => null);
     const file = fd?.get("file");
     const link = fd?.get("url");
+    const kind = (KINDS.includes(String(fd?.get("kind")) as UploadKind) ? String(fd?.get("kind")) : "image") as UploadKind;
+    if (kind === "background" && !user.isAdmin && !getSettings().allowCustomThemes) return Response.json({ error: t("Custom backgrounds are switched off.") }, { status: 403 });
+    // the site's logo (Admin → Name & texts)
+    if (kind === "logo" && !user.isAdmin) return Response.json({ error: t("Only admins can do that.") }, { status: 403 });
     // a picture's link instead of a file: fetched and kept like an upload ("only": a page stays a link)
     if (typeof link === "string" && link.trim()) {
-      const kind = (KINDS.includes(String(fd?.get("kind")) as UploadKind) ? String(fd?.get("kind")) : "image") as UploadKind;
-      if (kind === "background" && !user.isAdmin && !getSettings().allowCustomThemes) return Response.json({ error: t("Custom backgrounds are switched off.") }, { status: 403 });
       const out = await importImage(user.id, link, kind, { origin: await baseUrl(), onlyImage: fd?.get("only") === "1" });
       return Response.json(out ?? { notImage: true });
     }
@@ -40,8 +42,6 @@ export async function POST(req: Request) {
       if (!user.isAdmin) return Response.json({ error: t("Only admins can do that.") }, { status: 403 });
       return Response.json(saveSound(user.id, Buffer.from(await file.arrayBuffer()), file.name));
     }
-    const kind = (KINDS.includes(String(fd?.get("kind")) as UploadKind) ? String(fd?.get("kind")) : "image") as UploadKind;
-    if (kind === "background" && !user.isAdmin && !getSettings().allowCustomThemes) return Response.json({ error: t("Custom backgrounds are switched off.") }, { status: 403 });
     const out = await saveUpload(user.id, Buffer.from(await file.arrayBuffer()), kind, file.name);
     return Response.json(out);
   } catch (e) {

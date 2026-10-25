@@ -1,4 +1,4 @@
-// Hooden's microphone gate for voice chat, in the browser's audio thread (so it keeps working when
+// The microphone gate for voice chat, in the browser's audio thread (so it keeps working when
 // the tab is in the background). What goes out to the call opens when you're louder than the
 // sensitivity (threshold, in dB) and stays open a moment after (so words don't get clipped), or,
 // with push to talk, only while the key is held (force: 1 open, -1 shut, 0 by loudness). It tells
@@ -8,7 +8,7 @@ const HOLD_SECONDS = 0.35;
 const ATTACK_SECONDS = 0.005;
 const RELEASE_SECONDS = 0.05;
 
-class HoodenGate extends AudioWorkletProcessor {
+class CommunarrGate extends AudioWorkletProcessor {
   static get parameterDescriptors() {
     return [
       { name: "threshold", defaultValue: -100, minValue: -100, maxValue: 0, automationRate: "k-rate" },
@@ -74,4 +74,4 @@ class HoodenGate extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("hooden-gate", HoodenGate);
+registerProcessor("communarr-gate", CommunarrGate);

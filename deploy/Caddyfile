@@ -1,7 +1,7 @@
-# HTTPS for Hooden (docker compose --profile https). Caddy gets the certificate by itself.
-{$HOODEN_DOMAIN} {
+# HTTPS for Communarr (docker compose --profile https). Caddy gets the certificate by itself.
+{$COMMUNARR_DOMAIN} {
 	encode zstd gzip
-	reverse_proxy hooden:3000 {
+	reverse_proxy communarr:3000 {
 		# live updates (chat, notifications, voice) are a stream: pass it on at once
 		flush_interval -1
 	}

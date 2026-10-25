@@ -4,13 +4,15 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * The one SQLite database (DATA_DIR/hooden.db). Every timestamp is milliseconds since the epoch (UTC).
+ * The one SQLite database (DATA_DIR/communarr.db). Every timestamp is milliseconds since the epoch (UTC).
  * Migrations run in order on first use; each is applied once and recorded in meta.schema_version.
  */
 
 // (turbopackIgnore: a folder of the running server's, nothing to bundle)
 export const DATA_DIR = path.resolve(/*turbopackIgnore: true*/ process.env.DATA_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), ".data"));
 export const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
+// a site set up while the project was called Hooden keeps its hooden.db (nothing is moved)
+export const DB_FILE = fs.existsSync(path.join(/*turbopackIgnore: true*/ DATA_DIR, "hooden.db")) ? "hooden.db" : "communarr.db";
 
 const MIGRATIONS: string[] = [
   /* 1: everything */ `
@@ -456,12 +458,21 @@ const MIGRATIONS: string[] = [
     fetched_at integer not null
   );
   `,
+  /* 8: the project is called Communarr now, and that's the default name. A site set up before (it has
+        members) that never saved a name or footer of its own keeps the ones it had */ `
+  insert into settings (key, value)
+    select 'siteName', '"Hooden"'
+    where exists (select 1 from users) and not exists (select 1 from settings where key = 'siteName');
+  insert into settings (key, value)
+    select 'footer', case when (select value from settings where key = 'language') = '"sv"' then '"HOODEN · ETT STÄLLE FÖR VÄNNER"' else '"HOODEN · A PLACE FOR FRIENDS"' end
+    where exists (select 1 from users) and not exists (select 1 from settings where key = 'footer');
+  `,
 ];
 
 function open(): Database.Database {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  const db = new Database(path.join(DATA_DIR, "hooden.db"));
+  const db = new Database(path.join(DATA_DIR, DB_FILE));
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
@@ -481,11 +492,11 @@ function open(): Database.Database {
 }
 
 // one connection per process, kept across hot reloads and across Next's separately bundled routes
-const g = globalThis as typeof globalThis & { __hoodenDb?: Database.Database };
+const g = globalThis as typeof globalThis & { __communarrDb?: Database.Database };
 
 export function db(): Database.Database {
-  if (!g.__hoodenDb) g.__hoodenDb = open();
-  return g.__hoodenDb;
+  if (!g.__communarrDb) g.__communarrDb = open();
+  return g.__communarrDb;
 }
 
 export const now = () => Date.now();

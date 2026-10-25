@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
 <Container version="2">
-  <Name>Hooden</Name>
-  <Repository>ghcr.io/svennefenne/hooden:latest</Repository>
-  <Registry>https://github.com/svennefenne/hooden/pkgs/container/hooden</Registry>
+  <Name>Communarr</Name>
+  <Repository>ghcr.io/svennefenne/communarr:latest</Repository>
+  <Registry>https://github.com/svennefenne/communarr/pkgs/container/communarr</Registry>
   <Network>bridge</Network>
   <Shell>bash</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/svennefenne/hooden/issues</Support>
-  <Project>https://github.com/svennefenne/hooden</Project>
-  <Overview>Hooden: a closed community place for you and your friends. A front page with everyone's posts and news, a forum, chat rooms (open or private) with voice chat in every room, a calendar with RSVPs and reminders, polls, groups, site-wide search, push notifications on phones, and 98 colour schemes plus your own themes with your own backgrounds. Invite-only; everything lives in one folder (appdata).</Overview>
+  <Support>https://github.com/svennefenne/communarr/issues</Support>
+  <Project>https://github.com/svennefenne/communarr</Project>
+  <Overview>Communarr: a closed community place for you and your friends. A front page with everyone's posts and news, a forum, chat rooms (open or private) with voice chat in every room, a calendar with RSVPs and reminders, polls, groups, site-wide search, push notifications on phones, and 98 colour schemes plus your own themes with your own backgrounds. Invite-only; everything lives in one folder (appdata).</Overview>
   <Category>Social: Network:Messenger Network:Voip</Category>
   <WebUI>http://[IP]:[PORT:3000]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/svennefenne/hooden/main/unraid/hooden.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/svennefenne/hooden/main/unraid/hooden.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/svennefenne/communarr/main/unraid/communarr.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/svennefenne/communarr/main/unraid/communarr.png</Icon>
   <ExtraParams>--restart unless-stopped</ExtraParams>
   <Config Name="Web UI port" Target="3000" Default="3000" Mode="tcp" Description="Port of the website. Put your reverse proxy (SWAG, Nginx Proxy Manager, Cloudflare Tunnel...) in front of it: phones need HTTPS for push notifications and voice chat." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
-  <Config Name="Appdata" Target="/data" Default="/mnt/user/appdata/hooden" Mode="rw" Description="The database, uploaded pictures and backups. Back this up (the Appdata Backup plugin does)." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/hooden</Config>
-  <Config Name="Public URL" Target="PUBLIC_URL" Default="" Mode="" Description="The address your friends use, e.g. https://hooden.example.com. Used for invite links and calendar feeds behind a proxy." Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="Appdata" Target="/data" Default="/mnt/user/appdata/communarr" Mode="rw" Description="The database, uploaded pictures and backups. Back this up (the Appdata Backup plugin does)." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/communarr</Config>
+  <Config Name="Public URL" Target="PUBLIC_URL" Default="" Mode="" Description="The address your friends use, e.g. https://communarr.example.com. Used for invite links and calendar feeds behind a proxy." Type="Variable" Display="always" Required="false" Mask="false"/>
   <Config Name="Time zone" Target="TZ" Default="Europe/Stockholm" Mode="" Description="For event reminders, birthdays and calendar files." Type="Variable" Display="always" Required="false" Mask="false">Europe/Stockholm</Config>
   <Config Name="TURN server" Target="VOICE_TURN_URL" Default="" Mode="" Description="Optional: a TURN server for voice chat (e.g. turn:turn.example.com:3478), so phones on mobile data can talk too. Can also be set under Admin → Notifications &amp; voice." Type="Variable" Display="advanced" Required="false" Mask="false"/>
   <Config Name="TURN username" Target="VOICE_TURN_USER" Default="" Mode="" Description="The TURN server's username." Type="Variable" Display="advanced" Required="false" Mask="false"/>
@@ -27,7 +27,7 @@
   <Config Name="SMTP username" Target="SMTP_USER" Default="" Mode="" Description="The mail server's username (empty: no log-in)." Type="Variable" Display="advanced" Required="false" Mask="false"/>
   <Config Name="SMTP password" Target="SMTP_PASS" Default="" Mode="" Description="The mail server's password (Gmail: an app password)." Type="Variable" Display="advanced" Required="false" Mask="true"/>
   <Config Name="Mail sender" Target="SMTP_FROM" Default="" Mode="" Description="The address mails come from, e.g. noreply@example.com." Type="Variable" Display="advanced" Required="false" Mask="false"/>
-  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User id Hooden runs as (99 = nobody on Unraid)." Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User id Communarr runs as (99 = nobody on Unraid)." Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
   <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group id (100 = users on Unraid)." Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
-  <Config Name="UMASK" Target="UMASK" Default="002" Mode="" Description="File permission mask for files Hooden creates." Type="Variable" Display="advanced" Required="false" Mask="false">002</Config>
+  <Config Name="UMASK" Target="UMASK" Default="002" Mode="" Description="File permission mask for files Communarr creates." Type="Variable" Display="advanced" Required="false" Mask="false">002</Config>
 </Container>

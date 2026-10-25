@@ -3,7 +3,7 @@ import type { T } from "./i18n";
 import type { Mail } from "./mail";
 
 /**
- * The mails Hooden sends, in the site's look: dark, the six stripes of the logo across the top, one
+ * The mails the site sends, in the site's look: dark, the six stripes of the logo across the top, one
  * big button. Plain HTML tables with inline styles (what mail programs understand), and a text
  * version for the ones that show no HTML. Written in the reader's language.
  */

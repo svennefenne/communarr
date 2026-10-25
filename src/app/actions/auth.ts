@@ -23,8 +23,8 @@ const str = (fd: FormData, k: string) => String(fd.get(k) ?? "");
 function safeNext(next: string) {
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || next.startsWith("/login")) return "/";
   try {
-    const u = new URL(next, "http://hooden.invalid");
-    return u.origin === "http://hooden.invalid" ? u.pathname + u.search + u.hash : "/";
+    const u = new URL(next, "http://communarr.invalid");
+    return u.origin === "http://communarr.invalid" ? u.pathname + u.search + u.hash : "/";
   } catch {
     return "/";
   }

@@ -139,6 +139,7 @@ export async function saveSettingsAction(patch: Partial<SiteSettings>) {
     if (clean.defaultRoom !== undefined && !(Number.isInteger(clean.defaultRoom) && clean.defaultRoom >= -1)) delete clean.defaultRoom;
     if (clean.sounds !== undefined) clean.sounds = cleanSounds(clean.sounds);
     if (clean.siteName !== undefined) clean.siteName = cleanLine(clean.siteName, 40) || s.siteName;
+    if (clean.logo !== undefined && clean.logo !== "" && !/^\/media\/logo\/[\w./-]+$/.test(clean.logo)) delete clean.logo;
     if (clean.tagline !== undefined) clean.tagline = cleanLine(clean.tagline, 200);
     if (clean.welcome !== undefined) clean.welcome = cleanLine(clean.welcome, 400);
     if (clean.footer !== undefined) clean.footer = cleanLine(clean.footer, 120);

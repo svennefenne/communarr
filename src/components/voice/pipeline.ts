@@ -123,7 +123,7 @@ export async function openPipeline(prefs: VoicePrefs): Promise<Pipeline> {
           .catch(() => {});
       }
     }
-    const gate = new AudioWorkletNode(ctx, "hooden-gate", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+    const gate = new AudioWorkletNode(ctx, "communarr-gate", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
     const dest = ctx.createMediaStreamDestination();
     if (rn) src.connect(rn).connect(gate);
     else src.connect(gate);

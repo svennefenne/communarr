@@ -279,8 +279,8 @@ const sv: Record<string, string> = {
     "Bilderna ligger i {dir}: ta backup på hela datamappen (på Unraid: appdata-sharen) för att få med allt.",
   "What admins did": "Vad admins har gjort",
   "Nothing yet.": "Inget än.",
-  "Hooden {version} · Node {node} · up {h}h {m}m · memory {mem} · data {dir} · time zone {tz}":
-    "Hooden {version} · Node {node} · uppe {h} h {m} min · minne {mem} · data {dir} · tidszon {tz}",
+  "Communarr {version} · Node {node} · up {h}h {m}m · memory {mem} · data {dir} · time zone {tz}":
+    "Communarr {version} · Node {node} · uppe {h} h {m} min · minne {mem} · data {dir} · tidszon {tz}",
   "PUBLIC_URL not set": "PUBLIC_URL är inte satt",
 
   // the admin log: how the stored action names read (SystemSections.tsx looks up "audit: <action>")

@@ -98,7 +98,7 @@ const sv: Record<string, string> = {
   Normal: "Normal",
   Community: "Community",
   "System & backup": "System & backup",
-  Hooden: "Hooden",
+  Communarr: "Communarr",
 
   // errors
   "Something went wrong. Try again.": "Något gick fel. Försök igen.",

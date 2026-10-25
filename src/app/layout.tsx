@@ -12,6 +12,7 @@ import { getUser } from "@/lib/auth";
 import { boot } from "@/lib/boot";
 import { requestLang } from "@/lib/t";
 import { getSettings } from "@/lib/settings";
+import { siteIcons } from "@/lib/siteIcons";
 import { themeColor, themeCss } from "@/lib/theme";
 import { themeForUser } from "@/lib/themes";
 import { AppProvider } from "@/components/app/AppProvider";
@@ -29,11 +30,13 @@ import { Lightbox } from "@/components/content/Lightbox";
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = getSettings();
+  const ic = siteIcons();
   return {
     title: { default: s.siteName, template: `%s · ${s.siteName}` },
     description: s.tagline,
     applicationName: s.siteName,
-    icons: { icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192" }], apple: { url: "/icons/apple-touch-icon.png", sizes: "180x180" } },
+    // the stripes, or the admin's logo (Admin → Name & texts)
+    icons: { icon: [...(ic.svg ? [{ url: ic.svg, type: "image/svg+xml" }] : []), { url: ic.icon192, sizes: "192x192", type: "image/png" }], apple: { url: ic.apple, sizes: "180x180" } },
     // added to an iPhone's home screen it opens like an app (and can get push notifications)
     appleWebApp: { capable: true, title: s.siteName, statusBarStyle: "black-translucent" },
     formatDetection: { telephone: false },

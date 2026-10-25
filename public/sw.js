@@ -1,4 +1,4 @@
-/* Hooden's service worker: push notifications (shown even with the site closed), opening the right
+/* The service worker: push notifications (shown even with the site closed), opening the right
    page when one is tapped, and the number on the app icon. It doesn't cache pages: the site is live. */
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -9,12 +9,13 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "Hooden", body: event.data ? event.data.text() : "" };
+    data = { body: event.data ? event.data.text() : "" };
   }
-  const title = data.title || "Hooden";
+  // (every push names its site; one that doesn't shows the site's address)
+  const title = data.title || new URL(self.registration.scope).host;
   const options = {
     body: data.body || "",
-    icon: "/icons/icon-192.png",
+    icon: data.icon || "/icons/icon-192.png",
     badge: "/icons/badge-96.png",
     tag: data.tag || undefined,
     renotify: !!data.tag,

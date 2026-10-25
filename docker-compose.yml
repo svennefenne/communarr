@@ -1,7 +1,7 @@
-# Hooden on a home server (made for an Intel NUC; any amd64 Linux box with Docker works).
+# Communarr on a home server (made for an Intel NUC; any amd64 Linux box with Docker works).
 #
 #   cp .env.example .env      # then edit .env
-#   docker compose up -d                      # just Hooden, on http://<server>:3000
+#   docker compose up -d                      # just Communarr, on http://<server>:3000
 #   docker compose --profile https up -d      # + Caddy: automatic HTTPS for your domain
 #   docker compose --profile tunnel up -d     # + Cloudflare Tunnel: HTTPS without opening ports
 #   docker compose --profile turn up -d       # + coturn: voice chat for phones on mobile data
@@ -9,21 +9,23 @@
 # Profiles can be combined (--profile https --profile turn), or set once in .env with
 # COMPOSE_PROFILES=https,turn so a plain `docker compose up -d` uses them. Phones need HTTPS for push
 # notifications and voice chat, so use one of the two HTTPS profiles (or your own reverse proxy).
+# (An .env from when this was called Hooden keeps working: HOODEN_DATA, HOODEN_PORT and
+# HOODEN_DOMAIN are read when the COMMUNARR_ ones aren't set.)
 
 services:
-  hooden:
-    image: ghcr.io/svennefenne/hooden:latest
+  communarr:
+    image: ghcr.io/svennefenne/communarr:latest
     # build: .            # or build it here instead of pulling it
-    container_name: hooden
+    container_name: communarr
     restart: unless-stopped
     ports:
-      - "${HOODEN_PORT:-3000}:3000"
+      - "${COMMUNARR_PORT:-${HOODEN_PORT:-3000}}:3000"
     environment:
       TZ: ${TZ:-Europe/Stockholm}
       # who owns the files in ./data (1000:1000 is the first user on most Linux machines)
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
-      # the address people use, e.g. https://hooden.example.com (invite links, calendar feeds)
+      # the address people use, e.g. https://communarr.example.com (invite links, calendar feeds)
       PUBLIC_URL: ${PUBLIC_URL:-}
       # behind a Cloudflare Tunnel: cf-connecting-ip (slows down password guessing per visitor)
       TRUSTED_IP_HEADER: ${TRUSTED_IP_HEADER:-}
@@ -42,35 +44,35 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-}
     volumes:
       # the database, pictures and backups: back this folder up
-      - ${HOODEN_DATA:-./data}:/data
+      - ${COMMUNARR_DATA:-${HOODEN_DATA:-./data}}:/data
 
   # ── HTTPS with Caddy: point your domain's DNS at your home IP and forward ports 80 and 443 ──
   caddy:
     profiles: ["https"]
     image: caddy:2
-    container_name: hooden-caddy
+    container_name: communarr-caddy
     restart: unless-stopped
-    depends_on: [hooden]
+    depends_on: [communarr]
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     environment:
-      HOODEN_DOMAIN: ${HOODEN_DOMAIN:-}
+      COMMUNARR_DOMAIN: ${COMMUNARR_DOMAIN:-${HOODEN_DOMAIN:-}}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
 
   # ── HTTPS with a Cloudflare Tunnel: no open ports. Make a tunnel in the Cloudflare dashboard
-  #    (Zero Trust → Networks → Tunnels), add a public hostname pointing to http://hooden:3000,
+  #    (Zero Trust → Networks → Tunnels), add a public hostname pointing to http://communarr:3000,
   #    and put its token in .env ──
   cloudflared:
     profiles: ["tunnel"]
     image: cloudflare/cloudflared:latest
-    container_name: hooden-tunnel
+    container_name: communarr-tunnel
     restart: unless-stopped
-    depends_on: [hooden]
+    depends_on: [communarr]
     command: tunnel --no-autoupdate run
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
@@ -81,7 +83,7 @@ services:
   coturn:
     profiles: ["turn"]
     image: coturn/coturn:4.6
-    container_name: hooden-turn
+    container_name: communarr-turn
     restart: unless-stopped
     network_mode: host
     environment:
@@ -96,8 +98,8 @@ services:
       - --external-ip=$$(detect-external-ip)/${VOICE_TURN_LAN_IP:-}
       - --fingerprint
       - --lt-cred-mech
-      - --realm=hooden
-      - --user=${VOICE_TURN_USER:-hooden}:${VOICE_TURN_PASS:-change-me}
+      - --realm=communarr
+      - --user=${VOICE_TURN_USER:-communarr}:${VOICE_TURN_PASS:-change-me}
       - --min-port=49160
       - --max-port=49200
       # voice only needs UDP relays

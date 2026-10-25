@@ -15,11 +15,11 @@ import { saveUpload } from "@/lib/uploads";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/dev/seed: fills an empty site with friends and things to look at, for trying Hooden out.
- * Only with HOODEN_DEV_SEED=1 in the environment; never on a real site.
+ * POST /api/dev/seed: fills an empty site with friends and things to look at, for trying it out.
+ * Only with COMMUNARR_DEV_SEED=1 (or the older HOODEN_DEV_SEED=1) in the environment; never on a real site.
  */
 export async function POST() {
-  if (process.env.HOODEN_DEV_SEED !== "1") return new Response("Not here", { status: 404 });
+  if (process.env.COMMUNARR_DEV_SEED !== "1" && process.env.HOODEN_DEV_SEED !== "1") return new Response("Not here", { status: 404 });
   if (db().prepare("select count(*) n from users").get() && (db().prepare("select count(*) n from users").get() as { n: number }).n > 1) return Response.json({ ok: false, why: "already seeded" });
   const people: [string, string][] = [
     ["anna", "Anna Lind"],

@@ -425,8 +425,9 @@ function fold(line: string) {
 }
 
 export function icsFor(rows: EventRow[], name: string, baseUrl: string, t: T): string {
-  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Hooden//Calendar//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-CALNAME:${icsEsc(name)}`];
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Communarr//Calendar//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-CALNAME:${icsEsc(name)}`];
   for (const e of rows) {
+    // (the UID stays as it was: calendars that subscribe know each event by it)
     lines.push("BEGIN:VEVENT", `UID:hooden-event-${e.id}@hooden`, `DTSTAMP:${icsTime(e.edited_at ?? e.created_at)}`);
     if (e.all_day) {
       lines.push(`DTSTART;VALUE=DATE:${icsDate(e.start_at)}`, `DTEND;VALUE=DATE:${icsDate(e.end_at + 1)}`);
