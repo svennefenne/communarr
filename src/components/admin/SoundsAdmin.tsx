@@ -136,7 +136,7 @@ export function SoundsAdmin({ initial }: { initial: SoundSettings }) {
           })}
         </div>
         <p className="small muted" style={{ margin: 0 }}>
-          {t("Never for what you do yourself. Everyone can turn sounds off for themselves in their menu; voice chat isn't affected.")}
+          {t("For what others do, and for muting and deafening yourself in voice chat. Everyone can turn sounds off for themselves in their menu; voice chat isn't affected.")}
         </p>
       </div>
       <SaveBar pending={pending} onSave={() => save()} />
