@@ -1,5 +1,5 @@
 import "server-only";
-import { db, now } from "./db";
+import { db, now, tx } from "./db";
 import type { Reaction } from "./types";
 
 export type ReactTarget = "post" | "comment" | "message" | "thread" | "reply" | "poll" | "event";
@@ -23,17 +23,18 @@ export function reactionsFor(type: ReactTarget, ids: number[], me: number): Map<
   return out;
 }
 
-/** Add or take back a reaction. Returns the thing's reactions afterwards. */
+/**
+ * React to something: one reaction per person and thing. The one you have takes it back; another
+ * one takes its place. Returns the thing's reactions afterwards.
+ */
 export function toggleReaction(userId: number, type: ReactTarget, id: number, emoji: string): { added: boolean; reactions: Reaction[] } {
   const e = [...emoji].slice(0, 8).join("");
   if (!e.trim()) return { added: false, reactions: reactionsFor(type, [id], userId).get(id) ?? [] };
   const exists = db().prepare("select 1 from reactions where target_type = ? and target_id = ? and user_id = ? and emoji = ?").get(type, id, userId, e);
-  if (exists) db().prepare("delete from reactions where target_type = ? and target_id = ? and user_id = ? and emoji = ?").run(type, id, userId, e);
-  else {
-    // a dozen different reactions per person and thing is plenty
-    const n = (db().prepare("select count(*) n from reactions where target_type = ? and target_id = ? and user_id = ?").get(type, id, userId) as { n: number }).n;
-    if (n < 12) db().prepare("insert into reactions (target_type, target_id, user_id, emoji, created_at) values (?, ?, ?, ?, ?)").run(type, id, userId, e, now());
-  }
+  tx(() => {
+    db().prepare("delete from reactions where target_type = ? and target_id = ? and user_id = ?").run(type, id, userId);
+    if (!exists) db().prepare("insert into reactions (target_type, target_id, user_id, emoji, created_at) values (?, ?, ?, ?, ?)").run(type, id, userId, e, now());
+  });
   return { added: !exists, reactions: reactionsFor(type, [id], userId).get(id) ?? [] };
 }
 

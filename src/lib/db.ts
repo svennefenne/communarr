@@ -470,6 +470,13 @@ const MIGRATIONS: string[] = [
   /* 9: screenshots with feedback: the sender's uploads, as JSON [{ url, thumb }] */ `
   alter table feedback add column images text not null default '[]';
   `,
+  /* 10: one reaction per person and thing: where someone has several, their newest stays */ `
+  delete from reactions where exists (
+    select 1 from reactions r2
+    where r2.target_type = reactions.target_type and r2.target_id = reactions.target_id and r2.user_id = reactions.user_id
+      and (r2.created_at > reactions.created_at or (r2.created_at = reactions.created_at and r2.rowid > reactions.rowid))
+  );
+  `,
 ];
 
 function open(): Database.Database {
