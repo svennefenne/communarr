@@ -42,7 +42,7 @@ function subject() {
   const s = getSettings().pushContact.trim();
   if (/^(mailto:|https:\/\/)/.test(s)) return s;
   const pub = process.env.PUBLIC_URL || "";
-  return pub.startsWith("https://") ? pub : "https://github.com/svennefenne/hooden";
+  return pub.startsWith("https://") ? pub : "https://github.com/svennefenne/communarr";
 }
 
 export interface PushPayload {

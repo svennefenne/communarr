@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-import { db, DATA_DIR, now, tx, UPLOAD_DIR } from "./db";
+import { db, DATA_DIR, DB_FILE, now, tx, UPLOAD_DIR } from "./db";
 import { UserError } from "./errors";
 import { serverT } from "./t";
 import { audit, hashPassword, randomToken } from "./auth";
@@ -31,7 +31,7 @@ export interface AdminMember extends UserSummary {
 export function overview() {
   const n = (sql: string, ...p: unknown[]) => (db().prepare(sql).get(...p) as { n: number }).n;
   const week = now() - 7 * 86_400_000;
-  const dbSize = ["hooden.db", "hooden.db-wal"].reduce((s, f) => s + (fs.existsSync(path.join(DATA_DIR, f)) ? fs.statSync(path.join(DATA_DIR, f)).size : 0), 0);
+  const dbSize = [DB_FILE, `${DB_FILE}-wal`].reduce((s, f) => s + (fs.existsSync(path.join(DATA_DIR, f)) ? fs.statSync(path.join(DATA_DIR, f)).size : 0), 0);
   const up = db().prepare("select coalesce(sum(size), 0) n from uploads").get() as { n: number };
   return {
     members: n(`select count(*) n from users where banned = 0 and ${NOT_WAITING}`),
@@ -281,7 +281,7 @@ export async function backupFile(): Promise<string> {
   const dir = path.join(DATA_DIR, "backups");
   fs.mkdirSync(dir, { recursive: true });
   for (const f of fs.readdirSync(dir)) if (fs.statSync(path.join(dir, f)).mtimeMs < now() - 86_400_000) fs.rmSync(path.join(dir, f), { force: true });
-  const file = path.join(dir, `hooden-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.db`);
+  const file = path.join(dir, `communarr-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.db`);
   await db().backup(file);
   return file;
 }
@@ -289,7 +289,7 @@ export async function backupFile(): Promise<string> {
 export function system() {
   const mem = process.memoryUsage();
   return {
-    version: process.env.HOODEN_VERSION || "dev",
+    version: process.env.COMMUNARR_VERSION || process.env.HOODEN_VERSION || "dev",
     node: process.version,
     uptime: process.uptime(),
     rss: mem.rss,

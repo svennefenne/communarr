@@ -11,7 +11,7 @@ import { serverT } from "./t";
 /** What's wrong with a new account, as English text (translate it where it's shown: t(err)), or null. */
 export function validateNewUser(username: string, alias: string, password: string, password2?: string): string | null {
   if (!USERNAME_RE.test(username)) return "Usernames are 2–24 letters, numbers, dots, dashes or underscores.";
-  if (["admin", "system", "ghost", "me", "new", "settings", "hooden"].includes(username.toLowerCase()) && hasUsers()) return "That username is taken.";
+  if (["admin", "system", "ghost", "me", "new", "settings", "communarr", "hooden"].includes(username.toLowerCase()) && hasUsers()) return "That username is taken.";
   if (db().prepare("select 1 from users where username = ?").get(username)) return "That username is taken.";
   // (the alias is optional: without one, the username shows)
   if (alias.trim().length > 40) return "That alias is a bit long (40 letters at most).";

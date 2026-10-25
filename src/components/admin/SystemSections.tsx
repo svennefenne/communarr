@@ -331,7 +331,7 @@ export function SystemSection({ sys, storage, audit }: { sys: SystemInfo; storag
         </div>
       </div>
       <div className="small muted mono admin-sys">
-        {t("Hooden {version} · Node {node} · up {h}h {m}m · memory {mem} · data {dir} · time zone {tz}", { version: sys.version, node: sys.node, h, m: Math.floor((sys.uptime % 3600) / 60), mem: bytes(sys.rss), dir: sys.dataDir, tz: sys.tz })}
+        {t("Communarr {version} · Node {node} · up {h}h {m}m · memory {mem} · data {dir} · time zone {tz}", { version: sys.version, node: sys.node, h, m: Math.floor((sys.uptime % 3600) / 60), mem: bytes(sys.rss), dir: sys.dataDir, tz: sys.tz })}
         {sys.publicUrl ? ` · ${sys.publicUrl}` : ` · ${t("PUBLIC_URL not set")}`}
       </div>
     </div>

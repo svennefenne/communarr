@@ -34,5 +34,5 @@ export async function register() {
   };
   setTimeout(tick, 5_000);
   setInterval(tick, 60_000).unref?.();
-  console.log("[hooden] ready");
+  console.log("[communarr] ready");
 }

@@ -90,20 +90,77 @@ function NewAccountFields() {
   );
 }
 
-export function SetupForm() {
+/**
+ * The first start, in two steps: what the site is called (with how it'll look in the top left), then
+ * the admin account. One form: the name rides along in a hidden field.
+ */
+export function SetupForm({ defaultName }: { defaultName: string }) {
   const t = useT();
   const [state, action, pending] = useActionState(setupAction, {});
+  const [step, setStep] = useState<1 | 2>(1);
+  const [name, setName] = useState("");
+  const shown = name.trim() || defaultName;
   return (
     <form action={action} className="stack">
-      <div className="field">
-        <label htmlFor="siteName">{t("The site's name")}</label>
-        <input id="siteName" name="siteName" className="input" defaultValue="Hooden" maxLength={40} />
+      <input type="hidden" name="siteName" value={name.trim()} />
+      <ol className="setup-steps" aria-label={t("Step {n} of {total}", { n: step, total: 2 })}>
+        <li className={step === 1 ? "on" : "done"}>{t("The site")}</li>
+        <li className={step === 2 ? "on" : ""}>{t("Your account")}</li>
+      </ol>
+      <div className="stack" style={step === 1 ? undefined : { display: "none" }}>
+        <div className="field">
+          <label htmlFor="siteName">{t("What's the site called?")}</label>
+          <input
+            id="siteName"
+            className="input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              setStep(2);
+            }}
+            maxLength={40}
+            placeholder={defaultName}
+            autoFocus
+          />
+          <span className="hint">{t("It's shown in the top left corner, in the browser tab and as the app's name on phones. You can change it, and add your own logo, under Admin → Name & texts.")}</span>
+        </div>
+        <div className="setup-preview" aria-hidden>
+          <span className="tiny muted">{t("In the top left:")}</span>
+          <span className="brand">
+            <span className="brand-mark">
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="brand-text">
+              <span className="brand-name">{shown}</span>
+            </span>
+          </span>
+        </div>
+        <button type="button" className="btn btn-primary btn-block" onClick={() => setStep(2)}>
+          {t("Next")}
+        </button>
       </div>
-      <NewAccountFields />
-      <Messages state={state} />
-      <button type="submit" className={`btn btn-primary btn-block ${pending ? "loading" : ""}`}>
-        {t("Create the admin account")}
-      </button>
+      <div className="stack" style={step === 2 ? undefined : { display: "none" }}>
+        <p className="muted small" style={{ margin: 0 }}>
+          {t("This account runs the place: it invites friends, sets the look and keeps things tidy. You can make others admins later.")}
+        </p>
+        <NewAccountFields />
+        <Messages state={state} />
+        <div className="row" style={{ gap: 8 }}>
+          <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>
+            {t("Back")}
+          </button>
+          <button type="submit" className={`btn btn-primary grow ${pending ? "loading" : ""}`}>
+            {t("Create the admin account")}
+          </button>
+        </div>
+      </div>
     </form>
   );
 }

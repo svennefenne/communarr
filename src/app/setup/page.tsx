@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { hasAnyUser } from "@/lib/auth";
-import { hasSetting, setSettings } from "@/lib/settings";
+import { DEFAULTS, hasSetting, setSettings } from "@/lib/settings";
 import { LANGS, pickLang } from "@/lib/i18n";
 import { requestT } from "@/lib/t";
 import { setupLanguageAction } from "@/app/actions/language";
@@ -24,10 +24,10 @@ export default async function SetupPage() {
   return (
     <AuthShell
       toggle={false}
-      siteName="Hooden"
+      siteName={DEFAULTS.siteName}
       eyebrow={t("First start")}
-      title={t("Make yourself the admin")}
-      intro={t("This account runs the place: it invites friends, sets the look and keeps things tidy. You can make others admins later.")}
+      title={t("Set up your site")}
+      intro={t("Two quick steps: what the site is called, then your admin account.")}
     >
       <form action={setupLanguageAction} className="row wrap" style={{ gap: 6, marginBottom: 16 }} aria-label={t("Language")}>
         {LANGS.map((l) => (
@@ -36,7 +36,7 @@ export default async function SetupPage() {
           </button>
         ))}
       </form>
-      <SetupForm />
+      <SetupForm defaultName={DEFAULTS.siteName} />
     </AuthShell>
   );
 }

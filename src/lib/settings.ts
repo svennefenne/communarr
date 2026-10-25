@@ -63,10 +63,10 @@ export interface SiteSettings {
 
 export const DEFAULTS: SiteSettings = {
   language: "en",
-  siteName: "Hooden",
+  siteName: "Communarr",
   tagline: "A closed community space for friends to hang around, chat, discuss, plan and more.",
   welcome: "Welcome home. Log in to see what everyone's up to.",
-  footer: "HOODEN · A PLACE FOR FRIENDS",
+  footer: "COMMUNARR · A PLACE FOR FRIENDS",
   registration: "invite",
   approveNew: false,
   defaultScheme: "hooden",
@@ -97,7 +97,7 @@ const DEFAULT_TEXTS: Record<Exclude<Lang, "en">, Pick<SiteSettings, "tagline" | 
   sv: {
     tagline: "En sluten gemenskap där vänner kan hänga, chatta, diskutera, planera och mycket mer.",
     welcome: "Välkommen hem. Logga in och se vad alla håller på med.",
-    footer: "HOODEN · ETT STÄLLE FÖR VÄNNER",
+    footer: "COMMUNARR · ETT STÄLLE FÖR VÄNNER",
   },
 };
 

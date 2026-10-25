@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# Hooden: a closed community place for friends. One container: the Next.js server with SQLite,
+# Communarr: a closed community place for friends. One container: the Next.js server with SQLite,
 # live updates and voice signalling built in. Everything it keeps lives in /data.
 #
 # Build stages use the full node image (python3, make, g++ in case better-sqlite3 has to compile);
@@ -23,10 +23,10 @@ RUN npm run build
 
 # ───────────── 3. runtime ─────────────
 FROM ${NODE_RUN_IMAGE} AS run
-ARG HOODEN_VERSION=dev
-LABEL org.opencontainers.image.title="Hooden" \
+ARG COMMUNARR_VERSION=dev
+LABEL org.opencontainers.image.title="Communarr" \
       org.opencontainers.image.description="A closed community place for friends: feed, forum, chat with voice, calendar, polls, groups" \
-      org.opencontainers.image.source="https://github.com/svennefenne/hooden"
+      org.opencontainers.image.source="https://github.com/svennefenne/communarr"
 RUN apt-get update && apt-get install -y --no-install-recommends gosu tini tzdata ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -35,7 +35,7 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     DATA_DIR=/data \
-    HOODEN_VERSION=${HOODEN_VERSION} \
+    COMMUNARR_VERSION=${COMMUNARR_VERSION} \
     PUID=99 PGID=100 UMASK=002 \
     TZ=Europe/Stockholm
 COPY --from=build /app/.next/standalone ./

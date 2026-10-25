@@ -1,5 +1,5 @@
 /**
- * The 98 colour schemes: Hooden's own (the retro poster colours of Deck Force) plus the 97 dual
+ * The 98 colour schemes: Communarr's own (the retro poster colours of Deck Force) plus the 97 dual
  * light/dark palettes Muzix uses, from claude-desktop-extra (github.com/patrickjaja/claude-desktop-extra,
  * MIT; its community palettes come from github.com/noctalia-dev/community-palettes).
  * Shared by the server (the first paint) and the browser (live previews).
@@ -33,9 +33,10 @@ export interface Palette {
   light: Colors;
 }
 
-export const HOODEN: Palette = {
+// the project's own scheme (its slug and category stay "hooden": sites and members have that saved)
+export const COMMUNARR: Palette = {
   slug: "hooden",
-  name: "Hooden",
+  name: "Communarr",
   category: "hooden",
   dark: {
     bg: "#070b10",
@@ -65,17 +66,17 @@ export const HOODEN: Palette = {
   },
 };
 
-export const PALETTES: Palette[] = [HOODEN, ...(raw as Palette[])];
+export const PALETTES: Palette[] = [COMMUNARR, ...(raw as Palette[])];
 export const PALETTE_BY_SLUG = new Map(PALETTES.map((p) => [p.slug, p]));
 export const CATEGORY_LABEL: Record<PaletteCategory, string> = {
-  hooden: "Hooden",
+  hooden: "Communarr",
   builtin: "Classics",
   gaming: "Gaming",
   community: "Community",
 };
 
 export function palette(slug: string | null | undefined): Palette {
-  return (slug && PALETTE_BY_SLUG.get(slug)) || HOODEN;
+  return (slug && PALETTE_BY_SLUG.get(slug)) || COMMUNARR;
 }
 
 // ── colour maths ──

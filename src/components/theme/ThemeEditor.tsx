@@ -7,7 +7,7 @@ import { COLOR_KEYS, COLOR_LABEL, PALETTES, fullColors, isHex, type ColorKey, ty
 import { resolveTheme, themeFromScheme, type SiteLook, type ThemeData } from "@/lib/theme";
 import { BackdropPicker } from "./BackdropPicker";
 import { DISPLAY_FONTS, UI_FONTS } from "@/lib/fontChoices";
-import { useT, useToast } from "@/components/app/AppProvider";
+import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { ImagePick } from "@/components/ui/ImagePick";
 import { Switch } from "@/components/ui/ui";
 import { endPreview, previewTheme } from "./preview";
@@ -53,6 +53,7 @@ function ColorRow({ k, value, onChange }: { k: ColorKey; value: string; onChange
 /** Build a theme: colours for dark and light, fonts, corners, glass, frame, backdrop and a picture. The site previews it as you go. */
 export function ThemeEditor({ id, initial, name: initialName, shared: initialShared, site, textSize }: { id: number | null; initial: ThemeData; name: string; shared: boolean; site: SiteLook; textSize: number }) {
   const t = useT();
+  const siteName = useApp().site.name;
   const router = useRouter();
   const toast = useToast();
   const [data, setData] = useState<ThemeData>(initial);
@@ -228,7 +229,7 @@ export function ThemeEditor({ id, initial, name: initialName, shared: initialSha
             <div className="font-pick">
               {DISPLAY_FONTS.map((f) => (
                 <button key={f.id} type="button" className={`font-opt ${data.display === f.id ? "on" : ""}`} onClick={() => set("display", f.id)} style={{ fontFamily: f.css, fontStretch: f.wide ? "125%" : undefined }}>
-                  <span className="font-sample">Hooden</span>
+                  <span className="font-sample">{siteName}</span>
                   <span className="tiny muted" style={{ fontFamily: "var(--font-ui)" }}>
                     {t(f.label)}
                   </span>

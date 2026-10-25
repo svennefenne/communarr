@@ -1,7 +1,7 @@
 /* ───────────────────────────────────────────────────────────────
-   Hooden — the retro poster look of Deck Force, in any of 98 colour schemes.
+   Communarr — the retro poster look of Deck Force, in any of 98 colour schemes.
    Every colour comes from the theme's variables (lib/palettes.ts cssVars), which the server
-   writes into <head>; the defaults below are the Hooden scheme in the dark.
+   writes into <head>; the defaults below are the Communarr scheme in the dark.
    ─────────────────────────────────────────────────────────────── */
 
 :root {

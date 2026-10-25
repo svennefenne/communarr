@@ -14,7 +14,7 @@ import type { Extensions } from "@tiptap/core";
 import { mentionSuggestion } from "./mention";
 
 /** Pictures can be resized by their corner and set left, centre or right. */
-export const HoodenImage = Image.extend({
+export const SiteImage = Image.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -51,7 +51,7 @@ export function buildExtensions(o: ExtensionOptions): Extensions {
     TextStyleKit.configure({ lineHeight: false }),
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ["heading", "paragraph"] }),
-    HoodenImage.configure({
+    SiteImage.configure({
       inline: false,
       allowBase64: false,
       resize: { enabled: true, directions: ["bottom-right", "bottom-left", "top-right", "top-left"], minWidth: 60, minHeight: 40, alwaysPreserveAspectRatio: true },

@@ -1,8 +1,8 @@
-# Third-party work in Hooden
+# Third-party work in Communarr
 
 - **Colour schemes**: 97 of the 98 come from [claude-desktop-extra](https://github.com/patrickjaja/claude-desktop-extra)
   (MIT), whose community palettes come from [noctalia-dev/community-palettes](https://github.com/noctalia-dev/community-palettes),
-  by way of Muzix. The Hooden scheme is Deck Force's retro poster palette.
+  by way of Muzix. The Communarr scheme is Deck Force's retro poster palette.
 - **Emoji names and groups**: [emojibase-data](https://github.com/milesj/emojibase) (MIT).
 - **Editor**: [Tiptap](https://tiptap.dev) and [ProseMirror](https://prosemirror.net) (MIT).
 - **Icons**: [Lucide](https://lucide.dev) (ISC).
