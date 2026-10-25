@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/ui";
 import { SchemeTile } from "@/components/theme/SchemeTile";
 import { SaveBar } from "./Section";
 import { saveSettingsAction } from "@/app/actions/admin";
+import { setBggTokenAction } from "@/app/actions/bgg";
 
 function useSave() {
   const t = useT();
@@ -216,12 +217,13 @@ const FEATURES: [keyof SiteSettings["features"], string, string][] = [
   ["news", "News", "Admin news on the front page"],
 ];
 
-export function FeatureSettings({ s }: { s: SiteSettings }) {
+export function FeatureSettings({ s, bggToken }: { s: SiteSettings; bggToken: boolean }) {
   const t = useT();
   const { save, pending } = useSave();
   const [f, setF] = useState(s.features);
   const [can, setCan] = useState(s.canCreate);
   const [lib, setLib] = useState(s.emojiLibrary);
+  const [bgg, setBgg] = useState(s.bggLinks);
   const [maxUp, setMaxUp] = useState(s.maxUploadMb);
   return (
     <div className="stack loose">
@@ -277,11 +279,22 @@ export function FeatureSettings({ s }: { s: SiteSettings }) {
           <Switch on={lib} onChange={setLib} label={t("Google's animated emoji")} />
         </div>
       </div>
+      <div className="stack tight">
+        <span className="label">BoardGameGeek</span>
+        <div className="setting-row">
+          <span className="grow">
+            <b>{t("Board games with bgg:")}</b>
+            <span className="small muted">{t("Typing bgg: and a game's name in what you write suggests games from BoardGameGeek and links the one picked; resting the pointer on it shows its players, time and rating.")}</span>
+          </span>
+          <Switch on={bgg} onChange={setBgg} label={t("Board games with bgg:")} />
+        </div>
+        <BggTokenField has={bggToken} />
+      </div>
       <label className="row">
         <span className="grow">{t("Biggest picture upload")}</span>
         <input type="number" className="input sm" style={{ width: 90 }} min={1} max={200} value={maxUp} onChange={(e) => setMaxUp(Number(e.target.value))} /> MB
       </label>
-      <SaveBar pending={pending} onSave={() => save({ features: f, canCreate: can, emojiLibrary: lib, maxUploadMb: maxUp })} />
+      <SaveBar pending={pending} onSave={() => save({ features: f, canCreate: can, emojiLibrary: lib, bggLinks: bgg, maxUploadMb: maxUp })} />
     </div>
   );
 }
@@ -323,6 +336,58 @@ export function AnnouncementSettings({ s }: { s: SiteSettings }) {
         <textarea className="textarea" value={words} onChange={(e) => setWords(e.target.value)} style={{ minHeight: 90 }} />
         <SaveBar pending={pending} onSave={() => save({ wordFilter: words.split(/\n+/).map((w) => w.trim()).filter(Boolean) })} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * The site's BoardGameGeek token: it's never shown again once saved (only that there is one). Saving
+ * tries it on BGG first.
+ */
+function BggTokenField({ has }: { has: boolean }) {
+  const t = useT();
+  const toast = useToast();
+  const router = useRouter();
+  const [token, setToken] = useState("");
+  const [pending, start] = useTransition();
+  const send = (value: string) =>
+    start(async () => {
+      const r = await setBggTokenAction(value);
+      if (!r.ok) return toast(r.error, { kind: "err" });
+      setToken("");
+      toast(!value ? t("Token removed.") : r.data.checked ? t("Token saved: BoardGameGeek accepted it.") : t("Token saved. BoardGameGeek didn't answer just now to try it."));
+      router.refresh();
+    });
+  return (
+    <div className="setting-row bgg-token">
+      <span className="grow stack tight">
+        <span className="small">{has ? t("A token is saved: games are suggested and shown.") : t("No token yet: bgg: links to a search on BoardGameGeek instead.")}</span>
+        <span className="row wrap" style={{ gap: 6 }}>
+          <input
+            className="input sm grow"
+            type="password"
+            autoComplete="off"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder={has ? t("Paste a new token") : t("Paste the token")}
+            aria-label={t("BoardGameGeek token")}
+          />
+          <button type="button" className={`btn btn-sm btn-primary ${pending ? "loading" : ""}`} disabled={!token.trim() || pending} onClick={() => send(token)}>
+            {t("Save token")}
+          </button>
+          {has ? (
+            <button type="button" className="btn btn-sm btn-ghost" disabled={pending} onClick={() => send("")}>
+              {t("Remove")}
+            </button>
+          ) : null}
+        </span>
+        <span className="tiny muted">
+          {t("Get one by registering the site as an application on BoardGameGeek (free when it isn't commercial):")}{" "}
+          <a href="https://boardgamegeek.com/applications" target="_blank" rel="noopener noreferrer">
+            boardgamegeek.com/applications
+          </a>
+        </span>
+      </span>
     </div>
   );
 }

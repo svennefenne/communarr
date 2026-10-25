@@ -10,7 +10,7 @@ import { Toolbar } from "./Toolbar";
 import { ImageBubble, LinkBubble, LinkDialog, PictureDialog, TextBubble, VideoDialog } from "./Menus";
 import { mentionOpen } from "./mentionState";
 import { importImage, uploadFile, Modal } from "@/components/ui/ui";
-import { useT, useToast } from "@/components/app/AppProvider";
+import { useSite, useT, useToast } from "@/components/app/AppProvider";
 import { LinkPreviews } from "@/components/content/LinkPreviews";
 
 export interface EditorHandle {
@@ -69,6 +69,7 @@ const SHORTCUTS: [string, string][] = [
   ["Code", "`code` or ``` for a block"],
   ["Divider", "---"],
   ["Mention someone", "@ and a name"],
+  ["A board game from BoardGameGeek", "bgg: and its name"],
   ["Send / post", "Ctrl + Enter"],
 ];
 
@@ -108,6 +109,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
 ) {
   const compact = variant === "compact";
   const t = useT();
+  const bgg = useSite().bgg;
   const placeholder = placeholderProp ?? t("Write something…");
   // read when the placeholder is drawn: a new one (comments that turn out to be there) shows at once
   const placeholderRef = useRef(placeholder);
@@ -263,8 +265,8 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
         };
       },
     });
-    return [...buildExtensions({ placeholder: () => placeholderRef.current, compact, limit }), keys];
-  }, [compact, limit, enterSends]);
+    return [...buildExtensions({ placeholder: () => placeholderRef.current, compact, limit, bgg }), keys];
+  }, [compact, limit, enterSends, bgg]);
 
   const editor = useEditor({
     extensions,
@@ -460,7 +462,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
               {t("Everything is in the bar above the text. Select words for quick formatting, and drop, paste or pick pictures (then drag their corner to resize). These shortcuts work too:")}
             </p>
             <div className="list inset">
-              {SHORTCUTS.map(([a, b]) => (
+              {SHORTCUTS.filter(([a]) => bgg !== "off" || !a.includes("BoardGameGeek")).map(([a, b]) => (
                 <div key={a} className="list-row" style={{ padding: "8px 12px" }}>
                   <span className="grow">{t(a)}</span>
                   <span className="mono small muted">{t(b)}</span>
