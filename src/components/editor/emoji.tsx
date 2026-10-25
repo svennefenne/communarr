@@ -8,7 +8,7 @@ import Suggestion, { type SuggestionProps } from "@tiptap/suggestion";
 import { mentionOpen } from "./mentionState";
 import { place } from "./mention";
 import { customName, siteEmojis } from "@/components/emoji/Emojis";
-import { loadEmoji, loadedEmoji } from "@/components/ui/EmojiPicker";
+import { loadEmoji, loadedEmoji } from "@/components/ui/emojiData";
 import { clientT } from "@/lib/i18n";
 
 /**

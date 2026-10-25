@@ -487,6 +487,10 @@ const MIGRATIONS: string[] = [
     created_at integer not null
   );
   `,
+  /* 12: where an emoji's picture is from: '' someone's own, 'noto' Google's animated Noto Emoji (CC BY 4.0,
+         so the site says so) */ `
+  alter table emojis add column source text not null default '';
+  `,
 ];
 
 function open(): Database.Database {
