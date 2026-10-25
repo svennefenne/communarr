@@ -15,7 +15,7 @@ self.addEventListener("push", (event) => {
   const title = data.title || new URL(self.registration.scope).host;
   const options = {
     body: data.body || "",
-    icon: "/icons/icon-192.png",
+    icon: data.icon || "/icons/icon-192.png",
     badge: "/icons/badge-96.png",
     tag: data.tag || undefined,
     renotify: !!data.tag,

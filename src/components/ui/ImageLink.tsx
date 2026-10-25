@@ -5,7 +5,7 @@ import { Link2, LoaderCircle } from "lucide-react";
 import { importImage, Modal } from "./ui";
 import { useT } from "@/components/app/AppProvider";
 
-type Kind = "image" | "avatar" | "banner" | "background" | "cover";
+type Kind = "image" | "avatar" | "banner" | "background" | "cover" | "logo";
 
 /**
  * A picture from a link: paste where it is (a picture, or a page: then the page's own picture). The

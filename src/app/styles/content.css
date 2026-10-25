@@ -327,9 +327,12 @@ html[data-density="compact"] .prose {
 }
 .auth-brand .grow {
   min-width: 0;
+  container-type: inline-size;
 }
+/* the name on one line: its usual size, or as big as fits its space (a wide display letter is about
+   0.86 of the size across); only a very long one still breaks */
 .auth-site {
-  font-size: 2.2rem;
+  font-size: min(2.2rem, calc(100cqi / (0.86 * var(--n, 6))));
   overflow-wrap: anywhere;
 }
 /* the first start's two steps, and how the name will look in the top left */

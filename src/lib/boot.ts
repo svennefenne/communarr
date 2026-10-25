@@ -22,6 +22,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     lang: lang ?? s.language,
     texts: s.texts[lang ?? s.language] ?? {},
     name: s.siteName,
+    logo: s.logo || null,
     tagline: defaultTextIn("tagline", s.tagline, lang ?? s.language),
     footer: defaultTextIn("footer", s.footer, lang ?? s.language),
     features: s.features,

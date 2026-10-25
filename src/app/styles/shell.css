@@ -185,6 +185,20 @@ html[data-backdrop="plain"] .backdrop {
 .brand-mark i:nth-child(6) {
   background: var(--stripe-6);
 }
+/* the admin's own logo in place of the stripes: as tall, as wide as it is (up to a point) */
+.brand-logo {
+  flex: none;
+  display: block;
+  height: 36px;
+  width: auto;
+  max-width: 132px;
+  object-fit: contain;
+}
+.brand-logo.auth-mark {
+  width: auto;
+  height: 52px;
+  max-width: 160px;
+}
 .brand-text {
   display: flex;
   flex-direction: column;
@@ -389,6 +403,10 @@ html[data-backdrop="plain"] .backdrop {
   .brand-mark {
     width: 24px;
     height: 30px;
+  }
+  .brand-logo {
+    height: 30px;
+    max-width: 96px;
   }
   .brand-name {
     font-size: 1.3rem;
