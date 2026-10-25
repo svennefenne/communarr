@@ -37,6 +37,8 @@ export interface SiteInfo {
   can: { groups: boolean; rooms: boolean; events: boolean; polls: boolean; news: boolean; emojis: boolean };
   /** the site's own emoji (logged in only) */
   emojis: CustomEmoji[];
+  /** Google's animated emoji to pick from when adding one (Admin → Features & permissions) */
+  emojiLibrary: boolean;
   allowCustomThemes: boolean;
   vapidKey: string | null;
   maxUploadMb: number;

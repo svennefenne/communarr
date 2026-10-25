@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, LoaderCircle, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import type { CustomEmoji } from "@/lib/types";
 import { Modal, useConfirm } from "@/components/ui/ui";
 import { ImagePick } from "@/components/ui/ImagePick";
 import { useMe, useSite, useT, useToast } from "@/components/app/AppProvider";
 import { addEmojiAction, deleteEmojiAction, renameEmojiAction } from "@/app/actions/emojis";
-import { useEmojis } from "./Emojis";
+import { NOTO_LICENSE, NOTO_PAGE, useEmojis } from "./Emojis";
+import { NotoBrowser } from "./NotoBrowser";
 
 /** what can be typed for a name: "Party Parrot" → "party_parrot" */
 function typedName(s: string): string {
@@ -45,13 +46,22 @@ function NameInput({ value, onChange, onEnter, autoFocus }: { value: string; onC
   );
 }
 
-/** Add one of the site's own emoji: a picture (a GIF stays animated) and a name to write it with. */
+/**
+ * Add one of the site's own emoji: a picture (a GIF stays animated), or one of Google's animated
+ * emoji when the site offers them, and a name to write it with.
+ */
 export function AddEmojiDialog({ onClose, onAdded }: { onClose: () => void; onAdded?: (name: string) => void }) {
   const t = useT();
   const toast = useToast();
+  const site = useSite();
   const { byName, set } = useEmojis();
+  const [from, setFrom] = useState<"noto" | "own">(site.emojiLibrary ? "noto" : "own");
   const [url, setUrl] = useState<string | null>(null);
+  // the one picked from Google's (its codepoint), while it's the picture
+  const [noto, setNoto] = useState<string | null>(null);
   const [name, setName] = useState("");
+  // a name filled in from the one picked gives way to the next one picked, not to one they wrote
+  const autoName = useRef("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const taken = byName.has(name);
@@ -60,7 +70,7 @@ export function AddEmojiDialog({ onClose, onAdded }: { onClose: () => void; onAd
     if (!ready) return;
     setBusy(true);
     setErr("");
-    const r = await addEmojiAction(name, url);
+    const r = await addEmojiAction(name, url, !!noto);
     setBusy(false);
     if (!r.ok) return setErr(r.error);
     set(r.data);
@@ -84,7 +94,41 @@ export function AddEmojiDialog({ onClose, onAdded }: { onClose: () => void; onAd
       }
     >
       <div className="stack">
-        <ImagePick kind="emoji" shape="square" whole value={url} onChange={setUrl} label={t("Picture")} />
+        {site.emojiLibrary ? (
+          <div className="pills" role="tablist">
+            <button type="button" role="tab" aria-selected={from === "noto"} className={`pill ${from === "noto" ? "active" : ""}`} onClick={() => setFrom("noto")}>
+              {t("Animated emoji")}
+            </button>
+            <button type="button" role="tab" aria-selected={from === "own"} className={`pill ${from === "own" ? "active" : ""}`} onClick={() => setFrom("own")}>
+              {t("Your own picture")}
+            </button>
+          </div>
+        ) : null}
+        {from === "noto" && site.emojiLibrary ? (
+          <NotoBrowser
+            picked={noto}
+            onPick={(up) => {
+              setUrl(up.url);
+              setNoto(up.code);
+              if (!name || name === autoName.current) {
+                autoName.current = up.name;
+                setName(up.name);
+              }
+            }}
+          />
+        ) : (
+          <ImagePick
+            kind="emoji"
+            shape="square"
+            whole
+            value={url}
+            onChange={(v) => {
+              setUrl(v);
+              setNoto(null);
+            }}
+            label={t("Picture")}
+          />
+        )}
         <div className="field">
           <label>{t("Name")}</label>
           <NameInput value={name} onChange={setName} onEnter={() => void add()} />
@@ -104,9 +148,11 @@ export function AddEmojiDialog({ onClose, onAdded }: { onClose: () => void; onAd
             <img className="emoji-custom big" src={url} alt="" />
           </div>
         ) : null}
-        <p className="tiny muted" style={{ margin: 0 }}>
-          {t("A GIF or animated WebP stays animated. It's made at most 128 pixels; square pictures with a see-through background look best.")}
-        </p>
+        {from === "own" || !site.emojiLibrary ? (
+          <p className="tiny muted" style={{ margin: 0 }}>
+            {t("A GIF or animated WebP stays animated. It's made at most 128 pixels; square pictures with a see-through background look best.")}
+          </p>
+        ) : null}
         {err ? <div className="form-error">{err}</div> : null}
       </div>
     </Modal>
@@ -176,6 +222,19 @@ export function EmojiManager() {
                 <span className="tiny muted ellipsis">
                   {e.byName ? t("Added by {name}", { name: e.byName }) : t("Added by someone who left")}
                   {e.animated ? ` · ${t("Animated")}` : ""}
+                  {e.noto ? (
+                    <>
+                      {" · "}
+                      <a href={NOTO_PAGE} target="_blank" rel="noopener noreferrer">
+                        {t("Google's Noto Emoji")}
+                      </a>{" "}
+                      (
+                      <a href={NOTO_LICENSE} target="_blank" rel="noopener noreferrer">
+                        CC BY 4.0
+                      </a>
+                      )
+                    </>
+                  ) : null}
                 </span>
               </span>
             )}

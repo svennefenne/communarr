@@ -238,6 +238,18 @@ const sv: Record<string, string> = {
   "None of the site's own yet.": "Inga egna än.",
   "The site's own, that members add": "Sajtens egna, som medlemmarna lägger till",
   "Who can add emoji": "Vem kan lägga till emoji",
+
+  // Google's animated emoji (Noto)
+  "Animated emoji": "Animerade emoji",
+  "Your own picture": "Egen bild",
+  "Search Google's animated emoji": "Sök bland Googles animerade emoji",
+  "Google's animated Noto Emoji": "Googles animerade Noto Emoji",
+  "Tap one to see it move: the site keeps its own copy, emoji-sized.": "Tryck på en så ser du den röra sig: sajten sparar en egen kopia i emojistorlek.",
+  "Google's Noto Emoji": "Googles Noto Emoji",
+  "Some are": "Några är",
+  "Google's animated emoji": "Googles animerade emoji",
+  "Animated emoji to pick from when adding one (Noto Emoji by Google, CC BY 4.0). The site keeps its own copy of each one picked.":
+    "Animerade emoji att välja bland när man lägger till en (Noto Emoji av Google, CC BY 4.0). Sajten sparar en egen kopia av varje som väljs.",
 };
 
 export default sv;
