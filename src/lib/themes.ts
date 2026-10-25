@@ -13,10 +13,16 @@ export interface ThemeRow {
   name: string;
   data_json: string;
   shared: number;
+  /** (no longer kept: picks counted, never taken back. "using" is counted as it is) */
   uses: number;
   created_at: number;
   updated_at: number;
 }
+
+/** A theme with how many use it now: members (not its maker, not closed accounts) with it as theirs. */
+const SELECT = `select t.*, (select count(*) from users u where u.banned = 0 and u.id is not t.user_id and json_extract(u.theme_json, '$.custom') = t.id) in_use
+  from themes t`;
+type Row = ThemeRow & { in_use: number };
 
 export interface ThemeInfo {
   id: number;
@@ -29,31 +35,31 @@ export interface ThemeInfo {
   updatedAt: number;
 }
 
-function toInfo(r: ThemeRow, me: number | null, owners: Map<number, UserSummary>): ThemeInfo {
+function toInfo(r: Row, me: number | null, owners: Map<number, UserSummary>): ThemeInfo {
   let data: ThemeData;
   try {
     data = cleanTheme(JSON.parse(r.data_json));
   } catch {
     data = cleanTheme({});
   }
-  return { id: r.id, name: r.name, data, shared: !!r.shared, uses: r.uses, owner: r.user_id ? owners.get(r.user_id) ?? null : null, mine: r.user_id === me, updatedAt: r.updated_at };
+  return { id: r.id, name: r.name, data, shared: !!r.shared, uses: r.in_use, owner: r.user_id ? owners.get(r.user_id) ?? null : null, mine: r.user_id === me, updatedAt: r.updated_at };
 }
 
 /** A theme someone may use: their own, or one shared to the gallery. */
 export function themeFor(id: number, userId: number): ThemeInfo | null {
-  const r = db().prepare("select * from themes where id = ? and (user_id = ? or shared = 1)").get(id, userId) as ThemeRow | undefined;
+  const r = db().prepare(`${SELECT} where t.id = ? and (t.user_id = ? or t.shared = 1)`).get(id, userId) as Row | undefined;
   if (!r) return null;
   return toInfo(r, userId, summaries(r.user_id ? [r.user_id] : []));
 }
 
 export function myThemes(userId: number): ThemeInfo[] {
-  const rows = db().prepare("select * from themes where user_id = ? order by updated_at desc").all(userId) as ThemeRow[];
+  const rows = db().prepare(`${SELECT} where t.user_id = ? order by t.updated_at desc`).all(userId) as Row[];
   const owners = summaries([userId]);
   return rows.map((r) => toInfo(r, userId, owners));
 }
 
 export function sharedThemes(userId: number): ThemeInfo[] {
-  const rows = db().prepare("select * from themes where shared = 1 order by uses desc, updated_at desc limit 200").all() as ThemeRow[];
+  const rows = db().prepare(`${SELECT} where t.shared = 1 order by in_use desc, t.updated_at desc limit 200`).all() as Row[];
   const owners = summaries(rows.map((r) => r.user_id!).filter(Boolean));
   return rows.map((r) => toInfo(r, userId, owners));
 }
