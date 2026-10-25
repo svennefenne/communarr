@@ -7,12 +7,13 @@ import { playSound, setSoundsOn, soundsOn, unlockSounds } from "./sfx";
 import type { SoundTrigger } from "@/lib/sounds";
 
 /** at most one of each in this long (ms): a busy chat or a flood of joins stays bearable */
-const GAP: Record<SoundTrigger, number> = { online: 2000, voiceJoin: 300, voiceLeave: 300, post: 1500, message: 1500, event: 1500, poll: 1500 };
+const GAP: Record<SoundTrigger, number> = { online: 2000, voiceJoin: 300, voiceLeave: 300, mute: 0, unmute: 0, deafen: 0, undeafen: 0, post: 1500, message: 1500, event: 1500, poll: 1500 };
 
 /**
  * The site's sounds (Admin → Sounds), played for what others do: someone coming online, joining or
  * leaving the voice chat you're in, a new post, event or poll you can see, a message in one of your
- * rooms (not the one you're looking at, nor one you muted). Not while the member has Sounds off.
+ * rooms (not the one you're looking at, nor one you muted); and in a call, muting or deafening
+ * yourself. Not while the member has Sounds off.
  */
 export function SiteSounds() {
   const { me, site, presence, conn } = useApp();
@@ -76,6 +77,18 @@ export function SiteSounds() {
     // (play is the same each time; what changes is who's in the channel)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voice.room, voice.channels, conn]);
+
+  // your own microphone and hearing in a call (deafening mutes too: that plays only the deafen sound;
+  // joining and leaving set them back without a sound)
+  const mine = useRef({ room: voice.room, muted: voice.muted, deafened: voice.deafened });
+  useEffect(() => {
+    const before = mine.current;
+    mine.current = { room: voice.room, muted: voice.muted, deafened: voice.deafened };
+    if (voice.room == null || before.room !== voice.room) return;
+    if (voice.deafened !== before.deafened) play(voice.deafened ? "deafen" : "undeafen");
+    else if (voice.muted !== before.muted) play(voice.muted ? "mute" : "unmute");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.room, voice.muted, voice.deafened]);
 
   return null;
 }
