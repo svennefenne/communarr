@@ -40,7 +40,10 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ github.repository }}
+          # the second name is the one sites set up as Communarr pull: published too until they've switched
+          images: |
+            ghcr.io/${{ github.repository_owner }}/communarr
+            ghcr.io/${{ github.repository_owner }}/communarr
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}

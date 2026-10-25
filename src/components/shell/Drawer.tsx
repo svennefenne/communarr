@@ -31,7 +31,7 @@ export function Drawer({ onClose }: { onClose: () => void }) {
     <div className="drawer-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <nav className="panel drawer" aria-label={t("Menu")} onClick={(e) => (e.target as HTMLElement).closest("a") && onClose()}>
         <div style={{ padding: "4px 8px 12px" }}>
-          <Brand name={site.name} />
+          <Brand name={site.name} logo={site.logo} />
         </div>
         <button
           type="button"

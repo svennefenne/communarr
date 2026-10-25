@@ -9,6 +9,8 @@
 # Profiles can be combined (--profile https --profile turn), or set once in .env with
 # COMPOSE_PROFILES=https,turn so a plain `docker compose up -d` uses them. Phones need HTTPS for push
 # notifications and voice chat, so use one of the two HTTPS profiles (or your own reverse proxy).
+# (An .env from when this was called Communarr keeps working: COMMUNARR_DATA, COMMUNARR_PORT and
+# COMMUNARR_DOMAIN are read when the COMMUNARR_ ones aren't set.)
 
 services:
   communarr:
@@ -17,7 +19,7 @@ services:
     container_name: communarr
     restart: unless-stopped
     ports:
-      - "${COMMUNARR_PORT:-3000}:3000"
+      - "${COMMUNARR_PORT:-${COMMUNARR_PORT:-3000}}:3000"
     environment:
       TZ: ${TZ:-Europe/Stockholm}
       # who owns the files in ./data (1000:1000 is the first user on most Linux machines)
@@ -42,7 +44,7 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-}
     volumes:
       # the database, pictures and backups: back this folder up
-      - ${COMMUNARR_DATA:-./data}:/data
+      - ${COMMUNARR_DATA:-${COMMUNARR_DATA:-./data}}:/data
 
   # ── HTTPS with Caddy: point your domain's DNS at your home IP and forward ports 80 and 443 ──
   caddy:
@@ -56,7 +58,7 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      COMMUNARR_DOMAIN: ${COMMUNARR_DOMAIN:-}
+      COMMUNARR_DOMAIN: ${COMMUNARR_DOMAIN:-${COMMUNARR_DOMAIN:-}}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

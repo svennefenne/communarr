@@ -19,10 +19,13 @@ const TYPES: Record<string, string> = {
   flac: "audio/flac",
 };
 
-/** GET /media/…: an uploaded picture (members only, except backgrounds the log-in page shows). */
+// what the log-in page shows, so anyone may see it: backgrounds and the logo
+const PUBLIC = new Set(["bg", "logo"]);
+
+/** GET /media/…: an uploaded picture (members only, except backgrounds and the logo). */
 export async function GET(_: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path: parts } = await params;
-  if (parts[0] !== "bg" && !(await getUser())) return new Response((await requestT())("Log in first."), { status: 401 });
+  if (!PUBLIC.has(parts[0]) && !(await getUser())) return new Response((await requestT())("Log in first."), { status: 401 });
   const file = mediaFile(parts);
   if (!file) return new Response((await requestT())("Not found"), { status: 404 });
   const ext = file.split(".").pop()!.toLowerCase();

@@ -11,6 +11,8 @@ import path from "node:path";
 // (turbopackIgnore: a folder of the running server's, nothing to bundle)
 export const DATA_DIR = path.resolve(/*turbopackIgnore: true*/ process.env.DATA_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), ".data"));
 export const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
+// a site set up while the project was called Communarr keeps its communarr.db (nothing is moved)
+export const DB_FILE = fs.existsSync(path.join(/*turbopackIgnore: true*/ DATA_DIR, "communarr.db")) ? "communarr.db" : "communarr.db";
 
 const MIGRATIONS: string[] = [
   /* 1: everything */ `
@@ -456,12 +458,21 @@ const MIGRATIONS: string[] = [
     fetched_at integer not null
   );
   `,
+  /* 8: the project is called Communarr now, and that's the default name. A site set up before (it has
+        members) that never saved a name or footer of its own keeps the ones it had */ `
+  insert into settings (key, value)
+    select 'siteName', '"Communarr"'
+    where exists (select 1 from users) and not exists (select 1 from settings where key = 'siteName');
+  insert into settings (key, value)
+    select 'footer', case when (select value from settings where key = 'language') = '"sv"' then '"COMMUNARR · ETT STÄLLE FÖR VÄNNER"' else '"COMMUNARR · A PLACE FOR FRIENDS"' end
+    where exists (select 1 from users) and not exists (select 1 from settings where key = 'footer');
+  `,
 ];
 
 function open(): Database.Database {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  const db = new Database(path.join(DATA_DIR, "communarr.db"));
+  const db = new Database(path.join(DATA_DIR, DB_FILE));
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");

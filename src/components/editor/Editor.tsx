@@ -237,7 +237,7 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
 
   const extensions = useMemo(() => {
     const keys = Extension.create({
-      name: "communarrKeys",
+      name: "siteKeys",
       priority: 1000,
       addKeyboardShortcuts() {
         return {

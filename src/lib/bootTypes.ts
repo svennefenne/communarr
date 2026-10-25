@@ -28,6 +28,8 @@ export interface SiteInfo {
   /** the admin's own wording for that language (Admin → Texts) */
   texts: Own;
   name: string;
+  /** the admin's own logo, in place of the stripes (null: the stripes) */
+  logo: string | null;
   tagline: string;
   footer: string;
   features: Features;

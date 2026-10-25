@@ -17,6 +17,8 @@ export interface SiteSettings {
   /** the site's language (every page, notification and message from the server) */
   language: Lang;
   siteName: string;
+  /** the admin's own logo (an upload, /media/logo/…) in place of the stripes: the top left, the tab and the app icon; "" = the stripes */
+  logo: string;
   tagline: string;
   /** shown on the log-in page */
   welcome: string;
@@ -64,6 +66,7 @@ export interface SiteSettings {
 export const DEFAULTS: SiteSettings = {
   language: "en",
   siteName: "Communarr",
+  logo: "",
   tagline: "A closed community space for friends to hang around, chat, discuss, plan and more.",
   welcome: "Welcome home. Log in to see what everyone's up to.",
   footer: "COMMUNARR · A PLACE FOR FRIENDS",

@@ -34,9 +34,9 @@ export function publicIp(ip: string): boolean {
   return fam === 4 ? !blocked.check(ip, "ipv4") : fam === 6 ? !blocked.check(ip, "ipv6") : false;
 }
 
-// tests on a computer: "host:port"s in COMMUNARR_DEV_FETCH_ALLOW may be fetched (a local test server);
-// never in production
-const devAllow = new Set(process.env.NODE_ENV === "production" ? [] : (process.env.COMMUNARR_DEV_FETCH_ALLOW ?? "").split(",").map((s) => s.trim()).filter(Boolean));
+// tests on a computer: "host:port"s in COMMUNARR_DEV_FETCH_ALLOW (or COMMUNARR_DEV_FETCH_ALLOW) may be
+// fetched (a local test server); never in production
+const devAllow = new Set(process.env.NODE_ENV === "production" ? [] : (process.env.COMMUNARR_DEV_FETCH_ALLOW ?? process.env.COMMUNARR_DEV_FETCH_ALLOW ?? "").split(",").map((s) => s.trim()).filter(Boolean));
 const hostPort = (u: URL) => `${u.hostname}:${u.port || (u.protocol === "https:" ? "443" : "80")}`;
 
 type LookupCb = (err: NodeJS.ErrnoException | null, address?: string | dns.LookupAddress[], family?: number) => void;

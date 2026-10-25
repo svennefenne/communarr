@@ -12,9 +12,9 @@ import { UserError } from "./errors";
  * for. Files live under DATA_DIR/uploads and are served by /media/….
  */
 
-export type UploadKind = "image" | "avatar" | "banner" | "cover" | "background" | "preview";
+export type UploadKind = "image" | "avatar" | "banner" | "cover" | "background" | "preview" | "logo";
 
-const DIRS: Record<UploadKind, string> = { image: "img", avatar: "avatar", banner: "banner", cover: "cover", background: "bg", preview: "preview" };
+const DIRS: Record<UploadKind, string> = { image: "img", avatar: "avatar", banner: "banner", cover: "cover", background: "bg", preview: "preview", logo: "logo" };
 
 export interface Uploaded {
   id: string;
@@ -52,6 +52,10 @@ export async function saveUpload(userId: number, buf: Buffer, kind: UploadKind, 
       break;
     case "preview":
       img = img.resize(1200, 1200, { fit: "inside", withoutEnlargement: true });
+      break;
+    case "logo":
+      // (transparency kept; the app icons are cut from it at their own sizes)
+      img = img.resize(512, 512, { fit: "inside", withoutEnlargement: true });
       break;
     default:
       img = img.resize(2048, 2048, { fit: "inside", withoutEnlargement: true });

@@ -11,18 +11,26 @@ import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
 import { OnlineButton } from "./OnlineButton";
 
-export function Brand({ name }: { name: string }) {
+/** The site's mark: the admin's own logo, or the six stripes. */
+export function BrandMark({ logo, className = "" }: { logo: string | null; className?: string }) {
+  if (logo) return <img className={`brand-logo ${className}`} src={logo} alt="" aria-hidden />;
+  return (
+    <span className={`brand-mark ${className}`} aria-hidden>
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
+export function Brand({ name, logo }: { name: string; logo: string | null }) {
   const t = useT();
   return (
     <Link href="/" className="brand" aria-label={t("{name} home", { name })}>
-      <span className="brand-mark" aria-hidden>
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-      </span>
+      <BrandMark logo={logo} />
       <span className="brand-text">
         <span className="brand-name">{name}</span>
       </span>
@@ -94,7 +102,7 @@ function SiteHeader({ pathname }: { pathname: string }) {
             {counts.chat ? <span className="count-badge" style={{ minWidth: 10, height: 10, padding: 0, top: 4, right: 4 }} /> : null}
           </button>
         ) : null}
-        <Brand name={site.name} />
+        <Brand name={site.name} logo={site.logo} />
       </div>
 
       {me ? (
