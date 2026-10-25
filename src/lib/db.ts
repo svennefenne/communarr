@@ -470,6 +470,23 @@ const MIGRATIONS: string[] = [
   /* 9: screenshots with feedback: the sender's uploads, as JSON [{ url, thumb }] */ `
   alter table feedback add column images text not null default '[]';
   `,
+  /* 10: one reaction per person and thing: where someone has several, their newest stays */ `
+  delete from reactions where exists (
+    select 1 from reactions r2
+    where r2.target_type = reactions.target_type and r2.target_id = reactions.target_id and r2.user_id = reactions.user_id
+      and (r2.created_at > reactions.created_at or (r2.created_at = reactions.created_at and r2.rowid > reactions.rowid))
+  );
+  `,
+  /* 11: the site's own emoji (Discord style): a name for :name: and a small picture, animated or not */ `
+  create table emojis (
+    id integer primary key,
+    name text not null unique collate nocase,
+    url text not null,
+    animated integer not null default 0,
+    user_id integer references users(id) on delete set null,
+    created_at integer not null
+  );
+  `,
 ];
 
 function open(): Database.Database {

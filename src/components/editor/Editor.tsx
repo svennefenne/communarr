@@ -109,6 +109,9 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
   const compact = variant === "compact";
   const t = useT();
   const placeholder = placeholderProp ?? t("Write something…");
+  // read when the placeholder is drawn: a new one (comments that turn out to be there) shows at once
+  const placeholderRef = useRef(placeholder);
+  placeholderRef.current = placeholder;
   const toast = useToast();
   const [html, setHtml] = useState(initial);
   // the text as it was a moment ago (at once when it's emptied), for its links' cards (previews)
@@ -260,8 +263,8 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
         };
       },
     });
-    return [...buildExtensions({ placeholder, compact, limit }), keys];
-  }, [placeholder, compact, limit, enterSends]);
+    return [...buildExtensions({ placeholder: () => placeholderRef.current, compact, limit }), keys];
+  }, [compact, limit, enterSends]);
 
   const editor = useEditor({
     extensions,
@@ -312,6 +315,11 @@ export const RichEditor = forwardRef<EditorHandle, EditorProps>(function RichEdi
     onFocus: () => onFocus?.(),
   });
   editorRef.current = editor;
+
+  // a new placeholder: draw it (an empty step redraws; the text is unchanged)
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) editor.view.dispatch(editor.state.tr);
+  }, [editor, placeholder]);
 
   // a draft left from last time
   useEffect(() => {

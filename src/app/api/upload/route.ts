@@ -5,10 +5,11 @@ import { UserError } from "@/lib/errors";
 import { requestT } from "@/lib/t";
 import { importImage } from "@/lib/links";
 import { baseUrl } from "@/lib/url";
+import { canAddEmoji } from "@/lib/emojis";
 
 export const dynamic = "force-dynamic";
 
-const KINDS: UploadKind[] = ["image", "avatar", "banner", "cover", "background", "logo"];
+const KINDS: UploadKind[] = ["image", "avatar", "banner", "cover", "background", "logo", "emoji"];
 
 // a few uploads at once per member, so a phone dropping 30 photos doesn't swamp the NUC
 const g = globalThis as typeof globalThis & { __hdUploads?: Map<number, number> };
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
     if (kind === "background" && !user.isAdmin && !getSettings().allowCustomThemes) return Response.json({ error: t("Custom backgrounds are switched off.") }, { status: 403 });
     // the site's logo (Admin → Name & texts)
     if (kind === "logo" && !user.isAdmin) return Response.json({ error: t("Only admins can do that.") }, { status: 403 });
+    if (kind === "emoji" && !canAddEmoji(user)) return Response.json({ error: t("Only moderators can add emoji.") }, { status: 403 });
     // a picture's link instead of a file: fetched and kept like an upload ("only": a page stays a link)
     if (typeof link === "string" && link.trim()) {
       const out = await importImage(user.id, link, kind, { origin: await baseUrl(), onlyImage: fd?.get("only") === "1" });

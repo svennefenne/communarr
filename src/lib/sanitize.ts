@@ -20,7 +20,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
   ],
   allowedAttributes: {
     a: ["href", "target", "rel", "class"],
-    img: ["src", "alt", "title", "width", "height", "data-align", "data-thumb"],
+    img: ["src", "alt", "title", "width", "height", "data-align", "data-thumb", "data-emoji", "class"],
     span: ["style", "class", "data-type", "data-id", "data-label"],
     mark: ["style", "data-color", "class"],
     p: ["style"],
@@ -56,6 +56,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
   allowedClasses: {
     span: ["mention"],
     a: ["mention"],
+    img: ["emoji-custom"],
     code: ["language-*"],
     div: ["video-embed"],
   },
@@ -71,10 +72,13 @@ const OPTIONS: sanitizeHtml.IOptions = {
       const external = /^https?:\/\//i.test(href);
       return { tagName: "a", attribs: { ...attribs, ...(external ? { target: "_blank", rel: "noopener noreferrer nofollow ugc" } : { target: "", rel: "" }) } };
     },
-    img: (tag, attribs) => {
+    img: (tag, attribs): sanitizeHtml.Tag => {
       const src = attribs.src || "";
       // our own pictures, or https links; never data: or javascript:
       if (!/^\/media\/[\w./-]+$/.test(src) && !/^https:\/\//i.test(src)) return { tagName: "span", attribs: {} };
+      // one of the site's own emoji (:name:), drawn the size of the text around it
+      const emoji = attribs["data-emoji"] || "";
+      if (/^\/media\/emoji\//.test(src) && /^[a-z0-9_]{2,32}$/.test(emoji)) return { tagName: "img", attribs: { src, alt: `:${emoji}:`, title: `:${emoji}:`, "data-emoji": emoji, class: "emoji-custom" } };
       const width = /^\d{1,4}$/.test(attribs.width || "") ? attribs.width : undefined;
       const height = /^\d{1,4}$/.test(attribs.height || "") ? attribs.height : undefined;
       return {
@@ -120,7 +124,8 @@ export function cleanHtml(input: string, opts: { maxLength?: number } = {}): Cle
   // an editor with nothing in it leaves an empty paragraph behind
   html = html.replace(/^(<p>\s*<\/p>)+|(<p>\s*<\/p>)+$/g, "").trim();
   const mentions = [...html.matchAll(/data-type="mention"[^>]*data-id="([^"]+)"/g)].map((m) => m[1]);
-  const img = html.match(/<img[^>]*src="([^"]+)"/);
+  // (the site's own emoji aren't pictures for this)
+  const img = html.match(/<img(?![^>]*data-emoji)[^>]*src="([^"]+)"/);
   const text = plain(html);
   return { html, text, mentions: [...new Set(mentions)], firstImage: img ? img[1] : null, empty: !text && !/<(img|iframe|hr|table)/.test(html) };
 }

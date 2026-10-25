@@ -16,6 +16,7 @@ import { siteIcons } from "@/lib/siteIcons";
 import { themeColor, themeCss } from "@/lib/theme";
 import { themeForUser } from "@/lib/themes";
 import { AppProvider } from "@/components/app/AppProvider";
+import { EmojiProvider } from "@/components/emoji/Emojis";
 import { Backdrop } from "@/components/shell/Backdrop";
 import { Header } from "@/components/shell/Header";
 import { Footer } from "@/components/shell/Footer";
@@ -89,19 +90,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <i className="sf-edge" />
         </div>
         <AppProvider boot={b}>
-          <TransitionsProvider initial={user ? user.theme.wipes && user.theme.motion : true}>
-            <VoiceProvider>
-              <Header />
-              <Announcement />
-              <main id="main">{children}</main>
-              <Footer />
-              <BottomNav />
-              <VoiceDock />
-              {user ? <SiteSounds /> : null}
-              <SearchOverlay />
-              <Lightbox />
-            </VoiceProvider>
-          </TransitionsProvider>
+          <EmojiProvider initial={b.site.emojis}>
+            <TransitionsProvider initial={user ? user.theme.wipes && user.theme.motion : true}>
+              <VoiceProvider>
+                <Header />
+                <Announcement />
+                <main id="main">{children}</main>
+                <Footer />
+                <BottomNav />
+                <VoiceDock />
+                {user ? <SiteSounds /> : null}
+                <SearchOverlay />
+                <Lightbox />
+              </VoiceProvider>
+            </TransitionsProvider>
+          </EmojiProvider>
         </AppProvider>
       </body>
     </html>

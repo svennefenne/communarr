@@ -63,8 +63,19 @@ export interface NotificationItem {
 export type ActionResult<T = unknown> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface Reaction {
+  /** an emoji, or one of the site's own as ":name:" */
   emoji: string;
   count: number;
   mine: boolean;
   users: string[];
+}
+
+/** One of the site's own emoji: written :name:, shown as its picture. */
+export interface CustomEmoji {
+  name: string;
+  url: string;
+  animated: boolean;
+  /** who added it (null: they're gone) */
+  by: number | null;
+  byName: string | null;
 }
