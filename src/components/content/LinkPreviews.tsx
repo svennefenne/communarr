@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { LinkPreview } from "@/lib/links";
 import { linksIn } from "@/lib/linksIn";
+import { bggIdOf } from "@/lib/bggUrl";
+import { useSite } from "@/components/app/AppProvider";
+import { GameLinkCard } from "./bggCards";
 
 /**
  * Previews of the links in written text (under every RichText, and under an event's details as
@@ -35,24 +38,28 @@ export function loadPreview(url: string): Promise<LinkPreview | null> {
 
 export function LinkPreviews({ html, initial, max = 3 }: { html: string; initial?: Record<string, LinkPreview | null>; max?: number }) {
   const urls = useMemo(() => linksIn(html, max), [html, max]);
+  // a link to a game on BoardGameGeek: its card from BGG's API (BGG turns away fetching its pages)
+  const bgg = useSite().bgg === "full";
+  const game = useCallback((u: string) => (bgg ? bggIdOf(u) : null), [bgg]);
   const [got, setGot] = useState<Record<string, LinkPreview | null>>(initial ?? {});
   useEffect(() => {
     let live = true;
-    for (const u of urls) void loadPreview(u).then((p) => live && setGot((x) => (u in x && x[u]?.title === p?.title ? x : { ...x, [u]: p })));
+    for (const u of urls) if (!game(u)) void loadPreview(u).then((p) => live && setGot((x) => (u in x && x[u]?.title === p?.title ? x : { ...x, [u]: p })));
     return () => {
       live = false;
     };
-  }, [urls]);
-  const shown = urls.map((u) => got[u]).filter((p): p is LinkPreview => !!p);
+  }, [urls, game]);
+  const shown = urls.filter((u) => game(u) || got[u]);
   useLayoutEffect(() => {
     if (shown.length) grew();
   }, [shown.length]);
   if (!shown.length) return null;
   return (
     <div className="link-previews">
-      {shown.map((p) => (
-        <LinkCard key={p.url} p={p} />
-      ))}
+      {shown.map((u) => {
+        const id = game(u);
+        return id ? <GameLinkCard key={u} id={id} url={u} /> : <LinkCard key={u} p={got[u]!} />;
+      })}
     </div>
   );
 }

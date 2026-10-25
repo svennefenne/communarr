@@ -285,6 +285,10 @@ const sv: Record<string, string> = {
     "Du får en genom att registrera sajten som en applikation på BoardGameGeek (gratis när den inte är kommersiell):",
   "That doesn't look like a token.": "Det där ser inte ut som en token.",
   "BoardGameGeek didn't accept that token.": "BoardGameGeek godtog inte den token.",
+
+  // the quick look at a link
+  "This site doesn't give a preview.": "Den här sajten ger ingen förhandsvisning.",
+  "BoardGameGeek didn't say more about it just now.": "BoardGameGeek berättade inte mer om det just nu.",
 };
 
 export default sv;
