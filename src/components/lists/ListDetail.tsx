@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowDown, ArrowUp, Ellipsis, Eraser, ListChecks, Lock, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { ListCell, ListColumn, ListRowView, ListView } from "@/lib/contentTypes";
 import type { UserSummary } from "@/lib/types";
@@ -70,6 +70,51 @@ export function ListDetail({ list: initial }: { list: ListView }) {
     void refresh();
   };
 
+  // Tab and Shift+Tab go from cell to cell like a spreadsheet's (past a row's "…" and a cell's clear
+  // button), on to the next row; with automatic rows, Tab in the last cell adds a row
+  const body = useRef<HTMLTableSectionElement>(null);
+  const [focusRow, setFocusRow] = useState<number | null>(null);
+  useEffect(() => {
+    if (focusRow === null) return;
+    const tr = body.current?.querySelector(`tr[data-row="${focusRow}"]`);
+    if (!tr) return;
+    setFocusRow(null);
+    for (const td of dataCells(tr)) {
+      const s = stops(td);
+      if (s.length) return s[0].focus();
+    }
+  }, [focusRow, l]);
+  const onTab = (e: KeyboardEvent<HTMLTableSectionElement>) => {
+    if (e.key !== "Tab" || e.altKey || e.ctrlKey || e.metaKey) return;
+    const el = e.target as HTMLElement;
+    // (not a date's month, which opens over the page)
+    const td = el.closest("td");
+    if (!td || !e.currentTarget.contains(td) || td.matches(".lt-n, .lt-act")) return;
+    const own = stops(td);
+    const k = own.indexOf(el);
+    // inside a cell (a time's hour, then its minutes) as usual
+    if (k >= 0 && (e.shiftKey ? k > 0 : k < own.length - 1)) return;
+    const cells = dataCells(e.currentTarget);
+    const i = cells.indexOf(td);
+    for (const c of e.shiftKey ? cells.slice(0, i).reverse() : cells.slice(i + 1)) {
+      const s = stops(c);
+      if (!s.length) continue;
+      e.preventDefault();
+      return (e.shiftKey ? s[s.length - 1] : s[0]).focus();
+    }
+    // past the last cell: out of the table, or (automatic rows) a new row
+    if (e.shiftKey || !l.autoRows || !l.canAddRows) return;
+    e.preventDefault();
+    const rowId = Number(td.closest("tr")?.dataset.row);
+    // (leaving the cell saves it first)
+    el.blur();
+    void addRowAction(l.id, rowId).then(async (r) => {
+      if (!r.ok) return toast(r.error, { kind: "err" });
+      await refresh();
+      setFocusRow(r.data);
+    });
+  };
+
   return (
     <div className="stack loose">
       <article className="panel panel-pad list-detail">
@@ -118,7 +163,7 @@ export function ListDetail({ list: initial }: { list: ListView }) {
         <h1 className="display list-title">{l.title}</h1>
         {l.html ? <RichText html={l.html} /> : null}
         <p className="tiny muted" style={{ margin: 0 }}>
-          {t("{n} of {total} rows filled in", { n: filledCount, total: l.rowList.length })}
+          {l.autoRows ? t.n(filledCount, "{n} row filled in", "{n} rows filled in") : t("{n} of {total} rows filled in", { n: filledCount, total: l.rowList.length })}
           {" · "}
           {l.fill === "owner" ? t("Only {name} fills it in", { name: l.author.name }) : l.ownRows ? t("Everyone fills it in; a filled-in row is its filler's") : t("Everyone fills it in")}
         </p>
@@ -144,9 +189,9 @@ export function ListDetail({ list: initial }: { list: ListView }) {
               <th className="lt-act" aria-label={t("More")} />
             </tr>
           </thead>
-          <tbody>
+          <tbody ref={body} onKeyDown={onTab}>
             {l.rowList.map((r, i) => (
-              <tr key={r.id} className={r.filledBy && r.filledBy.id === me?.id ? "mine" : ""}>
+              <tr key={r.id} data-row={r.id} className={r.filledBy && r.filledBy.id === me?.id ? "mine" : ""}>
                 <td className="lt-n">
                   {r.filledBy ? (
                     <span title={t("{name}'s row", { name: r.filledBy.name })}>
@@ -197,6 +242,11 @@ export function ListDetail({ list: initial }: { list: ListView }) {
     </div>
   );
 }
+
+/** The cells people fill in (not a row's number or its "…"), row by row. */
+const dataCells = (el: Element) => [...el.querySelectorAll<HTMLTableCellElement>("td:not(.lt-n):not(.lt-act)")];
+/** What Tab stops at in a cell: its controls, not a clear button. */
+const stops = (td: Element) => [...td.querySelectorAll<HTMLElement>("input, select, button:not(.icon-btn)")].filter((x) => !(x as HTMLInputElement).disabled);
 
 function withCell(cells: Record<string, ListCell>, id: string, v: ListCell | null) {
   const x = { ...cells };

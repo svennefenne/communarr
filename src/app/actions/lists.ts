@@ -54,10 +54,10 @@ export async function setCellAction(id: number, rowId: number, colId: string, va
   });
 }
 
-export async function addRowAction(id: number) {
+export async function addRowAction(id: number, after?: number) {
   return act((u) => {
     on();
-    return addRow(u, Number(id));
+    return addRow(u, Number(id), after ? Number(after) : undefined);
   });
 }
 

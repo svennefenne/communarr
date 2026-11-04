@@ -34,6 +34,7 @@ export interface ListRow {
   fill: "members" | "owner";
   add_rows: number;
   own_rows: number;
+  auto_rows: number;
   created_at: number;
   edited_at: number | null;
   updated_at: number;
@@ -70,7 +71,8 @@ export function canSeeList(u: User, l: ListRow): boolean {
 /** its author (and moderators): the columns, rows and settings */
 const owns = (u: User, l: ListRow) => l.author_id === u.id || u.isMod;
 export const canFill = (u: User, l: ListRow) => canSeeList(u, l) && (owns(u, l) || l.fill === "members");
-const canAddRows = (u: User, l: ListRow) => owns(u, l) || (canFill(u, l) && !!l.add_rows);
+// (automatic rows: whoever fills it in adds rows, with Tab in the last cell)
+const canAddRows = (u: User, l: ListRow) => owns(u, l) || (canFill(u, l) && (!!l.add_rows || !!l.auto_rows));
 
 export function columnsOf(l: Pick<ListRow, "columns_json">): ListColumn[] {
   try {
@@ -186,6 +188,15 @@ function fitCells(cols: ListColumn[], cells: Record<string, ListCell>): Record<s
 
 const filled = (cells: Record<string, ListCell>) => Object.keys(cells).length > 0;
 
+/** Automatic rows: an empty row stays last, for whoever fills it in next (up to MAX_ROWS). */
+function keepEmptyLast(l: Pick<ListRow, "id" | "auto_rows">) {
+  if (!l.auto_rows) return;
+  const last = db().prepare("select position, cells_json from list_rows where list_id = ? order by position desc, id desc limit 1").get(l.id) as Pick<RowRow, "position" | "cells_json"> | undefined;
+  if (last && !filled(cellsOf(last))) return;
+  if ((db().prepare("select count(*) n from list_rows where list_id = ?").get(l.id) as { n: number }).n >= MAX_ROWS) return;
+  db().prepare("insert into list_rows (list_id, position) values (?, ?)").run(l.id, (last?.position ?? -1) + 1);
+}
+
 function rowsOf(listId: number): RowRow[] {
   return db().prepare("select * from list_rows where list_id = ? order by position, id").all(listId) as RowRow[];
 }
@@ -232,6 +243,7 @@ export function toListCards(u: User, rows: ListRow[]): ListCard[] {
       private: !!r.private,
       columns: columnsOf(r),
       rows: c?.n ?? 0,
+      autoRows: !!r.auto_rows,
       filled: c?.filled ?? 0,
       mine: c?.mine ?? 0,
       canFill: canFill(u, r),
@@ -300,6 +312,8 @@ export interface ListInput {
   columns: Partial<ListColumn>[];
   /** how many rows it has (to begin with; when changed, empty rows are added or taken away at the end) */
   rows?: number;
+  /** automatic rows: it starts with one empty row, and an empty row stays last as it's filled in (rows is left alone) */
+  autoRows?: boolean;
   groupId?: number | null;
   private?: boolean;
   fill?: "members" | "owner";
@@ -319,15 +333,16 @@ export function createList(u: User, o: ListInput): number {
   }
   const priv = !groupId && !!o.private;
   const c = cleanHtml(o.html || "");
-  const n = Math.max(1, Math.min(MAX_ROWS, Math.round(Number(o.rows) || 10)));
+  const auto = !!o.autoRows;
+  const n = auto ? 1 : Math.max(1, Math.min(MAX_ROWS, Math.round(Number(o.rows) || 10)));
   const t = now();
   const id = tx(() => {
     const id = Number(
       db()
         .prepare(
-          "insert into lists (author_id, title, description_html, description_text, columns_json, group_id, private, fill, add_rows, own_rows, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "insert into lists (author_id, title, description_html, description_text, columns_json, group_id, private, fill, add_rows, own_rows, auto_rows, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(u.id, title, c.html, c.text, JSON.stringify(cols), groupId, priv ? 1 : 0, o.fill === "owner" ? "owner" : "members", o.addRows === false ? 0 : 1, o.ownRows === false ? 0 : 1, t, t).lastInsertRowid,
+        .run(u.id, title, c.html, c.text, JSON.stringify(cols), groupId, priv ? 1 : 0, o.fill === "owner" ? "owner" : "members", o.addRows === false ? 0 : 1, o.ownRows === false ? 0 : 1, auto ? 1 : 0, t, t).lastInsertRowid,
     );
     const add = db().prepare("insert into list_rows (list_id, position) values (?, ?)");
     for (let i = 0; i < n; i++) add.run(id, i);
@@ -348,9 +363,10 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
   const c = o.html !== undefined ? cleanHtml(o.html) : null;
   const cols = o.columns ? cleanColumns(o.columns, columnsOf(l)) : columnsOf(l);
   const priv = l.group_id ? 0 : o.private === undefined ? l.private : o.private ? 1 : 0;
+  const auto = o.autoRows === undefined ? l.auto_rows : o.autoRows ? 1 : 0;
   tx(() => {
     db()
-      .prepare("update lists set title = ?, description_html = ?, description_text = ?, columns_json = ?, private = ?, fill = ?, add_rows = ?, own_rows = ?, edited_at = ?, updated_at = ? where id = ?")
+      .prepare("update lists set title = ?, description_html = ?, description_text = ?, columns_json = ?, private = ?, fill = ?, add_rows = ?, own_rows = ?, auto_rows = ?, edited_at = ?, updated_at = ? where id = ?")
       .run(
         title,
         c ? c.html : l.description_html,
@@ -360,6 +376,7 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
         o.fill === undefined ? l.fill : o.fill === "owner" ? "owner" : "members",
         o.addRows === undefined ? l.add_rows : o.addRows ? 1 : 0,
         o.ownRows === undefined ? l.own_rows : o.ownRows ? 1 : 0,
+        auto,
         now(),
         now(),
         id,
@@ -371,7 +388,7 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
       if (JSON.stringify(cells) !== r.cells_json) db().prepare("update list_rows set cells_json = ?, filled_by = ? where id = ?").run(JSON.stringify(cells), filled(cells) ? r.filled_by : null, r.id);
     }
     // more rows: empty ones at the end; fewer: empty ones from the end (filled ones stay)
-    if (o.rows !== undefined) {
+    if (o.rows !== undefined && !auto) {
       const want = Math.max(1, Math.min(MAX_ROWS, Math.round(Number(o.rows) || rows.length)));
       if (want > rows.length) {
         const last = rows.length ? rows[rows.length - 1].position : -1;
@@ -387,6 +404,7 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
         }
       }
     }
+    keepEmptyLast({ ...l, auto_rows: auto });
   });
   if (l.author_id !== u.id) audit(u.id, "list changed", `#${id}`, title);
   reindex(id);
@@ -427,6 +445,7 @@ export function setCell(u: User, id: number, rowId: number, colId: string, value
     const t = now();
     db().prepare("update list_rows set cells_json = ?, filled_by = ?, updated_by = ?, updated_at = ? where id = ?").run(JSON.stringify(cells), has ? (r.filled_by ?? u.id) : null, u.id, t, r.id);
     db().prepare("update lists set updated_at = ? where id = ?").run(t, id);
+    keepEmptyLast(l);
     return rowOf(l, rowId);
   });
   reindex(id);
@@ -447,9 +466,15 @@ export function clearRow(u: User, id: number, rowId: number) {
   broadcast("list", { id });
 }
 
-export function addRow(u: User, id: number): number {
+/** Add a row at the end. after: Tab in that row's last cell, so the row after it if there is one already. */
+export function addRow(u: User, id: number, after?: number): number {
   const l = seen(u, id);
   if (!canAddRows(u, l)) throw new ListError("Only the one who made this list adds rows.");
+  if (after) {
+    const r = rowOf(l, after);
+    const next = db().prepare("select id from list_rows where list_id = ? and (position > ? or (position = ? and id > ?)) order by position, id limit 1").get(id, r.position, r.position, r.id) as { id: number } | undefined;
+    if (next) return next.id;
+  }
   const { n, last } = db().prepare("select count(*) n, coalesce(max(position), -1) last from list_rows where list_id = ?").get(id) as { n: number; last: number };
   if (n >= MAX_ROWS) throw new ListError("A list has at most {n} rows.", { n: MAX_ROWS });
   const rowId = Number(db().prepare("insert into list_rows (list_id, position) values (?, ?)").run(id, last + 1).lastInsertRowid);
@@ -465,6 +490,7 @@ export function removeRow(u: User, id: number, rowId: number) {
   const r = rowOf(l, rowId);
   if ((db().prepare("select count(*) n from list_rows where list_id = ?").get(id) as { n: number }).n <= 1) throw new ListError("A list needs at least one row.");
   db().prepare("delete from list_rows where id = ?").run(r.id);
+  keepEmptyLast(l);
   db().prepare("update lists set updated_at = ? where id = ?").run(now(), id);
   reindex(id);
   broadcast("list", { id });
@@ -484,6 +510,7 @@ export function moveRow(u: User, id: number, rowId: number, by: -1 | 1) {
     [order[i], order[j]] = [order[j], order[i]];
     const put = db().prepare("update list_rows set position = ? where id = ?");
     order.forEach((rid, k) => put.run(k, rid));
+    keepEmptyLast(l);
   });
   broadcast("list", { id });
 }

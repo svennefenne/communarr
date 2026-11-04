@@ -1465,32 +1465,96 @@ div.backdrop-tile {
   border-color: var(--line);
 }
 
-/* the form's columns */
+/* the form's columns: side by side like the table's (sideways on a narrow screen), each one's
+   name on top in the table's header colour, what goes in it underneath */
+.list-cols-edit {
+  display: flex;
+  overflow-x: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  scroll-snap-type: x proximity;
+}
 .list-col-edit {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  flex: 1 0 190px;
+  min-width: 0;
+  scroll-snap-align: start;
 }
-.list-col-edit-row {
+.list-col-edit + .list-col-edit {
+  border-left: 1px solid var(--line-strong);
+}
+.list-col-edit-head {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 6px 6px 10px;
+  background: color-mix(in srgb, var(--stripe-4) 30%, var(--surface-2));
+  border-bottom: 1px solid var(--line-strong);
+}
+.list-col-edit-head > svg {
+  flex: none;
+  opacity: 0.7;
+}
+.list-col-edit-head > .input {
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 10px;
+  border-color: transparent;
+  background: transparent;
+  font-weight: 700;
+}
+.list-col-edit-head > .input:hover {
+  border-color: var(--line-strong);
+}
+.list-col-edit-head > .input:focus {
+  border-color: var(--accent-2);
+  background: var(--field);
+}
+.list-col-edit-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 6px;
+  padding: 8px;
 }
-.list-col-edit-row > .input {
-  flex: 2 1 200px;
-  min-width: 0;
-}
-.list-col-edit-row > .select {
-  flex: 1 1 140px;
-  min-width: 0;
+.list-col-edit-body > .select {
+  padding: 8px 12px;
+  font-size: 0.9375rem;
 }
 .list-col-edit-tools {
-  display: inline-flex;
+  display: flex;
+  justify-content: flex-end;
   gap: 2px;
+  padding: 2px 6px 6px;
+}
+.list-col-add {
+  display: flex;
+  flex: 0 0 130px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 0;
+  border-left: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  scroll-snap-align: end;
+}
+.list-col-add:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.list-col-add:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: -4px;
 }
 /* a list's reactions and comments, under the table */
 .list-talk > .post-foot:first-child {

@@ -546,6 +546,9 @@ const MIGRATIONS: string[] = [
   );
   create index list_rows_list on list_rows(list_id, position);
   `,
+  /* 15: lists with automatic rows: an empty row stays last, and Tab in the last cell adds one */ `
+  alter table lists add column auto_rows integer not null default 0;
+  `,
 ];
 
 function open(): Database.Database {
