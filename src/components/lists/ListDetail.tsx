@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Ellipsis, Eraser, ListChecks, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Ellipsis, Eraser, ListChecks, Lock, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { ListCell, ListColumn, ListRowView, ListView } from "@/lib/contentTypes";
 import type { UserSummary } from "@/lib/types";
 import { useLive, useMe, useT, useToast } from "@/components/app/AppProvider";
@@ -13,6 +13,8 @@ import { useConfirm } from "@/components/ui/ui";
 import { Popover } from "@/components/ui/Popover";
 import { DateField, TimeField } from "@/components/ui/DateTime";
 import { RichText } from "@/components/content/RichText";
+import { Reactions } from "@/components/content/Reactions";
+import { Comments } from "@/components/content/Comments";
 import { GroupChip } from "@/components/feed/PostCard";
 import { loadMembers } from "@/components/editor/mention";
 import { clock, hourCycle } from "@/lib/clock";
@@ -30,6 +32,7 @@ export function ListDetail({ list: initial }: { list: ListView }) {
   const router = useRouter();
   const { confirm, node } = useConfirm();
   const [l, setL] = useState(initial);
+  const [comments, setComments] = useState(initial.comments);
   const [members, setMembers] = useState<UserSummary[]>([]);
   useEffect(() => {
     void loadMembers().then((all) => setMembers([...all].sort((a, b) => Number(b.id === me?.id) - Number(a.id === me?.id) || a.name.localeCompare(b.name))));
@@ -179,6 +182,17 @@ export function ListDetail({ list: initial }: { list: ListView }) {
           <Plus size={15} /> {t("Add a row")}
         </button>
       ) : null}
+      {/* what people think of it, and talk about it */}
+      <section className="panel panel-pad list-talk" id="comments" aria-label={t("Comments")}>
+        <footer className="post-foot">
+          <Reactions type="list" id={l.id} initial={l.reactions} myName={me?.name ?? ""} />
+          <span className="spacer" />
+          <span className="small muted row" style={{ gap: 6 }}>
+            <MessageSquare size={15} /> {comments ? t.n(comments, "{n} comment", "{n} comments") : t("No comments yet")}
+          </span>
+        </footer>
+        <Comments type="list" id={l.id} onCount={setComments} />
+      </section>
       {node}
     </div>
   );

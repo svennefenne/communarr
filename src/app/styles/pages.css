@@ -1492,3 +1492,9 @@ div.backdrop-tile {
   display: inline-flex;
   gap: 2px;
 }
+/* a list's reactions and comments, under the table */
+.list-talk > .post-foot:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}

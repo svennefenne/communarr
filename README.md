@@ -42,11 +42,11 @@ or in a theme you make yourself.
 - **Forum**: categories (some for moderators only, some for a group), threads with quoting, reactions,
   following, unread markers, pinning, locking and moving, and each member's post count.
 - **Lists**: tables of your own making that others fill in, like a sign-up sheet ("Who are you?" /
-  "What are you bringing?"), a checklist or a schedule. You pick the columns and what each one holds
+  "What are you bringing?"), a shopping list, a checklist or a schedule. You pick the columns and what each one holds
   (text, a number, a checkbox, a member, a date, a time or a choice) and how many rows; who sees it
   (everyone, a group or only you) and who fills it in (everyone who sees it, or only you); whether
   others can add rows, and whether a filled-in row is its filler's. Filled in right in the table, live
-  for everyone looking; in the feed and in search.
+  for everyone looking; reactions and comments; in the feed and in search.
 - **Chat**: open rooms anyone can join and private rooms you're invited to, direct messages, group rooms,
   replies, edits, deletes, pins, reactions, typing, "seen" marks, @mentions, pictures, per-room
   notification settings, owners and admins per room, archiving. **Every room has a voice channel**: press

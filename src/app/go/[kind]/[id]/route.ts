@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
     case "comment": {
       const c = db().prepare("select target_type t, target_id i from comments where id = ?").get(n) as { t: string; i: number } | undefined;
       if (!c) break;
-      const base = c.t === "post" ? `/posts/${c.i}` : c.t === "poll" ? `/polls/${c.i}` : c.t === "event" ? `/events/${c.i}` : "/";
+      const base = c.t === "post" ? `/posts/${c.i}` : c.t === "poll" ? `/polls/${c.i}` : c.t === "event" ? `/events/${c.i}` : c.t === "list" ? `/lists/${c.i}` : "/";
       return redirectTo(`${base}#c-${n}`);
     }
     case "reply": {

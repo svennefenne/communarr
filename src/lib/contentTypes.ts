@@ -177,6 +177,8 @@ export interface ListCard {
   /** rows this member has filled in */
   mine: number;
   canFill: boolean;
+  comments: number;
+  reactions: Reaction[];
   createdAt: number;
   updatedAt: number;
 }
