@@ -40,7 +40,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
       : first.columns.map((c) => ({ key: key(), name: t(c.name), type: c.type, choices: "" })),
   );
   const [rows, setRows] = useState(list?.rows ?? first.rows);
-  const [auto, setAuto] = useState(list?.autoRows ?? false);
+  const [auto, setAuto] = useState(list?.autoRows ?? true);
   const [template, setTemplate] = useState(list ? "" : first.id);
   const [where, setWhere] = useState<string>(list ? (list.private ? "me" : "") : groupId ? String(groupId) : "");
   const [fill, setFill] = useState<"members" | "owner">(list?.fill ?? "members");
