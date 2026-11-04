@@ -228,9 +228,10 @@ class MainActivity : ComponentActivity() {
             setPadding(dp(2), dp(10), 0, dp(6))
         }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         val f = EditText(this).apply {
+            // (one line first: set after the type, it would undo a password's dots)
+            isSingleLine = true
             inputType = type
             imeOptions = action
-            isSingleLine = true
             textSize = 17f
             setTextColor(TEXT)
             setHintTextColor(FAINT)
