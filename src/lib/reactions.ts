@@ -3,7 +3,7 @@ import { db, now, tx } from "./db";
 import type { Reaction } from "./types";
 import { emojiExists } from "./emojis";
 
-export type ReactTarget = "post" | "comment" | "message" | "thread" | "reply" | "poll" | "event";
+export type ReactTarget = "post" | "comment" | "message" | "thread" | "reply" | "poll" | "event" | "list";
 
 /** Reactions for many things at once: id → reactions (most used first). */
 export function reactionsFor(type: ReactTarget, ids: number[], me: number): Map<number, Reaction[]> {

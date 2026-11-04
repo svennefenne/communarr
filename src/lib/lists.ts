@@ -8,7 +8,8 @@ import { indexItem, unindex } from "./search";
 import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf } from "./groups";
 import { GHOST, summaries, type User } from "./users";
 import { broadcast } from "./hub";
-import { groupRefs } from "./posts";
+import { commentCounts, groupRefs } from "./posts";
+import { clearReactions, reactionsFor } from "./reactions";
 import { audit } from "./auth";
 import type { ListCard, ListCell, ListColumn, ListColumnType, ListRowView, ListView } from "./contentTypes";
 import type { UserSummary } from "./types";
@@ -211,6 +212,8 @@ export function toListCards(u: User, rows: ListRow[]): ListCard[] {
   const ids = rows.map((r) => r.id);
   const authors = summaries(rows.map((r) => r.author_id));
   const groups = groupRefs(rows.map((r) => r.group_id));
+  const comments = commentCounts("list", ids);
+  const reacts = reactionsFor("list", ids, u.id);
   const counts = new Map(
     (
       db()
@@ -232,6 +235,8 @@ export function toListCards(u: User, rows: ListRow[]): ListCard[] {
       filled: c?.filled ?? 0,
       mine: c?.mine ?? 0,
       canFill: canFill(u, r),
+      comments: comments.get(r.id) ?? 0,
+      reactions: reacts.get(r.id) ?? [],
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     };
@@ -385,6 +390,10 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
   });
   if (l.author_id !== u.id) audit(u.id, "list changed", `#${id}`, title);
   reindex(id);
+  // comments follow the list ("only me": only its author finds them in search)
+  db()
+    .prepare("update search_index set scope = ? where kind = 'comment' and ref in (select id from comments where target_type = 'list' and target_id = ?)")
+    .run(scopeOf({ group_id: l.group_id, private: priv, author_id: l.author_id }), id);
   broadcast("list", { id });
 }
 
@@ -483,8 +492,14 @@ export function deleteList(u: User, id: number) {
   const l = listRow(id);
   if (!l) return;
   if (!owns(u, l)) throw new ListError("Only the one who made the list can delete it.");
+  for (const c of db().prepare("select id from comments where target_type = 'list' and target_id = ?").all(id) as { id: number }[]) {
+    clearReactions("comment", c.id);
+    unindex("comment", c.id);
+  }
+  db().prepare("delete from comments where target_type = 'list' and target_id = ?").run(id);
   db().prepare("delete from lists where id = ?").run(id);
   db().prepare("delete from bookmarks where target_type = 'list' and target_id = ?").run(id);
+  clearReactions("list", id);
   unindex("list", id);
   if (l.author_id !== u.id) audit(u.id, "list deleted", `#${id}`, l.title);
   broadcast("list", { id, gone: true });

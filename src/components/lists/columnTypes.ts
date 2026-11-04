@@ -14,8 +14,11 @@ export const COLUMN_TYPES: { type: ListColumnType; label: string; icon: LucideIc
 
 export const typeIcon = (type: ListColumnType): LucideIcon => COLUMN_TYPES.find((c) => c.type === type)?.icon ?? Type;
 
-/** Ready-made lists to start from (names English, translated where shown). */
-export const TEMPLATES: { id: string; label: string; columns: Omit<ListColumn, "id">[]; rows: number }[] = [
+/**
+ * Ready-made lists to start from (names English, translated where shown). ownRows: whether a filled-in
+ * row is its filler's (a sign-up sheet: yes; a shopping list anyone ticks off: no).
+ */
+export const TEMPLATES: { id: string; label: string; columns: Omit<ListColumn, "id">[]; rows: number; ownRows: boolean }[] = [
   {
     id: "signup",
     label: "Sign-up sheet",
@@ -24,6 +27,19 @@ export const TEMPLATES: { id: string; label: string; columns: Omit<ListColumn, "
       { name: "What are you bringing?", type: "text" },
     ],
     rows: 11,
+    ownRows: true,
+  },
+  {
+    id: "shopping",
+    label: "Shopping list",
+    columns: [
+      { name: "Bought", type: "check" },
+      { name: "Item", type: "text" },
+      { name: "Quantity", type: "text" },
+      { name: "Who's buying?", type: "member" },
+    ],
+    rows: 15,
+    ownRows: false,
   },
   {
     id: "checklist",
@@ -34,6 +50,7 @@ export const TEMPLATES: { id: string; label: string; columns: Omit<ListColumn, "
       { name: "Who", type: "member" },
     ],
     rows: 8,
+    ownRows: false,
   },
   {
     id: "schedule",
@@ -45,11 +62,13 @@ export const TEMPLATES: { id: string; label: string; columns: Omit<ListColumn, "
       { name: "Who", type: "member" },
     ],
     rows: 6,
+    ownRows: true,
   },
   {
     id: "blank",
     label: "Empty",
     columns: [{ name: "Column 1", type: "text" }],
     rows: 5,
+    ownRows: true,
   },
 ];

@@ -42,7 +42,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
   const [where, setWhere] = useState<string>(list ? (list.private ? "me" : "") : groupId ? String(groupId) : "");
   const [fill, setFill] = useState<"members" | "owner">(list?.fill ?? "members");
   const [addRows, setAddRows] = useState(list?.addRows ?? true);
-  const [ownRows, setOwnRows] = useState(list?.ownRows ?? true);
+  const [ownRows, setOwnRows] = useState(list?.ownRows ?? first.ownRows);
   const [pending, start] = useTransition();
 
   const pick = (id: string) => {
@@ -51,6 +51,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
     setTemplate(id);
     setCols(tp.columns.map((c) => ({ key: key(), name: t(c.name), type: c.type, choices: "" })));
     setRows(tp.rows);
+    setOwnRows(tp.ownRows);
   };
   const set = (k: string, patch: Partial<EditCol>) => setCols((cs) => cs.map((c) => (c.key === k ? { ...c, ...patch } : c)));
   const move = (i: number, d: number) =>
@@ -107,11 +108,11 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
       ) : null}
       <div className="field">
         <label htmlFor="lf-title">{t("Title")}</label>
-        <input id="lf-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder={t("Wednesday: finger food")} autoFocus={!list} style={{ fontSize: "1.1rem", fontWeight: 700 }} />
+        <input id="lf-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder={t("Name the list")} autoFocus={!list} style={{ fontSize: "1.1rem", fontWeight: 700 }} />
       </div>
       <div className="field">
         <span className="label">{t("What it's for (optional)")}</span>
-        <RichEditor ref={ed} variant="compact" showToolbar initial={list?.html} placeholder={t("Everyone brings something for the table: write what you're bringing.")} minHeight={60} draftKey={list ? undefined : "list"} />
+        <RichEditor ref={ed} variant="compact" showToolbar initial={list?.html} placeholder={t("Details, links, pictures…")} minHeight={60} draftKey={list ? undefined : "list"} />
       </div>
       <div className="field">
         <span className="label">{t("Columns")}</span>
@@ -140,7 +141,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
                 </span>
               </div>
               {c.type === "choice" ? (
-                <input className="input sm" value={c.choices} onChange={(e) => set(c.key, { choices: e.target.value })} placeholder={t("The choices, separated by commas: Salad, Bread, Dessert")} aria-label={t("The choices for column {n}", { n: i + 1 })} />
+                <input className="input sm" value={c.choices} onChange={(e) => set(c.key, { choices: e.target.value })} placeholder={t("The choices, separated by commas")} aria-label={t("The choices for column {n}", { n: i + 1 })} />
               ) : null}
             </div>
           ))}

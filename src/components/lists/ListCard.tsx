@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ListChecks, Lock } from "lucide-react";
+import { ListChecks, Lock, MessageSquare } from "lucide-react";
 import type { ListCard } from "@/lib/contentTypes";
-import { useT } from "@/components/app/AppProvider";
+import { useMe, useT } from "@/components/app/AppProvider";
+import { Reactions } from "@/components/content/Reactions";
 import { UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { CardSection } from "@/components/feed/CardSection";
@@ -13,6 +14,7 @@ import { typeIcon } from "./columnTypes";
 /** A list in Lists and the feed: what it's for, its columns, and how far it's been filled in. */
 export function ListCardView({ list: l, section = false }: { list: ListCard; section?: boolean }) {
   const t = useT();
+  const me = useMe();
   const share = l.rows ? Math.round((l.filled / l.rows) * 100) : 0;
   return (
     <article className="panel list-card">
@@ -62,6 +64,13 @@ export function ListCardView({ list: l, section = false }: { list: ListCard; sec
           {l.canFill && !l.mine ? t("Fill in") : t("Open the list")}
         </Link>
       </div>
+      <footer className="post-foot">
+        <Reactions type="list" id={l.id} initial={l.reactions} myName={me?.name ?? ""} />
+        <span className="spacer" />
+        <Link href={`/lists/${l.id}#comments`} className="btn btn-ghost btn-sm">
+          <MessageSquare size={16} /> {l.comments ? t.n(l.comments, "{n} comment", "{n} comments") : t("Comment{verb}", { verb: "" })}
+        </Link>
+      </footer>
     </article>
   );
 }

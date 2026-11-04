@@ -64,7 +64,7 @@ export async function saveAction(type: BookmarkType, id: number) {
 
 export async function reactAction(type: ReactTarget, id: number, emoji: string) {
   return act((u) => {
-    if (!["post", "comment", "thread", "reply", "poll", "event"].includes(type)) throw new UserError("Can't react to that.");
+    if (!["post", "comment", "thread", "reply", "poll", "event", "list"].includes(type)) throw new UserError("Can't react to that.");
     if (!canSeeTarget(u, type, id)) throw new UserError("That's gone.");
     return toggleReaction(u.id, type, id, emoji).reactions;
   });

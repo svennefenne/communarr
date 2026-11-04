@@ -8,13 +8,14 @@ import { indexItem, unindex } from "./search";
 import { canSeePost, postRow } from "./posts";
 import { canSeePoll, pollRow } from "./polls";
 import { canSeeEvent, eventRow, eventScope } from "./events";
+import { canSeeList, listRow } from "./lists";
 import { groupScope } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { serverT } from "./t";
 import type { CommentView } from "./contentTypes";
 
-export type CommentTarget = "post" | "poll" | "event";
+export type CommentTarget = "post" | "poll" | "event" | "list";
 
 interface CommentRow {
   id: number;
@@ -41,6 +42,11 @@ function target(u: User, type: CommentTarget, id: number): { authorId: number; t
     const p = pollRow(id);
     if (!p || !canSeePoll(u, p)) return null;
     return { authorId: p.author_id, title: p.question, url: `/polls/${id}`, locked: false, scope: groupScope(p.group_id) };
+  }
+  if (type === "list") {
+    const l = listRow(id);
+    if (!l || !canSeeList(u, l)) return null;
+    return { authorId: l.author_id, title: l.title, url: `/lists/${id}`, locked: false, scope: l.private ? `u:${l.author_id}` : groupScope(l.group_id) };
   }
   const e = eventRow(id);
   if (!e || !canSeeEvent(u, e)) return null;

@@ -6,6 +6,7 @@ import { canSeeEvent, eventRow } from "./events";
 import { canSeeThread, threadRow } from "./forum";
 import { canSee as canSeeRoom, room } from "./chat";
 import { canSeeGroup, groupRow } from "./groups";
+import { canSeeList, listRow } from "./lists";
 import { userById, type User } from "./users";
 
 /** Can this member see this thing? (The one check behind reactions, reports and notifications.) */
@@ -26,6 +27,10 @@ export function canSeeTarget(u: User, type: string, id: number): boolean {
     case "thread": {
       const t = threadRow(id);
       return !!t && canSeeThread(u, t);
+    }
+    case "list": {
+      const l = listRow(id);
+      return !!l && canSeeList(u, l);
     }
     case "reply": {
       const r = db().prepare("select thread_id t from forum_posts where id = ?").get(id) as { t: number } | undefined;
