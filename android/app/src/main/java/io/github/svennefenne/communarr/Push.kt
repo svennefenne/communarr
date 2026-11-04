@@ -31,9 +31,9 @@ object Push {
     private const val PREFS = "push"
     const val CHANNEL = "notifications"
 
-    /** What the page's Settings → Notifications shows. */
-    data class Status(val permission: String, val configured: Boolean, val ready: Boolean) {
-        fun json(): String = JSONObject().put("t", "push-status").put("permission", permission).put("configured", configured).put("ready", ready).toString()
+    /** What the page's Settings → Notifications shows (error: why this phone couldn't sign up). */
+    data class Status(val permission: String, val configured: Boolean, val ready: Boolean, val error: String? = null) {
+        fun json(): String = JSONObject().put("t", "push-status").put("permission", permission).put("configured", configured).put("ready", ready).put("error", error ?: "").toString()
     }
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -62,7 +62,7 @@ object Push {
         FirebaseApp.initializeApp(context, o)
     }
 
-    /** This phone's token, as Firebase gave it (PushService.onRegistered). */
+    /** This phone's token, as Firebase gave it. */
     fun keepToken(context: Context, token: String) = prefs(context).edit().putString("token", token).apply()
 
     /**
@@ -81,23 +81,23 @@ object Push {
             .putString("apiKey", o.optString("apiKey")).putString("appId", o.optString("appId"))
             .putString("projectId", o.optString("projectId")).putString("senderId", o.optString("senderId"))
             .putBoolean("configured", true).apply()
-        val ok = runCatching {
+        var error: String? = null
+        val ok = try {
             firebase(context, saved(context)!!)
-            // the token: the one Firebase gave before, else sign up and wait for it (PushService.onRegistered)
-            val token = prefs(context).getString("token", null) ?: run {
-                Tasks.await(FirebaseMessaging.getInstance().register(), 30, TimeUnit.SECONDS)
-                val until = System.currentTimeMillis() + 30_000
-                var t: String? = null
-                while (t == null && System.currentTimeMillis() < until) {
-                    t = prefs(context).getString("token", null)
-                    if (t == null) Thread.sleep(250)
-                }
-                t
-            }
-            token != null && sendToken(context, server, token)
-        }.getOrDefault(false)
-        prefs(context).edit().putBoolean("ready", ok).apply()
-        return Status(permission(context), configured = true, ready = ok)
+            // this phone's token: getToken() is Firebase Messaging's default (its newer register() is
+            // off unless a manifest switch turns getToken() off instead)
+            @Suppress("DEPRECATION")
+            val token = Tasks.await(FirebaseMessaging.getInstance().token, 30, TimeUnit.SECONDS)
+            keepToken(context, token)
+            sendToken(context, server, token).also { if (!it) error = "the server didn't take the token" }
+        } catch (e: Exception) {
+            error = (e.cause ?: e).let { it.message ?: it.javaClass.simpleName }
+            false
+        }
+        prefs(context).edit().putBoolean("ready", ok).putString("error", error).apply()
+        // (and to the server's log, where a phone that can't sign up shows why)
+        if (error != null) runCatching { request(context, server, "POST", "/api/app/push", JSONObject().put("error", error).put("app", context.packageName)) }
+        return Status(permission(context), configured = true, ready = ok, error = error)
     }
 
     /** This phone's token to the server, for the log-in the app has with it. */
@@ -129,7 +129,7 @@ object Push {
     /** Where notifications stand on this phone: Android's permission, and what the server said last. */
     fun status(context: Context, activity: Activity? = null): Status {
         val p = prefs(context)
-        return Status(permission(context, activity), p.getBoolean("configured", false), p.getBoolean("ready", false))
+        return Status(permission(context, activity), p.getBoolean("configured", false), p.getBoolean("ready", false), p.getString("error", null))
     }
 
     /** "granted", "ask" (Android can still ask), or "denied" (only the app's settings can allow them now). */

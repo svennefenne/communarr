@@ -379,6 +379,8 @@ const sv: Record<string, string> = {
   "Notifications are off for this phone.": "Notiser är avstängda på den här telefonen.",
   "Notifications are on for this phone.": "Notiser är på för den här telefonen.",
   "Signing this phone up…": "Registrerar telefonen…",
+  "Couldn't sign this phone up: {error}": "Kunde inte registrera telefonen: {error}",
+  "Try again": "Försök igen",
   "Open the app's settings": "Öppna appens inställningar",
   "The Android app": "Android-appen",
   "Notifications in the Android app (Firebase)": "Notiser i Android-appen (Firebase)",

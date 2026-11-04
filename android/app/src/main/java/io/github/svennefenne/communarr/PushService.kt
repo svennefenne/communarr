@@ -10,8 +10,9 @@ class PushService : FirebaseMessagingService() {
         Push.show(this, message.data)
     }
 
-    /** Signed up with Firebase (Push.register), or a new token since: to the server the app's logged in to. */
-    override fun onRegistered(token: String) {
+    /** A new token for this phone (Firebase renews them now and then): to the server the app's logged in to. */
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onNewToken(token: String) {
         Push.keepToken(this, token)
         val server = Server.saved(this) ?: return
         thread { Push.sendToken(this, server, token) }
