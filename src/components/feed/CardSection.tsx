@@ -1,9 +1,9 @@
 "use client";
 
-import { CalendarDays, FileText, MessagesSquare, Newspaper, Vote } from "lucide-react";
+import { CalendarDays, FileText, ListChecks, MessagesSquare, Newspaper, Vote } from "lucide-react";
 import { useT } from "@/components/app/AppProvider";
 
-export type SectionKind = "post" | "news" | "event" | "poll" | "thread";
+export type SectionKind = "post" | "news" | "event" | "poll" | "thread" | "list";
 
 /** each kind of card and the part of the site it belongs to (the names in the menus) */
 const SECTIONS: Record<SectionKind, { label: string; icon: React.ComponentType<{ size?: number }> }> = {
@@ -12,6 +12,7 @@ const SECTIONS: Record<SectionKind, { label: string; icon: React.ComponentType<{
   event: { label: "Calendar", icon: CalendarDays },
   poll: { label: "Polls", icon: Vote },
   thread: { label: "Forum", icon: MessagesSquare },
+  list: { label: "Lists", icon: ListChecks },
 };
 
 /** The strip along the top of a card on the front page: which part of the site it's from. */

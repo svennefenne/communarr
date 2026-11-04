@@ -141,10 +141,66 @@ export interface EventView {
   occurrence?: number;
 }
 
+/** A list's column: what it holds decides how it's filled in. */
+export type ListColumnType = "text" | "number" | "check" | "member" | "date" | "time" | "choice";
+export interface ListColumn {
+  id: string;
+  name: string;
+  type: ListColumnType;
+  /** a choice's choices */
+  options?: string[];
+}
+/** a cell: text, a number, true (checked), a member's id, "2026-11-06", "18:30", or a choice */
+export type ListCell = string | number | boolean;
+
+export interface ListRowView {
+  id: number;
+  cells: Record<string, ListCell>;
+  /** whose row it is (the first to fill it in) */
+  filledBy: UserSummary | null;
+  /** this member may change it */
+  canEdit: boolean;
+}
+
+/** A list in the Lists overview and the feed. */
+export interface ListCard {
+  id: number;
+  title: string;
+  text: string;
+  author: UserSummary;
+  group: GroupRef | null;
+  private: boolean;
+  columns: ListColumn[];
+  rows: number;
+  /** rows with something in them */
+  filled: number;
+  /** rows this member has filled in */
+  mine: number;
+  canFill: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ListView extends ListCard {
+  html: string;
+  /** who can fill it in: everyone who sees it, or only its author */
+  fill: "members" | "owner";
+  addRows: boolean;
+  /** a filled row is its filler's: only they (and the list's author) can change it */
+  ownRows: boolean;
+  rowList: ListRowView[];
+  /** the members named in member columns */
+  people: Record<number, UserSummary>;
+  /** may change the columns, rows and settings */
+  canEdit: boolean;
+  canAddRows: boolean;
+}
+
 export type FeedItem =
   | { type: "post"; at: number; post: PostView }
   | { type: "thread"; at: number; thread: ThreadCard }
   | { type: "poll"; at: number; poll: PollView }
-  | { type: "event"; at: number; event: EventView };
+  | { type: "event"; at: number; event: EventView }
+  | { type: "list"; at: number; list: ListCard };
 
-export type FeedFilter = "all" | "posts" | "news" | "forum" | "polls" | "events";
+export type FeedFilter = "all" | "posts" | "news" | "forum" | "polls" | "events" | "lists";

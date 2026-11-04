@@ -144,6 +144,7 @@ export function cleanOrphans(): { removed: number; bytes: number } {
     "select body_html h from forum_posts",
     "select description_html h from polls",
     "select description_html h from events",
+    "select description_html h from lists",
     "select cover h from events where cover is not null",
     "select body_html h from messages",
     "select bio_html h from users",

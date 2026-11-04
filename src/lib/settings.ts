@@ -40,9 +40,9 @@ export interface SiteSettings {
   /** backdrops an admin uploaded, for the site and everyone's own themes */
   backdrops: LibraryBackdrop[];
   announcement: { text: string; style: "info" | "warn" | "party"; on: boolean; id: number };
-  features: { forum: boolean; polls: boolean; calendar: boolean; groups: boolean; chat: boolean; voice: boolean; news: boolean };
+  features: { forum: boolean; polls: boolean; calendar: boolean; groups: boolean; chat: boolean; voice: boolean; news: boolean; lists: boolean };
   /** who may create these (members or only moderators/admins) */
-  canCreate: { groups: "members" | "mods"; rooms: "members" | "mods"; events: "members" | "mods"; polls: "members" | "mods"; emojis: "members" | "mods" };
+  canCreate: { groups: "members" | "mods"; rooms: "members" | "mods"; events: "members" | "mods"; polls: "members" | "mods"; emojis: "members" | "mods"; lists: "members" | "mods" };
   /** Google's animated emoji (Noto, CC BY 4.0) to pick from when adding one of the site's own */
   emojiLibrary: boolean;
   /** bgg: in the editor links board games on BoardGameGeek (its token is kept apart: lib/bgg.ts) */
@@ -85,8 +85,8 @@ export const DEFAULTS: SiteSettings = {
   backdrop: "orbits",
   backdrops: [],
   announcement: { text: "", style: "info", on: false, id: 0 },
-  features: { forum: true, polls: true, calendar: true, groups: true, chat: true, voice: true, news: true },
-  canCreate: { groups: "members", rooms: "members", events: "members", polls: "members", emojis: "members" },
+  features: { forum: true, polls: true, calendar: true, groups: true, chat: true, voice: true, news: true, lists: true },
+  canCreate: { groups: "members", rooms: "members", events: "members", polls: "members", emojis: "members", lists: "members" },
   emojiLibrary: true,
   bggLinks: true,
   maxUploadMb: 20,

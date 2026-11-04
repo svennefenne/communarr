@@ -15,6 +15,7 @@ export interface Me extends UserSummary {
 export interface Features {
   forum: boolean;
   polls: boolean;
+  lists: boolean;
   calendar: boolean;
   groups: boolean;
   chat: boolean;
@@ -34,7 +35,7 @@ export interface SiteInfo {
   footer: string;
   features: Features;
   /** what this member may start (emojis: add the site's own) */
-  can: { groups: boolean; rooms: boolean; events: boolean; polls: boolean; news: boolean; emojis: boolean };
+  can: { groups: boolean; rooms: boolean; events: boolean; polls: boolean; news: boolean; emojis: boolean; lists: boolean };
   /** the site's own emoji (logged in only) */
   emojis: CustomEmoji[];
   /** Google's animated emoji to pick from when adding one (Admin → Features & permissions) */

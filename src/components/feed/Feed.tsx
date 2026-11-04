@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, CalendarDays, FileText, Layers, MessagesSquare, Newspaper, Vote } from "lucide-react";
+import { ArrowUp, CalendarDays, FileText, Layers, ListChecks, MessagesSquare, Newspaper, Vote } from "lucide-react";
 import type { FeedFilter, FeedItem } from "@/lib/contentTypes";
 import { useApp, useLive, useT } from "@/components/app/AppProvider";
 import { Empty } from "@/components/ui/ui";
@@ -9,16 +9,18 @@ import { PostCard } from "./PostCard";
 import { PollCard } from "./PollCard";
 import { EventCard } from "./EventCard";
 import { ThreadFeedCard } from "./ThreadCard";
+import { ListCardView } from "@/components/lists/ListCard";
 import { Composer, type ComposerGroup } from "./Composer";
 import { feedAction } from "@/app/actions/content";
 
-const FILTERS: { id: FeedFilter; label: string; icon: React.ComponentType<{ size?: number }>; feature?: "forum" | "polls" | "calendar" | "news" }[] = [
+const FILTERS: { id: FeedFilter; label: string; icon: React.ComponentType<{ size?: number }>; feature?: "forum" | "polls" | "calendar" | "news" | "lists" }[] = [
   { id: "all", label: "Everything", icon: Layers },
   { id: "posts", label: "Posts", icon: FileText },
   { id: "news", label: "News", icon: Newspaper, feature: "news" },
   { id: "forum", label: "Forum", icon: MessagesSquare, feature: "forum" },
   { id: "polls", label: "Polls", icon: Vote, feature: "polls" },
   { id: "events", label: "Events", icon: CalendarDays, feature: "calendar" },
+  { id: "lists", label: "Lists", icon: ListChecks, feature: "lists" },
 ];
 
 /** One thing in the feed; section: a strip on top saying which part of the site it's from (the front page). */
@@ -32,10 +34,12 @@ export function FeedItemView({ item, section = false }: { item: FeedItem; sectio
       return <EventCard event={item.event} section={section} />;
     case "thread":
       return <ThreadFeedCard thread={item.thread} section={section} />;
+    case "list":
+      return <ListCardView list={item.list} section={section} />;
   }
 }
 
-const keyOf = (i: FeedItem) => `${i.type}-${i.type === "post" ? i.post.id : i.type === "poll" ? i.poll.id : i.type === "event" ? i.event.id : i.thread.id}`;
+const keyOf = (i: FeedItem) => `${i.type}-${i.type === "post" ? i.post.id : i.type === "poll" ? i.poll.id : i.type === "event" ? i.event.id : i.type === "list" ? i.list.id : i.thread.id}`;
 
 /** The feed with its filters, more as you scroll, and a pill when others post something new. */
 export function Feed({

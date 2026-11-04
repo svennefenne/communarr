@@ -13,7 +13,7 @@ import type { UserSummary } from "./types";
  *   u:<id>   only that member
  */
 
-export type SearchKind = "post" | "news" | "comment" | "thread" | "reply" | "poll" | "event" | "message" | "group" | "user" | "room";
+export type SearchKind = "post" | "news" | "comment" | "thread" | "reply" | "poll" | "event" | "message" | "group" | "user" | "room" | "list";
 
 export const KIND_LABEL: Record<SearchKind, string> = {
   post: "Post",
@@ -27,6 +27,7 @@ export const KIND_LABEL: Record<SearchKind, string> = {
   group: "Group",
   user: "Member",
   room: "Chat room",
+  list: "List",
 };
 
 const URL_FOR: Record<SearchKind, (ref: number) => string> = {
@@ -41,6 +42,7 @@ const URL_FOR: Record<SearchKind, (ref: number) => string> = {
   group: (r) => `/go/group/${r}`,
   user: (r) => `/go/user/${r}`,
   room: (r) => `/chat/${r}`,
+  list: (r) => `/lists/${r}`,
 };
 
 export function indexItem(kind: SearchKind, ref: number, scope: string, authorId: number | null, createdAt: number, title: string, body: string, url?: string) {

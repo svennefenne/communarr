@@ -1219,3 +1219,276 @@ div.backdrop-tile {
 .custom-repeat-sum {
   margin: 2px 0 0;
 }
+
+/* ── Lists: tables of the author's making, filled in together ── */
+.kind-icon.list {
+  background: color-mix(in srgb, var(--stripe-4) 18%, transparent);
+  color: var(--stripe-4);
+}
+.card-section.list svg {
+  color: var(--stripe-4);
+}
+.list-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.list-card .post-head {
+  margin-bottom: 0;
+}
+.list-card-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.list-card-title:hover {
+  color: var(--accent-2);
+}
+.list-card-text {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.list-card-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.list-col-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+.list-col-chip svg {
+  color: var(--muted);
+}
+.list-card-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.list-progress {
+  flex: 0 0 90px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.list-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--stripe-4);
+}
+.list-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.list-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  overflow-wrap: anywhere;
+}
+
+/* the table: as wide as its columns need, sideways on a narrow screen */
+.list-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+.list-table th {
+  position: sticky;
+  top: 0;
+  padding: 10px 10px;
+  background: color-mix(in srgb, var(--stripe-4) 30%, var(--surface-2));
+  color: var(--text);
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line-strong);
+}
+.lt-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.lt-head svg {
+  opacity: 0.7;
+}
+.list-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  vertical-align: middle;
+}
+.list-table th + th {
+  border-left: 1px solid var(--line-strong);
+}
+.list-table tr:last-child td {
+  border-bottom: 0;
+}
+.list-table tr.mine td {
+  background: rgb(var(--accent-2-rgb) / 0.07);
+}
+.list-table .lt-n {
+  width: 36px;
+  border-left: 0;
+  text-align: center;
+  font-size: 0.75rem;
+}
+.list-table th.lt-n {
+  color: var(--muted);
+}
+.list-table .lt-act {
+  width: 36px;
+  text-align: center;
+}
+/* a wide list scrolls sideways: the row's number and its menu stay in view, like frozen columns */
+.list-table td.lt-n,
+.list-table td.lt-act {
+  position: sticky;
+  z-index: 1;
+  background: var(--surface);
+}
+.list-table td.lt-n {
+  left: 0;
+}
+.list-table td.lt-act {
+  right: 0;
+  border-left: 1px solid var(--line);
+}
+.list-table tr.mine td.lt-n,
+.list-table tr.mine td.lt-act {
+  background: linear-gradient(rgb(var(--accent-2-rgb) / 0.07), rgb(var(--accent-2-rgb) / 0.07)), var(--surface);
+}
+.list-table th.lt-n {
+  left: 0;
+  z-index: 2;
+}
+.list-table th.lt-act {
+  right: 0;
+  z-index: 2;
+}
+.list-table td.lt-col-text {
+  min-width: 200px;
+}
+.list-table td.lt-col-member,
+.list-table td.lt-col-date,
+.list-table td.lt-col-choice {
+  min-width: 160px;
+}
+.list-table td.lt-col-time {
+  min-width: 150px;
+}
+.list-table td.lt-col-number {
+  min-width: 90px;
+}
+.list-table td.lt-col-check {
+  width: 64px;
+  text-align: center;
+}
+.lt-input,
+.lt-select {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+.lt-input:hover,
+.lt-select:hover {
+  border-color: var(--line);
+}
+.lt-input:focus,
+.lt-select:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: var(--field);
+}
+.lt-input.num,
+.lt-num {
+  font-variant-numeric: tabular-nums;
+}
+.lt-select option {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.lt-check {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--stripe-4);
+  cursor: pointer;
+}
+.lt-check:disabled {
+  cursor: default;
+}
+.lt-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.lt-member {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+.lt-empty {
+  padding: 0 8px;
+  color: var(--muted);
+}
+.list-table .date-btn {
+  border-color: transparent;
+  background: transparent;
+}
+.list-table .date-btn:hover {
+  border-color: var(--line);
+}
+
+/* the form's columns */
+.list-col-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.list-col-edit-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.list-col-edit-row > .input {
+  flex: 2 1 200px;
+  min-width: 0;
+}
+.list-col-edit-row > .select {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.list-col-edit-tools {
+  display: inline-flex;
+  gap: 2px;
+}
