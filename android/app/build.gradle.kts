@@ -72,4 +72,8 @@ android {
 dependencies {
     implementation("androidx.activity:activity-ktx:1.12.4")
     implementation("androidx.webkit:webkit:1.17.1")
+    // notifications (Push.kt): started with the server's own Firebase settings, no google-services.json
+    implementation("com.google.firebase:firebase-messaging:26.0.1")
+    // (Firebase brings an older one, which registerForActivityResult can't use)
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
 }

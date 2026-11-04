@@ -11,7 +11,7 @@ import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
 import { bytes } from "./Overview";
 import { SaveBar } from "./Section";
-import { archiveRoomAdminAction, cleanupAction, deleteGroupAdminAction, deleteRoomAdminAction, reindexAction, rotateVapidAction, saveSettingsAction, testPushAction, vacuumAction } from "@/app/actions/admin";
+import { archiveRoomAdminAction, cleanupAction, clearFcmAction, deleteGroupAdminAction, deleteRoomAdminAction, reindexAction, rotateVapidAction, saveFcmAction, saveSettingsAction, testPushAction, vacuumAction } from "@/app/actions/admin";
 
 export interface AdminGroup {
   id: number;
@@ -141,7 +141,7 @@ export function DefaultRoom({ rooms, value }: { rooms: AdminRoom[]; value: numbe
   );
 }
 
-export function NotifyVoice({ s, vapid, devices, timezones }: { s: SiteSettings; vapid: string; devices: number; timezones: string[] }) {
+export function NotifyVoice({ s, vapid, devices, timezones, fcm }: { s: SiteSettings; vapid: string; devices: number; timezones: string[]; fcm: { project: string | null; apps: string[]; account: string | null; phones: number } }) {
   const t = useT();
   const toast = useToast();
   const router = useRouter();
@@ -195,6 +195,7 @@ export function NotifyVoice({ s, vapid, devices, timezones }: { s: SiteSettings;
         </details>
         <SaveBar pending={pending} onSave={() => save({ pushContact: contact.trim() })} />
       </div>
+      <AppPush fcm={fcm} />
       <div className="stack tight">
         <b>{t("Voice chat")}</b>
         <span className="small muted">{t("Calls go directly between people. STUN finds the way through home routers; a TURN server relays calls that can't (phones on mobile data often need one, e.g. coturn).")}</span>
@@ -232,6 +233,77 @@ export function NotifyVoice({ s, vapid, devices, timezones }: { s: SiteSettings;
           ))}
         </select>
         <SaveBar pending={pending} onSave={() => save({ timezone: tz })} />
+      </div>
+      {node}
+    </div>
+  );
+}
+
+/**
+ * The Android app's notifications, through Firebase: the project's google-services.json (the apps'
+ * settings) and a service account's key (to send with: saved, never shown again).
+ */
+function AppPush({ fcm }: { fcm: { project: string | null; apps: string[]; account: string | null; phones: number } }) {
+  const t = useT();
+  const toast = useToast();
+  const router = useRouter();
+  const [services, setServices] = useState("");
+  const [account, setAccount] = useState("");
+  const [pending, start] = useTransition();
+  const { confirm, node } = useConfirm();
+  const ready = !!(fcm.project && fcm.account);
+  return (
+    <div className="stack tight">
+      <b>{t("Notifications in the Android app (Firebase)")}</b>
+      <span className="small muted">
+        {ready
+          ? `${t("Project {project}, sent as {account}.", { project: fcm.project!, account: fcm.account! })} ${t("Apps: {apps}.", { apps: fcm.apps.join(", ") })} ${t.n(fcm.phones, "{n} phone signed up.", "{n} phones signed up.")}`
+          : t("Not set up: the app gets no notifications yet.")}
+      </span>
+      <details className="small">
+        <summary style={{ cursor: "pointer" }}>{t("How to set it up")}</summary>
+        <ol style={{ margin: "6px 0 0", paddingLeft: 20 }}>
+          <li>{t("At console.firebase.google.com, make a project (it's free; Google Analytics isn't needed).")}</li>
+          <li>{t("Add an Android app for each copy of the app, by its package name (Communarr: io.github.svennefenne.communarr; a copy of your own: its own, such as io.github.svennefenne.communarr). Skip the steps about the SDK.")}</li>
+          <li>{t("Project settings → General: download google-services.json (after adding the apps, so they're all in it).")}</li>
+          <li>{t("Project settings → Service accounts: Generate new private key.")}</li>
+          <li>{t("Paste both here and save. Phones that already have the app sign up the next time it's opened.")}</li>
+        </ol>
+      </details>
+      <div className="field">
+        <label htmlFor="fcm-services">google-services.json</label>
+        <textarea id="fcm-services" className="textarea mono small" rows={3} value={services} onChange={(e) => setServices(e.target.value)} placeholder={fcm.project ? t("Saved. Paste a new one to replace it.") : '{ "project_info": … }'} />
+      </div>
+      <div className="field">
+        <label htmlFor="fcm-account">{t("The service account's key")}</label>
+        <textarea id="fcm-account" className="textarea mono small" rows={3} value={account} onChange={(e) => setAccount(e.target.value)} placeholder={fcm.account ? t("Saved. Paste a new one to replace it.") : '{ "type": "service_account", … }'} />
+      </div>
+      <div className="row wrap">
+        <button
+          type="button"
+          className={`btn btn-sm btn-primary ${pending ? "loading" : ""}`}
+          disabled={pending || (!services.trim() && !account.trim())}
+          onClick={() =>
+            start(async () => {
+              const r = await saveFcmAction({ services, account });
+              if (!r.ok) return toast(r.error, { kind: "err" });
+              setServices("");
+              setAccount("");
+              toast(t("Saved."));
+              router.refresh();
+            })
+          }
+        >
+          {t("Save")}
+        </button>
+        {fcm.project || fcm.account ? (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => confirm(t("Take Firebase away? The app gets no notifications until it's set up again."), t("Remove"), async () => {
+            await clearFcmAction();
+            router.refresh();
+          })}>
+            <Trash2 size={14} /> {t("Remove")}
+          </button>
+        ) : null}
       </div>
       {node}
     </div>

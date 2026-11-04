@@ -43,6 +43,10 @@ export const NOTIFY_KINDS = {
   poll: "Polls you voted in close",
   group: "Activity in your groups",
   reaction: "Reactions to your posts",
+  listFill: "Someone fills in your list",
+  listNew: "New lists",
+  listRow: "Someone changes your row in a list",
+  listEdit: "Changes to lists you're on",
 } as const;
 export type NotifyKind = keyof typeof NOTIFY_KINDS;
 /** for each kind: in the bell, as a push notification on your devices, and by mail while you're away */

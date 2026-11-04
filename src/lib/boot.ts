@@ -9,7 +9,7 @@ import { vapidPublicKey } from "./push";
 import { withDefaults } from "./sounds";
 import { listEmojis } from "./emojis";
 import { bggMode } from "./bgg";
-import { latestApp } from "@/lib/apps";
+import { latestApp, latestApps } from "@/lib/apps";
 
 export function me(u: User): Me {
   // (the groups they're in: a sound for a group's new post only plays for its members)
@@ -47,6 +47,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     clock: { timeFormat: s.timeFormat, weekStart: s.weekStart },
     sounds: u ? withDefaults(s.sounds) : null,
     androidApp: androidApp(),
+    androidApps: latestApps(),
   };
 }
 

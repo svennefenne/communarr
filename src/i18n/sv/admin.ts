@@ -495,6 +495,10 @@ const sv: Record<string, string> = {
   "Polls you voted in close": "Omröstningar du har röstat i stänger",
   "Activity in your groups": "Aktivitet i dina grupper",
   "Reactions to your posts": "Reaktioner på dina inlägg",
+  "Someone fills in your list": "Någon fyller i din lista",
+  "New lists": "Nya listor",
+  "Someone changes your row in a list": "Någon ändrar din rad i en lista",
+  "Changes to lists you're on": "Ändringar i listor du är med i",
   "{kind} in the bell": "{kind} i klockan",
   "{kind} on my devices": "{kind} på mina enheter",
   "Chat messages don't go in the bell (the chat counts them); choose per room in the room's ⋯ menu whether you hear about every message, only @mentions, or nothing.":

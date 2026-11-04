@@ -30,6 +30,7 @@ import { withDefaults } from "@/lib/sounds";
 import { getMailSettings, lastMailFailure, mailReady } from "@/lib/mail";
 import { firstOpenRoom } from "@/lib/chat";
 import { mailOrigin, rememberOrigin } from "@/lib/accountMail";
+import { fcmStatus } from "@/lib/fcm";
 
 export async function generateMetadata() {
   return { title: (await requestT())("Admin") };
@@ -184,7 +185,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <FeatureSettings s={s} bggToken={!!bggToken()} />
               </Section>
               <Section id="notifications" title={t("Notifications & voice")} icon={<Bell size={18} />}>
-                <NotifyVoice s={s} vapid={vapidPublicKey()} devices={o.devices} timezones={tzs} />
+                <NotifyVoice s={s} vapid={vapidPublicKey()} devices={o.devices} timezones={tzs} fcm={fcmStatus()} />
               </Section>
               <Section id="sounds" title={t("Sounds")} icon={<Volume2 size={18} />} hint={t("Sounds for what happens on the site, and how loud")}>
                 <SoundsAdmin initial={withDefaults(s.sounds)} />

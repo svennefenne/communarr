@@ -11,7 +11,9 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
 import android.view.Gravity
 import android.view.KeyEvent
@@ -36,27 +38,38 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.webkit.JavaScriptReplyProxy
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.concurrent.thread
 
 /**
  * The Communarr app: the server's own site in a web view, as it looks in a browser. Logged out (the
  * first time, after logging out, or when the session has run out) it shows only its own log-in screen:
- * the server's address, a username and a password.
+ * the server's address, a username and a password. Logged in, it shows the server's notifications
+ * (Push), and installs a newer copy of itself from the server when the page's menu offers one.
  */
 class MainActivity : ComponentActivity() {
     private lateinit var root: FrameLayout
     private var web: WebView? = null
     private var server = ""
-    private val userAgent by lazy { "${WebSettings.getDefaultUserAgent(this)} CommunarrApp/${BuildConfig.VERSION_NAME}" }
+    // (the page reads the app's name and version here: "Get the app" hidden, "New version" offered)
+    private val userAgent by lazy { "${WebSettings.getDefaultUserAgent(this)} CommunarrApp/${BuildConfig.VERSION_NAME} (${getString(R.string.app_name)})" }
 
     // a picture to post: the phone's own picker
     private var picked: ValueCallback<Array<Uri>>? = null
@@ -75,6 +88,22 @@ class MainActivity : ComponentActivity() {
         asking?.let { if (ok) it.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) else it.deny() }
         asking = null
     }
+
+    // notifications (Android 13 and later ask); the page's "Turn on" waits for the answer
+    private var notifyReply: JavaScriptReplyProxy? = null
+    private val askNotify = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        Push.asked(this)
+        val reply = notifyReply
+        notifyReply = null
+        val to = server
+        thread {
+            val st = if (Push.permission(this) == "granted") Push.register(this, to) else Push.status(this, this)
+            runOnUiThread { reply?.postMessage(Push.status(this, this).copy(configured = st.configured, ready = st.ready).json()) }
+        }
+    }
+
+    // an update downloaded while Android still had to allow installing from this app
+    private var waiting: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,12 +124,33 @@ class MainActivity : ComponentActivity() {
         }
         // logged in before: the site (it sends a run-out session to /login, which brings the log-in screen back)
         val saved = Server.saved(this)
-        if (saved == null) showLogIn(null) else showWeb(saved)
+        if (saved == null) showLogIn(null) else showWeb(saved, intent.getStringExtra(OPEN))
+    }
+
+    /** A notification tapped while the app was open: its page. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val path = intent.getStringExtra(OPEN)?.takeIf(::sitePath) ?: return
+        val w = web
+        if (w != null) w.loadUrl(server + path) else if (server.isNotEmpty()) showWeb(server, path)
+    }
+
+    // in the background the page is hidden: the server counts this phone as away, and pushes to it
+    override fun onStart() {
+        super.onStart()
+        web?.onResume()
+    }
+
+    override fun onStop() {
+        web?.onPause()
+        super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
         themeBars()
+        // back from allowing installs from this app: the update it downloaded
+        waiting?.let { if (packageManager.canRequestPackageInstalls()) install(it) }
     }
 
     override fun onPause() {
@@ -287,8 +337,9 @@ class MainActivity : ComponentActivity() {
     // ------------------------------------------------------------ the site
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun showWeb(address: String) {
+    private fun showWeb(address: String, path: String? = null) {
         server = address
+        var registered = false
         clear()
         val w = WebView(this)
         w.setBackgroundColor(BG)
@@ -331,7 +382,13 @@ class MainActivity : ComponentActivity() {
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                if (view == web) themeBars()
+                if (view != web) return
+                themeBars()
+                // logged in: notifications (once a start)
+                if (!registered && !loggedOut(Uri.parse(url))) {
+                    registered = true
+                    notifications()
+                }
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -375,9 +432,110 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        // the page's messages to the app (window.CommunarrApp), from the server's own pages only
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            WebViewCompat.addWebMessageListener(w, "CommunarrApp", setOf(address)) { _, message, _, isMainFrame, reply ->
+                if (isMainFrame) message.data?.let { fromPage(it, reply) }
+            }
+        }
+        // a download that isn't a page: the browser's
+        w.setDownloadListener { url, _, _, _, _ -> runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
         root.addView(w, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         web = w
-        w.loadUrl(address)
+        w.loadUrl(if (path != null && sitePath(path)) address + path else address)
+    }
+
+    /** A path on the site ("/lists/3"), not somewhere else ("//elsewhere.example"). */
+    private fun sitePath(path: String) = path.startsWith("/") && !path.startsWith("//") && !path.contains('\\')
+
+    // ------------------------------------------------------------ the page's messages
+
+    private fun fromPage(data: String, reply: JavaScriptReplyProxy) {
+        val m = runCatching { JSONObject(data) }.getOrNull() ?: return
+        when (m.optString("t")) {
+            "update" -> update(m.optString("url"))
+            "push-status" -> {
+                val to = server
+                thread {
+                    // (signs the phone up first if it isn't yet)
+                    val st = if (Push.status(this).ready) Push.status(this) else Push.register(this, to)
+                    runOnUiThread { reply.postMessage(Push.status(this, this).copy(configured = st.configured, ready = st.ready).json()) }
+                }
+            }
+            "push-on" -> askForNotifications(reply)
+            "push-settings" -> runCatching {
+                startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+            }
+        }
+    }
+
+    // ------------------------------------------------------------ notifications
+
+    /** Logged in: sign this phone up with the server, and the first time ask Android to allow notifications. */
+    private fun notifications() {
+        val to = server
+        thread {
+            val st = Push.register(this, to)
+            runOnUiThread { if (st.configured && Push.permission(this, this) == "ask" && !getSharedPreferences("push", MODE_PRIVATE).getBoolean("asked", false)) askForNotifications(null) }
+        }
+    }
+
+    private fun askForNotifications(reply: JavaScriptReplyProxy?) {
+        if (Build.VERSION.SDK_INT >= 33 && Push.permission(this, this) == "ask") {
+            notifyReply = reply
+            askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            val to = server
+            thread {
+                val st = Push.register(this, to)
+                runOnUiThread { reply?.postMessage(Push.status(this, this).copy(configured = st.configured, ready = st.ready).json()) }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------ updating itself
+
+    /** A newer copy of the app on the server ("Update" in the page's menu): downloaded, then Android's installer. */
+    private fun update(url: String) {
+        val uri = runCatching { Uri.parse(URL(URL(server), url).toString()) }.getOrNull() ?: return
+        if (Server.origin(uri) != server || uri.path?.matches(Regex("/[A-Za-z0-9][\\w.-]*\\.apk")) != true) return
+        Toast.makeText(this, R.string.downloading, Toast.LENGTH_SHORT).show()
+        thread {
+            val file = File(cacheDir, "updates/update.apk")
+            val failed = try {
+                file.parentFile?.mkdirs()
+                val conn = URL(uri.toString()).openConnection() as HttpURLConnection
+                conn.connectTimeout = 15_000
+                conn.readTimeout = 60_000
+                try {
+                    if (conn.responseCode != 200) "HTTP ${conn.responseCode}" else {
+                        conn.inputStream.use { input -> file.outputStream().use { input.copyTo(it) } }
+                        null
+                    }
+                } finally {
+                    conn.disconnect()
+                }
+            } catch (e: Exception) {
+                e.message ?: e.javaClass.simpleName
+            }
+            runOnUiThread {
+                if (failed == null) install(file) else Toast.makeText(this, getString(R.string.download_failed, failed), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun install(file: File) {
+        // the first time, Android asks to allow installing from this app (then onResume goes on)
+        if (!packageManager.canRequestPackageInstalls()) {
+            waiting = file
+            runCatching { startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName"))) }
+            return
+        }
+        waiting = null
+        val apk = FileProvider.getUriForFile(this, "$packageName.files", file)
+        runCatching {
+            startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(apk, "application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
     }
 
     /** The site's log-in page: where it sends someone who isn't logged in. */
@@ -436,20 +594,23 @@ class MainActivity : ComponentActivity() {
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    private companion object {
+    companion object {
+        /** A notification's page to open (its path on the site). */
+        const val OPEN = "open"
+
         // the site's own dark colours (src/app/styles/base.css)
-        val BG = Color.parseColor("#070b10")
-        val FIELD = Color.parseColor("#0c1218")
-        val TEXT = Color.parseColor("#efe3c8")
-        val MUTED = Color.parseColor("#8f9aa1")
-        val FAINT = Color.parseColor("#66707a")
-        val LINE = Color.argb(46, 239, 227, 200)
-        val ACCENT = Color.parseColor("#d65a2b")
-        val ON_ACCENT = Color.parseColor("#fff6e6")
-        val ACCENT_2 = Color.parseColor("#e2a634")
-        val ERROR = Color.parseColor("#ef6b5a")
+        private val BG = Color.parseColor("#070b10")
+        private val FIELD = Color.parseColor("#0c1218")
+        private val TEXT = Color.parseColor("#efe3c8")
+        private val MUTED = Color.parseColor("#8f9aa1")
+        private val FAINT = Color.parseColor("#66707a")
+        private val LINE = Color.argb(46, 239, 227, 200)
+        private val ACCENT = Color.parseColor("#d65a2b")
+        private val ON_ACCENT = Color.parseColor("#fff6e6")
+        private val ACCENT_2 = Color.parseColor("#e2a634")
+        private val ERROR = Color.parseColor("#ef6b5a")
 
         /** The page's theme colour: its theme-color for the phone's light or dark mode. */
-        const val THEME_COLOR = """(() => { const m = [...document.querySelectorAll('meta[name="theme-color"]')].find((x) => !x.media || matchMedia(x.media).matches); return m ? m.content : null; })()"""
+        private const val THEME_COLOR = """(() => { const m = [...document.querySelectorAll('meta[name="theme-color"]')].find((x) => !x.media || matchMedia(x.media).matches); return m ? m.content : null; })()"""
     }
 }

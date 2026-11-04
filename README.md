@@ -45,7 +45,9 @@ or in a theme you make yourself.
   "What are you bringing?"), a shopping list, a checklist or a schedule. You pick the columns and what each one holds
   (text, a number, a checkbox, a member, a date, a time or a choice) and how many rows; who sees it
   (everyone, a group or only you) and who fills it in (everyone who sees it, or only you); whether
-  others can add rows, and whether a filled-in row is its filler's. Filled in right in the table, live
+  others can add rows, and whether a filled-in row is its filler's. Notifications (each its own choice
+  under Settings → Notifications): someone fills in your list, a new list, someone changes your row,
+  and a list you're on changes. Filled in right in the table, live
   for everyone looking; reactions and comments; in the feed and in search.
 - **Chat**: open rooms anyone can join and private rooms you're invited to, direct messages, group rooms,
   replies, edits, deletes, pins, reactions, typing, "seen" marks, @mentions, pictures, per-room
@@ -108,8 +110,22 @@ JSON request so other sites can't send it) and hands the session cookie to the w
 the site, or a session that has run out, brings the log-in screen back with the server and username
 filled in. The microphone works in voice rooms (over HTTPS), pictures can be posted from the phone, and
 links to other sites open in the browser. The site hides its *Get the app* in the app, and in a browser
-its steps link to the APK. Push notifications aren't in the app yet; a browser or the installed site
-gets them.
+its steps link to the APK.
+
+**Notifications in the app** come through Firebase Cloud Messaging (a web view gets no web push): the
+same ones, with the same choices and quiet hours, as a browser's. Set it up once under Admin →
+Notifications & voice: make a free project at console.firebase.google.com, add an Android app for each
+copy of the app by its package name, and paste the project's `google-services.json` and a service
+account's key (Project settings → Service accounts → Generate new private key). The key stays on the
+server; the app gets its own settings after logging in, so nothing about Firebase is built into it. A
+phone's token lasts as long as the log-in it came with, and the app asks Android for permission to
+notify the first time. In the background the page counts as hidden, so the phone gets pushed to; a tap
+opens the notification's page.
+
+**Updates.** When the server's `apps/` has a newer version of the app (by the app's name: the Communarr
+copy looks for `communarr-<version>.apk`), the app's user menu offers *New version …* and *Update*, and a
+dot shows on the menu's button. The app downloads it and hands it to Android's installer (which, the
+first time, asks to allow installing from the app).
 
 Install it from <https://github.com/svennefenne/communarr/releases/latest/download/communarr-android.apk>
 (the phone asks once to allow installs from the browser); later versions install over it. GitHub

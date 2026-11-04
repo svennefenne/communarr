@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { devices } from "@/lib/push";
+import { appDevices } from "@/lib/fcm";
 import { feedToken } from "@/lib/events";
 import { mailReady } from "@/lib/mail";
 import { baseUrl } from "@/lib/url";
@@ -17,6 +18,7 @@ export default async function NotificationSettings() {
     <NotifySettings
       prefs={u.notify}
       devices={devices(u.id).map((d) => ({ id: d.id, ua: d.ua, createdAt: d.createdAt, lastOk: d.lastOk }))}
+      phones={appDevices(u.id)}
       feed={{ mine: `${base}/cal/${tok}.ics`, all: `${base}/cal/${tok}.ics?all=1` }}
       mail={{ ready: mailReady(), email }}
     />

@@ -13,4 +13,8 @@
     <string name="server_error">%1$s answered with an error (%2$d).</string>
     <string name="try_again">Try again</string>
     <string name="other_server">Log in somewhere else</string>
+    <string name="notifications">Notifications</string>
+    <string name="notifications_about">Messages, mentions, lists and the rest, as you chose under Settings → Notifications</string>
+    <string name="downloading">Downloading the update…</string>
+    <string name="download_failed">Couldn\'t download the update (%1$s).</string>
 </resources>

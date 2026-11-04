@@ -109,6 +109,24 @@ function canEditRow(u: User, l: ListRow, cols: ListColumn[], r: RowRow): boolean
 
 const newId = () => crypto.randomBytes(6).toString("hex");
 
+// notifications about a row or a list: one to each person in ten minutes, so changing several cells
+// (or the list's columns, one save after another) makes one
+const told = new Map<string, number>();
+function firstIn10Minutes(key: string): boolean {
+  const t = Date.now();
+  if ((told.get(key) ?? 0) > t - 10 * 60_000) return false;
+  if (told.size > 5000) for (const [k, at] of told) if (at < t - 10 * 60_000) told.delete(k);
+  told.set(key, t);
+  return true;
+}
+
+/** Tell a row's member (the one it's for) that someone else changed, emptied or took it away. */
+function tellRowsMember(u: User, l: ListRow, who: number | null, rowId: number, title: string) {
+  // (per what happened: changed, then emptied, are two)
+  if (!who || who === u.id || !firstIn10Minutes(`row:${who}:${rowId}:${title}`)) return;
+  notify([who], { kind: "listRow", actorId: u.id, title, vars: { name: u.name, title: l.title }, url: `/lists/${l.id}`, tag: `list-${l.id}` });
+}
+
 function cleanChoices(list: unknown): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -355,6 +373,11 @@ export function createList(u: User, o: ListInput): number {
   reindex(id);
   const url = `/lists/${id}`;
   if (groupId) notify(memberIdsOf(groupId), { kind: "group", actorId: u.id, title: "New list in {group}: {title}", vars: { group: groupRow(groupId)!.name, title }, url });
+  // one everyone sees: everyone hears (a group's list is the group's news, above)
+  else if (!priv) {
+    const all = (db().prepare("select id from users where banned = 0").all() as { id: number }[]).map((r) => r.id);
+    notify(all, { kind: "listNew", actorId: u.id, title: "{name} made a list: {title}", vars: { name: u.name, title }, url, tag: `list-${id}` });
+  }
   if (!priv) broadcast("feed", { type: "list", id, by: u.id, group: groupId });
   return id;
 }
@@ -368,6 +391,9 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
   const cols = o.columns ? cleanColumns(o.columns, columnsOf(l)) : columnsOf(l);
   const priv = l.group_id ? 0 : o.private === undefined ? l.private : o.private ? 1 : 0;
   const auto = o.autoRows === undefined ? l.auto_rows : o.autoRows ? 1 : 0;
+  // who's on it (a row of theirs), to hear that it changed
+  const was = columnsOf(l);
+  const on = new Set(rowsOf(id).flatMap((r) => ownerOf(was, cellsOf(r), r.filled_by) ?? []).filter((who) => who !== u.id && who !== l.author_id));
   tx(() => {
     db()
       .prepare("update lists set title = ?, description_html = ?, description_text = ?, columns_json = ?, private = ?, fill = ?, add_rows = ?, own_rows = ?, auto_rows = ?, show_all = ?, edited_at = ?, updated_at = ? where id = ?")
@@ -412,6 +438,9 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
     keepEmptyLast({ ...l, auto_rows: auto });
   });
   if (l.author_id !== u.id) audit(u.id, "list changed", `#${id}`, title);
+  // (not when only its author sees it now)
+  const tell = priv ? [] : [...on].filter((who) => firstIn10Minutes(`list:${who}:${id}`));
+  if (tell.length) notify(tell, { kind: "listEdit", actorId: u.id, title: "{name} changed the list “{title}”", vars: { name: u.name, title }, url: `/lists/${id}`, tag: `list-${id}` });
   reindex(id);
   // comments follow the list ("only me": only its author finds them in search)
   db()
@@ -440,10 +469,12 @@ export function setCell(u: User, id: number, rowId: number, colId: string, value
   const col = cols.find((c) => c.id === colId);
   if (!col) throw new ListError("That column is gone.");
   const v = cleanCell(col, value);
+  let was: { who: number | null; filled: boolean } = { who: null, filled: false };
   const row = tx(() => {
     const r = rowOf(l, rowId);
     if (!canEditRow(u, l, cols, r)) throw new ListError("Someone else filled in that row.");
     const cells = cellsOf(r);
+    was = { who: ownerOf(cols, cells, r.filled_by), filled: filled(cells) };
     if (v === null) delete cells[col.id];
     else cells[col.id] = v;
     const has = filled(cells);
@@ -457,6 +488,9 @@ export function setCell(u: User, id: number, rowId: number, colId: string, value
   broadcast("list", { id });
   const cells = cellsOf(row);
   const who = ownerOf(cols, cells, row.filled_by);
+  // an empty row filled in: its author hears (once a row); someone's own row changed by another: they hear
+  if (!was.filled && filled(cells)) notify([l.author_id], { kind: "listFill", actorId: u.id, title: "{name} filled in a row in “{title}”", vars: { name: u.name, title: l.title }, url: `/lists/${id}`, tag: `list-${id}` });
+  else if (was.filled) tellRowsMember(u, l, was.who, rowId, "{name} changed your row in “{title}”");
   return rowView(u, l, cols, row, summaries(who ? [who] : []));
 }
 
@@ -469,6 +503,7 @@ export function clearRow(u: User, id: number, rowId: number) {
   db().prepare("update lists set updated_at = ? where id = ?").run(now(), id);
   reindex(id);
   broadcast("list", { id });
+  if (filled(cellsOf(r))) tellRowsMember(u, l, ownerOf(columnsOf(l), cellsOf(r), r.filled_by), r.id, "{name} emptied your row in “{title}”");
 }
 
 /** Add a row at the end. after: Tab in that row's last cell, so the row after it if there is one already. */
@@ -499,6 +534,7 @@ export function removeRow(u: User, id: number, rowId: number) {
   db().prepare("update lists set updated_at = ? where id = ?").run(now(), id);
   reindex(id);
   broadcast("list", { id });
+  if (filled(cellsOf(r))) tellRowsMember(u, l, ownerOf(columnsOf(l), cellsOf(r), r.filled_by), r.id, "{name} removed your row from “{title}”");
 }
 
 /** Move a row up or down (the author). */

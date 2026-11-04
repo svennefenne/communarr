@@ -552,6 +552,19 @@ const MIGRATIONS: string[] = [
   /* 16: a list shown whole (its table) on its card in Lists */ `
   alter table lists add column show_all integer not null default 0;
   `,
+  /* 17: the Android app's notifications (Firebase): each phone's token, for as long as the session it
+         logged in with lasts */ `
+  create table app_push (
+    token text primary key,
+    user_id integer not null references users(id) on delete cascade,
+    session_id text not null references sessions(id) on delete cascade,
+    app text not null default '',
+    created_at integer not null,
+    last_ok_at integer,
+    fails integer not null default 0
+  );
+  create index app_push_user on app_push(user_id);
+  `,
 ];
 
 function open(): Database.Database {

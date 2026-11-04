@@ -20,6 +20,7 @@ import { deleteCategory, moveCategory, saveCategory } from "@/lib/forum";
 import { deleteGroup } from "@/lib/groups";
 import { archiveRoom, deleteRoom } from "@/lib/chat";
 import { pushTo, rotateVapid } from "@/lib/push";
+import { clearFcm, setFcm } from "@/lib/fcm";
 import { broadcast } from "@/lib/hub";
 import { cleanLine } from "@/lib/sanitize";
 import { mailReady, normEmail, saveMailSettings, sendMail, validEmail, type MailSecurity } from "@/lib/mail";
@@ -260,6 +261,26 @@ export async function testPushAction() {
   return act(async (u) => {
     const t = userT(u.id);
     return pushTo(u.id, { title: t("Test from the admin page"), body: t("Push notifications work."), url: "/admin#notifications", tag: "test" });
+  });
+}
+/** The Android app's notifications: the Firebase project's google-services.json and/or a service account's key. */
+export async function saveFcmAction(o: { services?: string; account?: string }) {
+  return act((u) => {
+    admin(u);
+    const err = setFcm({ services: String(o.services ?? ""), account: String(o.account ?? "") });
+    if (err) throw new UserError(err);
+    audit(u.id, "app notifications set up");
+    revalidatePath("/admin");
+    return true;
+  });
+}
+export async function clearFcmAction() {
+  return act((u) => {
+    admin(u);
+    clearFcm();
+    audit(u.id, "app notifications removed");
+    revalidatePath("/admin");
+    return true;
   });
 }
 export async function rotateVapidAction() {

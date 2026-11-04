@@ -3,15 +3,13 @@
 import { useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
 import { useSite, useT } from "@/components/app/AppProvider";
+import { inApp } from "@/components/app/androidApp";
 import { Modal } from "@/components/ui/ui";
 
 type PromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
 /** The Android app's download (GitHub builds it from android/), where the server has no copy of its own. */
 const ANDROID_APK = "https://github.com/svennefenne/communarr/releases/latest/download/communarr-android.apk";
-
-/** In the Android app (its web view says so in its user agent). */
-export const inApp = () => typeof navigator !== "undefined" && navigator.userAgent.includes("CommunarrApp/");
 
 export function isStandalone() {
   return typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true || inApp());
