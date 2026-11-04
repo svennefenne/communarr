@@ -30,7 +30,8 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
   const toast = useToast();
   const ed = useRef<EditorHandle>(null);
   const { confirm, node } = useConfirm();
-  const first = TEMPLATES[0];
+  // a new list starts empty (the templates are a click away)
+  const first = TEMPLATES.find((tp) => tp.id === "blank") ?? TEMPLATES[0];
   const [title, setTitle] = useState(list?.title ?? "");
   const [cols, setCols] = useState<EditCol[]>(() =>
     list
