@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Save, Trash2 } from "lucide-react";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { useConfirm } from "@/components/ui/ui";
 import type { ListColumnType, ListView } from "@/lib/contentTypes";
 import { createListAction, updateListAction } from "@/app/actions/lists";
-import { COLUMN_TYPES, TEMPLATES } from "./columnTypes";
+import { COLUMN_TYPES, TEMPLATES, typeIcon } from "./columnTypes";
 
 interface EditCol {
   /** (for React: a column's place in this form) */
@@ -29,6 +29,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
   const t = useT();
   const toast = useToast();
   const ed = useRef<EditorHandle>(null);
+  const strip = useRef<HTMLDivElement>(null);
   const { confirm, node } = useConfirm();
   // a new list starts empty (the templates are a click away)
   const first = TEMPLATES.find((tp) => tp.id === "blank") ?? TEMPLATES[0];
@@ -63,6 +64,11 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
       [x[i], x[j]] = [x[j], x[i]];
       return x;
     });
+  // a new column comes in at the end, named next (the row scrolls to it)
+  const addCol = () => {
+    setCols((cs) => [...cs, { key: key(), name: "", type: "text", choices: "" }]);
+    requestAnimationFrame(() => [...(strip.current?.querySelectorAll<HTMLInputElement>(".list-col-edit-head > input") ?? [])].pop()?.focus());
+  };
 
   const save = () =>
     start(async () => {
@@ -117,38 +123,45 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
       </div>
       <div className="field">
         <span className="label">{t("Columns")}</span>
-        <div className="stack tight">
-          {cols.map((c, i) => (
-            <div key={c.key} className="list-col-edit">
-              <div className="list-col-edit-row">
-                <input className="input" value={c.name} onChange={(e) => set(c.key, { name: e.target.value })} maxLength={60} placeholder={t("Column {n}", { n: i + 1 })} aria-label={t("Column {n}", { n: i + 1 })} />
-                <select className="select" value={c.type} onChange={(e) => set(c.key, { type: e.target.value as ListColumnType })} aria-label={t("What goes in it")}>
-                  {COLUMN_TYPES.map((ct) => (
-                    <option key={ct.type} value={ct.type}>
-                      {t(ct.label)}
-                    </option>
-                  ))}
-                </select>
-                <span className="list-col-edit-tools">
-                  <button type="button" className="icon-btn sm" onClick={() => move(i, -1)} disabled={!i} aria-label={t("Up")} title={t("Up")}>
-                    <ArrowUp size={15} />
+        {/* laid out like the table: each column's name on top, what goes in it underneath */}
+        <div className="list-cols-edit" ref={strip}>
+          {cols.map((c, i) => {
+            const Icon = typeIcon(c.type);
+            return (
+              <div key={c.key} className="list-col-edit">
+                <div className="list-col-edit-head">
+                  <Icon size={15} aria-hidden />
+                  <input className="input" value={c.name} onChange={(e) => set(c.key, { name: e.target.value })} maxLength={60} placeholder={t("Column {n}", { n: i + 1 })} aria-label={t("Column {n}", { n: i + 1 })} />
+                </div>
+                <div className="list-col-edit-body">
+                  <select className="select" value={c.type} onChange={(e) => set(c.key, { type: e.target.value as ListColumnType })} aria-label={t("What goes in it")}>
+                    {COLUMN_TYPES.map((ct) => (
+                      <option key={ct.type} value={ct.type}>
+                        {t(ct.label)}
+                      </option>
+                    ))}
+                  </select>
+                  {c.type === "choice" ? (
+                    <input className="input sm" value={c.choices} onChange={(e) => set(c.key, { choices: e.target.value })} placeholder={t("The choices, separated by commas")} aria-label={t("The choices for column {n}", { n: i + 1 })} />
+                  ) : null}
+                </div>
+                <div className="list-col-edit-tools">
+                  <button type="button" className="icon-btn sm" onClick={() => move(i, -1)} disabled={!i} aria-label={t("Move column {n} left", { n: i + 1 })} title={t("Move left")}>
+                    <ArrowLeft size={15} />
                   </button>
-                  <button type="button" className="icon-btn sm" onClick={() => move(i, 1)} disabled={i === cols.length - 1} aria-label={t("Down")} title={t("Down")}>
-                    <ArrowDown size={15} />
+                  <button type="button" className="icon-btn sm" onClick={() => move(i, 1)} disabled={i === cols.length - 1} aria-label={t("Move column {n} right", { n: i + 1 })} title={t("Move right")}>
+                    <ArrowRight size={15} />
                   </button>
                   <button type="button" className="icon-btn sm" onClick={() => setCols((cs) => cs.filter((x) => x.key !== c.key))} disabled={cols.length <= 1} aria-label={t("Remove column {n}", { n: i + 1 })} title={t("Remove")}>
                     <Trash2 size={15} />
                   </button>
-                </span>
+                </div>
               </div>
-              {c.type === "choice" ? (
-                <input className="input sm" value={c.choices} onChange={(e) => set(c.key, { choices: e.target.value })} placeholder={t("The choices, separated by commas")} aria-label={t("The choices for column {n}", { n: i + 1 })} />
-              ) : null}
-            </div>
-          ))}
+            );
+          })}
           {cols.length < 12 ? (
-            <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setCols((cs) => [...cs, { key: key(), name: "", type: "text", choices: "" }])}>
-              <Plus size={15} /> {t("Add a column")}
+            <button type="button" className="list-col-add" onClick={addCol}>
+              <Plus size={18} /> {t("Add a column")}
             </button>
           ) : null}
         </div>
