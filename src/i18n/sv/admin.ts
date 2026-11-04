@@ -459,7 +459,7 @@ const sv: Record<string, string> = {
   "Auto follows your device.": "Auto följer din enhet.",
   "Text size": "Textstorlek",
   Compact: "Kompakt",
-  "Smaller text in posts and lists, more on the screen.": "Mindre text i inlägg och listor, mer på skärmen.",
+  "Smaller text and tighter spacing in posts, lists, chat and comments: more on the screen.": "Mindre text och tätare avstånd i inlägg, listor, chatten och kommentarer: mer på skärmen.",
   Animations: "Animationer",
 
   // notifications (components/settings/NotifySettings.tsx, NOTIFY_KINDS in lib/types.ts)

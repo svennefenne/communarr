@@ -286,10 +286,6 @@ img.emoji-custom,
 .fold.open {
   max-height: none;
 }
-html[data-density="compact"] .prose {
-  font-size: 0.9375rem;
-  line-height: 1.5;
-}
 
 /* the picture viewer */
 .lightbox {

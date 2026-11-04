@@ -713,6 +713,41 @@ button.pill {
 .chip-row::-webkit-scrollbar {
   display: none;
 }
+/* a row that scrolls sideways (ScrollHints): a round arrow at each edge with more past it, kept at
+   the edge as the row scrolls; a tap on it scrolls that way */
+:is(.tabs, .pills.scroll, .chip-row, .strip-online, .strip-events, .admin-nav)[data-more~="left"]::before,
+:is(.tabs, .pills.scroll, .chip-row, .strip-online, .strip-events, .admin-nav)[data-more~="right"]::after {
+  position: sticky;
+  z-index: 3;
+  flex: none;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding-bottom: 2px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.3);
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+:is(.tabs, .pills.scroll, .chip-row, .strip-online, .strip-events, .admin-nav)[data-more~="left"]::before {
+  content: "‹";
+  order: -1;
+  left: 4px;
+  /* (over the row's start, taking no room) */
+  margin-right: -28px;
+}
+:is(.tabs, .pills.scroll, .chip-row, .strip-online, .strip-events, .admin-nav)[data-more~="right"]::after {
+  content: "›";
+  right: 4px;
+  margin-left: -28px;
+}
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1559,4 +1594,95 @@ html[data-motion="off"] .spin {
 }
 .spin {
   animation: spin 900ms linear infinite;
+}
+
+/* ── Compact (Settings → Display): smaller text, and tighter pages, cards, rows, chat and comments,
+   so more fits on the screen ── */
+html[data-density="compact"] .page {
+  padding-top: 16px;
+}
+html[data-density="compact"] .page-title {
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+}
+html[data-density="compact"] .stack {
+  gap: 10px;
+}
+html[data-density="compact"] .stack.tight {
+  gap: 6px;
+}
+html[data-density="compact"] .stack.loose {
+  gap: 14px;
+}
+html[data-density="compact"] .panel-pad {
+  padding: 14px;
+}
+html[data-density="compact"] .prose {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+/* the cards (and what reaches their edges: the section strip, a news cover) */
+html[data-density="compact"] :is(.post-card, .poll-card, .event-card, .list-card, .thread-feed-card) {
+  padding: 11px 13px;
+}
+html[data-density="compact"] .card-section {
+  margin: -11px -13px 9px;
+  padding: 5px 13px;
+}
+html[data-density="compact"] .post-cover {
+  margin: -11px -13px 10px;
+}
+html[data-density="compact"] .card-section + .post-cover {
+  margin-top: -9px;
+}
+html[data-density="compact"] .post-head {
+  gap: 9px;
+  margin-bottom: 6px;
+}
+html[data-density="compact"] .kind-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+html[data-density="compact"] .post-foot {
+  margin-top: 8px;
+  padding-top: 6px;
+}
+/* rows in lists */
+html[data-density="compact"] .list-row {
+  gap: 10px;
+  padding: 7px 12px;
+}
+html[data-density="compact"] .thread-row {
+  gap: 10px;
+  padding: 8px 12px;
+}
+html[data-density="compact"] .list-table th {
+  padding: 7px 8px;
+}
+html[data-density="compact"] .list-table td {
+  padding: 2px 4px;
+}
+/* chat and comments */
+html[data-density="compact"] .chat-row {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+html[data-density="compact"] .msg:not(.compact) {
+  margin-top: 3px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+html[data-density="compact"] .msg-body .prose {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+html[data-density="compact"] .comments {
+  gap: 8px;
+  margin-top: 10px;
+}
+html[data-density="compact"] .comment-bubble {
+  padding: 6px 10px 8px;
+}
+html[data-density="compact"] .comment-bubble .prose {
+  font-size: 0.875rem;
 }
