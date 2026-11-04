@@ -124,6 +124,12 @@ cd android && ./gradlew assembleRelease    # JDK 17+ and the Android SDK (platfo
 # ~/.config/communarr-android/keystore.properties names (or the debug key without it)
 ```
 
+**A server's own copy.** The same app with a name of its own, and its own id so it installs beside
+Communarr: `./gradlew assembleRelease -PappName=Communarr -PappId=io.github.svennefenne.communarr`. Put it in
+the data folder's `apps/` as, say, `communarr-0.1.0.apk`: the site serves it at `/communarr-0.1.0.apk` to
+anyone (it's installed before logging in), and *Get the app* links to the highest version there
+instead of GitHub.
+
 ## Install on the NUC (Docker Compose)
 
 The image is built by GitHub Actions and published as `ghcr.io/svennefenne/communarr:latest` on every

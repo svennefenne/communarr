@@ -9,11 +9,18 @@ import { vapidPublicKey } from "./push";
 import { withDefaults } from "./sounds";
 import { listEmojis } from "./emojis";
 import { bggMode } from "./bgg";
+import { latestApp } from "@/lib/apps";
 
 export function me(u: User): Me {
   // (the groups they're in: a sound for a group's new post only plays for its members)
   const groups = (db().prepare("select group_id from group_members where user_id = ?").all(u.id) as { group_id: number }[]).map((r) => r.group_id);
   return { ...summary(u), isAdmin: u.isAdmin, isMod: u.isMod, presence: u.presence, theme: u.theme, groups };
+}
+
+/** The server's own Android app, where its file is: /communarr-0.1.0.apk. */
+function androidApp() {
+  const f = latestApp();
+  return f ? `/${f}` : null;
 }
 
 export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
@@ -39,6 +46,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     registration: s.registration,
     clock: { timeFormat: s.timeFormat, weekStart: s.weekStart },
     sounds: u ? withDefaults(s.sounds) : null,
+    androidApp: androidApp(),
   };
 }
 

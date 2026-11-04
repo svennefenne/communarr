@@ -8,6 +8,13 @@ const OPEN = [/^\/login$/, /^\/setup$/, /^\/signup$/, /^\/invite\//, /^\/reset\/
 
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
+  // the server's own Android app (/communarr-0.1.0.apk, in the data folder's apps/), for anyone: it's
+  // installed before logging in
+  if (/^\/[A-Za-z0-9][\w.-]*\.apk$/.test(pathname)) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/api/app/download${pathname}`;
+    return NextResponse.rewrite(url);
+  }
   if (OPEN.some((r) => r.test(pathname))) return NextResponse.next();
   if (req.cookies.has("hd_session")) return NextResponse.next();
   if (pathname.startsWith("/api/") || pathname.startsWith("/media/")) return new NextResponse("Log in first", { status: 401 });

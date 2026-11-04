@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">Communarr</string>
     <string name="intro">Log in to your server</string>
     <string name="server">Server</string>
     <string name="server_hint">communarr.example.com</string>

@@ -12,6 +12,11 @@ val keyProps = Properties().apply { if (keyFile.exists()) keyFile.inputStream().
 fun signing(env: String, prop: String): String? = System.getenv(env)?.takeIf { it.isNotEmpty() } ?: keyProps.getProperty(prop)
 val keystore = signing("COMMUNARR_KEYSTORE", "storeFile")
 
+// a server's own copy of the app: a name (and id, so it installs beside Communarr) of its own, the
+// rest the same: ./gradlew assembleRelease -PappName=Communarr -PappId=io.github.svennefenne.communarr
+val appName = providers.gradleProperty("appName").getOrElse("Communarr")
+val appId = providers.gradleProperty("appId").getOrElse("io.github.svennefenne.communarr")
+
 // every commit is a newer version to Android: the version code counts them
 val commits = providers.exec {
     commandLine("git", "rev-list", "--count", "HEAD")
@@ -25,7 +30,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.svennefenne.communarr"
+        applicationId = appId
+        resValue("string", "app_name", appName)
         minSdk = 29
         targetSdk = 35
         versionCode = commits.get()
@@ -34,6 +40,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        resValues = true      // the app's name (appName above)
     }
 
     signingConfigs {

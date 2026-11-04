@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
-import { useT } from "@/components/app/AppProvider";
+import { useSite, useT } from "@/components/app/AppProvider";
 import { Modal } from "@/components/ui/ui";
 
 type PromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
-/** The Android app's download (GitHub builds it from android/). */
+/** The Android app's download (GitHub builds it from android/), where the server has no copy of its own. */
 const ANDROID_APK = "https://github.com/svennefenne/communarr/releases/latest/download/communarr-android.apk";
 
 /** In the Android app (its web view says so in its user agent). */
@@ -24,6 +24,7 @@ export function isIos() {
 /** How to put the site on the home screen, for each kind of device. */
 export function InstallHelp() {
   const t = useT();
+  const site = useSite();
   return (
     <div className="stack small">
       <p style={{ margin: 0 }}>{t("Installed, the site opens like an app, full screen, and can send you notifications even when it's closed.")}</p>
@@ -47,7 +48,7 @@ export function InstallHelp() {
         </ol>
         <p style={{ margin: "6px 0 0" }}>
           {t("Or the Android app:")}{" "}
-          <a className="link" href={ANDROID_APK}>
+          <a className="link" href={site.androidApp ?? ANDROID_APK}>
             {t("download it")}
           </a>{" "}
           {t("and log in with this site's address, your username and password.")}
