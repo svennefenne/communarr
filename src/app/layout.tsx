@@ -29,6 +29,7 @@ import { SiteSounds } from "@/components/app/SiteSounds";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { Lightbox } from "@/components/content/Lightbox";
 import { LinkPeekHost } from "@/components/content/LinkPeek";
+import { ScrollHints } from "@/components/app/ScrollHints";
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = getSettings();
@@ -104,6 +105,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 {user ? <LinkPeekHost /> : null}
                 <SearchOverlay />
                 <Lightbox />
+                <ScrollHints />
               </VoiceProvider>
             </TransitionsProvider>
           </EmojiProvider>
