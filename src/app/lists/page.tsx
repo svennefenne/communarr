@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ListChecks, Plus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { requestT } from "@/lib/t";
-import { listLists } from "@/lib/lists";
+import { getList, listLists } from "@/lib/lists";
 import { getSettings } from "@/lib/settings";
 import { ListCardView } from "@/components/lists/ListCard";
 import { Empty } from "@/components/ui/ui";
@@ -27,6 +27,8 @@ export default async function ListsPage({ searchParams }: { searchParams: Promis
   const { tab: raw = "all" } = await searchParams;
   const tab = TABS.some(([id]) => id === raw) ? (raw as (typeof TABS)[number][0]) : "all";
   const lists = listLists(u, { tab });
+  // the ones shown whole: all of each (their tables)
+  const whole = new Map(lists.filter((l) => l.showAll).map((l) => [l.id, getList(u, l.id)] as const));
   const canCreate = s.canCreate.lists === "members" || u.isMod;
   return (
     <div className="page narrow">
@@ -52,7 +54,7 @@ export default async function ListsPage({ searchParams }: { searchParams: Promis
       </nav>
       <div className="stack loose">
         {lists.map((l) => (
-          <ListCardView key={l.id} list={l} />
+          <ListCardView key={l.id} list={l} view={whole.get(l.id) ?? undefined} />
         ))}
         {!lists.length ? (
           <Empty icon={<ListChecks size={24} />} title={t(tab === "todo" ? "Nothing to fill in" : "No lists here")}>

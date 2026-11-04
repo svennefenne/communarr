@@ -1247,6 +1247,10 @@ div.backdrop-tile {
   flex-wrap: wrap;
   gap: 6px;
 }
+/* a list shown whole: its table on the card (sideways inside itself when wide) */
+.list-card-table {
+  min-width: 0;
+}
 .list-col-chip {
   display: inline-flex;
   align-items: center;

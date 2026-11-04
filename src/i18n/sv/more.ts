@@ -361,6 +361,7 @@ const sv: Record<string, string> = {
   "{n} row filled in": "{n} rad ifylld",
   "{n} rows filled in": "{n} rader ifyllda",
   "Fewer rows takes empty ones away from the end; filled-in rows stay.": "Färre rader tar bort tomma rader från slutet; ifyllda rader blir kvar.",
+  "Show the whole list on the Lists page": "Visa hela listan på sidan Listor",
   "Who fills it in": "Vem fyller i den",
   "Everyone who sees it": "Alla som ser den",
   "Others can add rows": "Andra kan lägga till rader",

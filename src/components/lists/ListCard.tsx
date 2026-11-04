@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useState, type ReactNode } from "react";
 import { ListChecks, Lock, MessageSquare } from "lucide-react";
-import type { ListCard } from "@/lib/contentTypes";
+import type { ListCard, ListView } from "@/lib/contentTypes";
 import { useMe, useT } from "@/components/app/AppProvider";
 import { Reactions } from "@/components/content/Reactions";
 import { UserLink } from "@/components/ui/Avatar";
@@ -10,9 +11,31 @@ import { Time } from "@/components/ui/Time";
 import { CardSection } from "@/components/feed/CardSection";
 import { GroupChip } from "@/components/feed/PostCard";
 import { typeIcon } from "./columnTypes";
+import { ListTable, useListView } from "./ListTable";
 
-/** A list in Lists and the feed: what it's for, its columns, and how far it's been filled in. */
-export function ListCardView({ list: l, section = false }: { list: ListCard; section?: boolean }) {
+/**
+ * A list in Lists and the feed: what it's for, its columns, and how far it's been filled in. view: the
+ * whole list, for one shown whole in Lists (its table instead of its columns, filled in right there).
+ */
+export function ListCardView({ list, view, section = false }: { list: ListCard; view?: ListView; section?: boolean }) {
+  return view ? <WholeListCard view={view} section={section} /> : <CardBody l={list} section={section} />;
+}
+
+/** A list shown whole: its table on the card, live as it's filled in. */
+function WholeListCard({ view, section }: { view: ListView; section: boolean }) {
+  const [gone, setGone] = useState(false);
+  const { l, setL, refresh } = useListView(view, () => setGone(true));
+  if (gone) return null;
+  return (
+    <CardBody l={l} section={section}>
+      <div className="stack tight list-card-table">
+        <ListTable l={l} setL={setL} refresh={refresh} />
+      </div>
+    </CardBody>
+  );
+}
+
+function CardBody({ l, section, children }: { l: ListCard; section: boolean; children?: ReactNode }) {
   const t = useT();
   const me = useMe();
   const share = l.rows ? Math.round((l.filled / l.rows) * 100) : 0;
@@ -42,17 +65,19 @@ export function ListCardView({ list: l, section = false }: { list: ListCard; sec
         {l.title}
       </Link>
       {l.text ? <p className="list-card-text">{l.text}</p> : null}
-      <div className="list-card-cols">
-        {l.columns.slice(0, 6).map((c) => {
-          const Icon = typeIcon(c.type);
-          return (
-            <span key={c.id} className="list-col-chip">
-              <Icon size={12} /> {c.name}
-            </span>
-          );
-        })}
-        {l.columns.length > 6 ? <span className="list-col-chip">+{l.columns.length - 6}</span> : null}
-      </div>
+      {children ?? (
+        <div className="list-card-cols">
+          {l.columns.slice(0, 6).map((c) => {
+            const Icon = typeIcon(c.type);
+            return (
+              <span key={c.id} className="list-col-chip">
+                <Icon size={12} /> {c.name}
+              </span>
+            );
+          })}
+          {l.columns.length > 6 ? <span className="list-col-chip">+{l.columns.length - 6}</span> : null}
+        </div>
+      )}
       <div className="list-card-meta">
         {/* (automatic rows: no set size, so just how many) */}
         {l.autoRows ? (
@@ -68,7 +93,7 @@ export function ListCardView({ list: l, section = false }: { list: ListCard; sec
         <span className="grow" />
         {l.mine ? <span className="badge accent">{t("You're on it")}</span> : null}
         <Link href={`/lists/${l.id}`} className="btn btn-sm">
-          {l.canFill && !l.mine ? t("Fill in") : t("Open the list")}
+          {l.canFill && !l.mine && !children ? t("Fill in") : t("Open the list")}
         </Link>
       </div>
       <footer className="post-foot">

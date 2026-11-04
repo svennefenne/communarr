@@ -174,6 +174,8 @@ export interface ListCard {
   rows: number;
   /** automatic rows: it grows as it's filled in (an empty row stays last), so it has no set size */
   autoRows: boolean;
+  /** shown whole (its table, filled in right there) on its card in Lists */
+  showAll: boolean;
   /** rows with something in them */
   filled: number;
   /** rows this member has filled in */

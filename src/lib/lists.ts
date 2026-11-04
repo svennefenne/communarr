@@ -35,6 +35,7 @@ export interface ListRow {
   add_rows: number;
   own_rows: number;
   auto_rows: number;
+  show_all: number;
   created_at: number;
   edited_at: number | null;
   updated_at: number;
@@ -244,6 +245,7 @@ export function toListCards(u: User, rows: ListRow[]): ListCard[] {
       columns: columnsOf(r),
       rows: c?.n ?? 0,
       autoRows: !!r.auto_rows,
+      showAll: !!r.show_all,
       filled: c?.filled ?? 0,
       mine: c?.mine ?? 0,
       canFill: canFill(u, r),
@@ -314,6 +316,8 @@ export interface ListInput {
   rows?: number;
   /** automatic rows: it starts with one empty row, and an empty row stays last as it's filled in (rows is left alone) */
   autoRows?: boolean;
+  /** shown whole on its card in Lists */
+  showAll?: boolean;
   groupId?: number | null;
   private?: boolean;
   fill?: "members" | "owner";
@@ -340,9 +344,9 @@ export function createList(u: User, o: ListInput): number {
     const id = Number(
       db()
         .prepare(
-          "insert into lists (author_id, title, description_html, description_text, columns_json, group_id, private, fill, add_rows, own_rows, auto_rows, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "insert into lists (author_id, title, description_html, description_text, columns_json, group_id, private, fill, add_rows, own_rows, auto_rows, show_all, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(u.id, title, c.html, c.text, JSON.stringify(cols), groupId, priv ? 1 : 0, o.fill === "owner" ? "owner" : "members", o.addRows === false ? 0 : 1, o.ownRows === false ? 0 : 1, auto ? 1 : 0, t, t).lastInsertRowid,
+        .run(u.id, title, c.html, c.text, JSON.stringify(cols), groupId, priv ? 1 : 0, o.fill === "owner" ? "owner" : "members", o.addRows === false ? 0 : 1, o.ownRows === false ? 0 : 1, auto ? 1 : 0, o.showAll ? 1 : 0, t, t).lastInsertRowid,
     );
     const add = db().prepare("insert into list_rows (list_id, position) values (?, ?)");
     for (let i = 0; i < n; i++) add.run(id, i);
@@ -366,7 +370,7 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
   const auto = o.autoRows === undefined ? l.auto_rows : o.autoRows ? 1 : 0;
   tx(() => {
     db()
-      .prepare("update lists set title = ?, description_html = ?, description_text = ?, columns_json = ?, private = ?, fill = ?, add_rows = ?, own_rows = ?, auto_rows = ?, edited_at = ?, updated_at = ? where id = ?")
+      .prepare("update lists set title = ?, description_html = ?, description_text = ?, columns_json = ?, private = ?, fill = ?, add_rows = ?, own_rows = ?, auto_rows = ?, show_all = ?, edited_at = ?, updated_at = ? where id = ?")
       .run(
         title,
         c ? c.html : l.description_html,
@@ -377,6 +381,7 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
         o.addRows === undefined ? l.add_rows : o.addRows ? 1 : 0,
         o.ownRows === undefined ? l.own_rows : o.ownRows ? 1 : 0,
         auto,
+        o.showAll === undefined ? l.show_all : o.showAll ? 1 : 0,
         now(),
         now(),
         id,
