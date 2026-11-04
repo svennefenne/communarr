@@ -1228,36 +1228,28 @@ div.backdrop-tile {
 .card-section.list svg {
   color: var(--stripe-4);
 }
-.list-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.list-card .post-head {
-  margin-bottom: 0;
-}
+/* a list's card: laid out like a poll's (its padding with the other cards, in feed.css) */
 .list-card-title {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  line-height: 1.2;
-  color: var(--text);
-  text-decoration: none;
+  display: block;
+  margin: 2px 0 8px;
   overflow-wrap: anywhere;
 }
-.list-card-title:hover {
-  color: var(--accent-2);
-}
 .list-card-text {
-  margin: 0;
+  margin: 0 0 10px;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   overflow: hidden;
+  overflow-wrap: anywhere;
 }
 .list-card-cols {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+/* a list shown whole: its table on the card (sideways inside itself when wide) */
+.list-card-table {
+  min-width: 0;
 }
 .list-col-chip {
   display: inline-flex;
@@ -1272,11 +1264,12 @@ div.backdrop-tile {
 .list-col-chip svg {
   color: var(--muted);
 }
-.list-card-foot {
+.list-card-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px 12px;
+  margin-top: 12px;
 }
 .list-progress {
   flex: 0 0 90px;

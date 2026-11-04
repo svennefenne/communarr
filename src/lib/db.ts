@@ -549,6 +549,9 @@ const MIGRATIONS: string[] = [
   /* 15: lists with automatic rows: an empty row stays last, and Tab in the last cell adds one */ `
   alter table lists add column auto_rows integer not null default 0;
   `,
+  /* 16: a list shown whole (its table) on its card in Lists */ `
+  alter table lists add column show_all integer not null default 0;
+  `,
 ];
 
 function open(): Database.Database {

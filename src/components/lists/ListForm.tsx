@@ -41,6 +41,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
   );
   const [rows, setRows] = useState(list?.rows ?? first.rows);
   const [auto, setAuto] = useState(list?.autoRows ?? true);
+  const [showAll, setShowAll] = useState(list?.showAll ?? false);
   const [template, setTemplate] = useState(list ? "" : first.id);
   const [where, setWhere] = useState<string>(list ? (list.private ? "me" : "") : groupId ? String(groupId) : "");
   const [fill, setFill] = useState<"members" | "owner">(list?.fill ?? "members");
@@ -79,6 +80,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
         columns: cols.map((c) => ({ id: c.id, name: c.name, type: c.type, options: c.type === "choice" ? c.choices.split(",").map((s) => s.trim()).filter(Boolean) : undefined })),
         rows: auto ? undefined : rows,
         autoRows: auto,
+        showAll,
         groupId: where && where !== "me" ? Number(where) : null,
         private: where === "me",
         fill,
@@ -207,6 +209,9 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
               </select>
             )}
           </div>
+          <label className="check">
+            <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> {t("Show the whole list on the Lists page")}
+          </label>
         </div>
         <div className="stack tight">
           <span className="label">{t("Who fills it in")}</span>
