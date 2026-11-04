@@ -40,6 +40,7 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
       : first.columns.map((c) => ({ key: key(), name: t(c.name), type: c.type, choices: "" })),
   );
   const [rows, setRows] = useState(list?.rows ?? first.rows);
+  const [auto, setAuto] = useState(list?.autoRows ?? false);
   const [template, setTemplate] = useState(list ? "" : first.id);
   const [where, setWhere] = useState<string>(list ? (list.private ? "me" : "") : groupId ? String(groupId) : "");
   const [fill, setFill] = useState<"members" | "owner">(list?.fill ?? "members");
@@ -76,7 +77,8 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
         title,
         html: ed.current?.getHTML() ?? "",
         columns: cols.map((c) => ({ id: c.id, name: c.name, type: c.type, options: c.type === "choice" ? c.choices.split(",").map((s) => s.trim()).filter(Boolean) : undefined })),
-        rows,
+        rows: auto ? undefined : rows,
+        autoRows: auto,
         groupId: where && where !== "me" ? Number(where) : null,
         private: where === "me",
         fill,
@@ -169,9 +171,23 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
       <div className="grid-2">
         <div className="stack tight">
           <div className="field">
-            <label htmlFor="lf-rows">{t("Rows")}</label>
-            <input id="lf-rows" type="number" className="input sm" style={{ width: 110 }} min={1} max={200} value={rows} onChange={(e) => setRows(Math.max(1, Math.min(200, Number(e.target.value) || 1)))} />
-            {list ? <span className="hint">{t("Fewer rows takes empty ones away from the end; filled-in rows stay.")}</span> : null}
+            <span className="label">{t("Rows")}</span>
+            <div className="pills" role="radiogroup" aria-label={t("Rows")}>
+              <button type="button" role="radio" aria-checked={auto} className={`pill ${auto ? "active" : ""}`} onClick={() => setAuto(true)}>
+                {t("Automatic")}
+              </button>
+              <button type="button" role="radio" aria-checked={!auto} className={`pill ${!auto ? "active" : ""}`} onClick={() => setAuto(false)}>
+                {t("Fixed number")}
+              </button>
+            </div>
+            {auto ? (
+              <span className="hint">{t("An empty row is always last, and Tab in the last cell adds a new one, as in Excel.")}</span>
+            ) : (
+              <>
+                <input id="lf-rows" type="number" className="input sm" style={{ width: 110 }} min={1} max={200} value={rows} onChange={(e) => setRows(Math.max(1, Math.min(200, Number(e.target.value) || 1)))} aria-label={t("Number of rows")} />
+                {list ? <span className="hint">{t("Fewer rows takes empty ones away from the end; filled-in rows stay.")}</span> : null}
+              </>
+            )}
           </div>
           <div className="field">
             <label htmlFor="lf-where">{t("Who sees it")}</label>
@@ -204,9 +220,12 @@ export function ListForm({ groups, list, groupId }: { groups: { id: number; name
           </div>
           {fill === "members" ? (
             <>
-              <label className="check">
-                <input type="checkbox" checked={addRows} onChange={(e) => setAddRows(e.target.checked)} /> {t("Others can add rows")}
-              </label>
+              {/* (automatic rows: whoever fills it in adds rows anyway) */}
+              {!auto ? (
+                <label className="check">
+                  <input type="checkbox" checked={addRows} onChange={(e) => setAddRows(e.target.checked)} /> {t("Others can add rows")}
+                </label>
+              ) : null}
               <label className="check">
                 <input type="checkbox" checked={ownRows} onChange={(e) => setOwnRows(e.target.checked)} /> {t("A filled-in row is its filler's: only they (and you) can change it")}
               </label>

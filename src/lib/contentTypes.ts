@@ -172,6 +172,8 @@ export interface ListCard {
   private: boolean;
   columns: ListColumn[];
   rows: number;
+  /** automatic rows: it grows as it's filled in (an empty row stays last), so it has no set size */
+  autoRows: boolean;
   /** rows with something in them */
   filled: number;
   /** rows this member has filled in */

@@ -54,10 +54,17 @@ export function ListCardView({ list: l, section = false }: { list: ListCard; sec
         {l.columns.length > 6 ? <span className="list-col-chip">+{l.columns.length - 6}</span> : null}
       </div>
       <div className="list-card-foot">
-        <span className="list-progress" aria-hidden>
-          <span style={{ width: `${share}%` }} />
-        </span>
-        <span className="small muted">{t("{n} of {total} rows filled in", { n: l.filled, total: l.rows })}</span>
+        {/* (automatic rows: no set size, so just how many) */}
+        {l.autoRows ? (
+          <span className="small muted">{t.n(l.filled, "{n} row filled in", "{n} rows filled in")}</span>
+        ) : (
+          <>
+            <span className="list-progress" aria-hidden>
+              <span style={{ width: `${share}%` }} />
+            </span>
+            <span className="small muted">{t("{n} of {total} rows filled in", { n: l.filled, total: l.rows })}</span>
+          </>
+        )}
         <span className="grow" />
         {l.mine ? <span className="badge accent">{t("You're on it")}</span> : null}
         <Link href={`/lists/${l.id}`} className="btn btn-sm">
