@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/ui";
 import { Time } from "@/components/ui/Time";
 import { TimeField } from "@/components/ui/DateTime";
 import { InstallHelp } from "@/components/shell/InstallButton";
+import { askApp, inApp, tellApp } from "@/components/app/androidApp";
 import { notifyPrefsAction, resetCalendarFeedAction } from "@/app/actions/settings";
 
 const STATE_TEXT: Record<PushState, string> = {
@@ -21,15 +22,40 @@ const STATE_TEXT: Record<PushState, string> = {
   unsupported: "This browser can't show notifications from websites.",
 };
 
-export function NotifySettings({ prefs, devices, feed, mail }: { prefs: NotifyPrefs; devices: { id: number; ua: string; createdAt: number; lastOk: number | null }[]; feed: { mine: string; all: string }; mail: { ready: boolean; email: string | null } }) {
+/** What the Android app says about its notifications on this phone. */
+interface AppPushStatus {
+  /** Android's permission for the app's notifications */
+  permission: "granted" | "denied" | "ask";
+  /** the admin has set up Firebase on this server */
+  configured: boolean;
+  /** this phone is signed up (its token is on the server) */
+  ready: boolean;
+}
+
+export function NotifySettings({
+  prefs,
+  devices,
+  phones,
+  feed,
+  mail,
+}: {
+  prefs: NotifyPrefs;
+  devices: { id: number; ua: string; createdAt: number; lastOk: number | null }[];
+  phones: { id: number; app: string; createdAt: number; lastOk: number | null }[];
+  feed: { mine: string; all: string };
+  mail: { ready: boolean; email: string | null };
+}) {
   const t = useT();
   const toast = useToast();
   const [state, setState] = useState<PushState | null>(null);
   const [p, setP] = useState(prefs);
   const [busy, setBusy] = useState(false);
   const [feedUrl, setFeedUrl] = useState(feed);
+  // in the Android app: its own notifications (Firebase), not the browser's
+  const [app, setApp] = useState<AppPushStatus | "none" | null>(null);
   useEffect(() => {
-    pushState().then(setState);
+    if (inApp()) void askApp<AppPushStatus>({ t: "push-status" }).then((s) => setApp(s ?? "none"));
+    else pushState().then(setState);
     // the browser's own time zone, for quiet hours
     void notifyPrefsAction({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone });
   }, []);
@@ -40,70 +66,48 @@ export function NotifySettings({ prefs, devices, feed, mail }: { prefs: NotifyPr
   };
   return (
     <div className="stack loose">
-      <section className="panel panel-pad stack">
-        <div className="row">
-          <span className="kind-icon event">
-            <BellRing size={20} />
-          </span>
-          <div className="grow">
-            <h2 className="h2">{t("This device")}</h2>
-            <div className="small muted">{state ? t(STATE_TEXT[state]) : t("Checking…")}</div>
+      {app ? (
+        <AppPushSection status={app} onChange={setApp} devices={<Devices devices={devices} phones={phones} />} />
+      ) : (
+        <section className="panel panel-pad stack">
+          <div className="row">
+            <span className="kind-icon event">
+              <BellRing size={20} />
+            </span>
+            <div className="grow">
+              <h2 className="h2">{t("This device")}</h2>
+              <div className="small muted">{state ? t(STATE_TEXT[state]) : t("Checking…")}</div>
+            </div>
           </div>
-        </div>
-        {state === "needs-install" ? <InstallHelp /> : null}
-        <div className="row wrap">
-          {state === "off" ? (
-            <button
-              type="button"
-              className={`btn btn-primary ${busy ? "loading" : ""}`}
-              onClick={async () => {
-                setBusy(true);
-                const s = await enablePush().catch(() => "off" as PushState);
-                setBusy(false);
-                setState(s);
-                if (s === "on") toast(t("Notifications are on for this device."));
-              }}
-            >
-              <BellRing size={16} /> {t("Turn on notifications here")}
-            </button>
-          ) : null}
-          {state === "on" ? (
-            <>
+          {state === "needs-install" ? <InstallHelp /> : null}
+          <div className="row wrap">
+            {state === "off" ? (
               <button
                 type="button"
-                className="btn btn-primary"
+                className={`btn btn-primary ${busy ? "loading" : ""}`}
                 onClick={async () => {
-                  const r = await testPush();
-                  toast(r.sent ? t.n(r.sent, "Sent a test to {n} device.", "Sent a test to {n} devices.") : t("Nothing sent: no devices answered."));
+                  setBusy(true);
+                  const s = await enablePush().catch(() => "off" as PushState);
+                  setBusy(false);
+                  setState(s);
+                  if (s === "on") toast(t("Notifications are on for this device."));
                 }}
               >
-                <Send size={16} /> {t("Send a test")}
+                <BellRing size={16} /> {t("Turn on notifications here")}
               </button>
-              <button type="button" className="btn btn-ghost" onClick={async () => setState(await disablePush())}>
-                {t("Turn off here")}
-              </button>
-            </>
-          ) : null}
-        </div>
-        {devices.length ? (
-          <div className="list inset">
-            {devices.map((d) => (
-              <div key={d.id} className="list-row">
-                {/iPhone|Android|Mobile|iPad/.test(d.ua) ? <Smartphone size={18} className="muted" /> : <Monitor size={18} className="muted" />}
-                <span className="grow small" style={{ minWidth: 0 }}>
-                  <span className="ellipsis" style={{ display: "block" }}>
-                    {d.ua.replace(/\(.*?\)/g, "").split(" ").filter((x) => /Chrome|Firefox|Safari|Edg|Mobile/.test(x)).slice(0, 2).join(" ") || t("A device")}
-                  </span>
-                  <span className="tiny muted">
-                    {t("added")} <Time t={d.createdAt} mode="date" />
-                    {d.lastOk ? <> · {t("last notified")} <Time t={d.lastOk} /></> : null}
-                  </span>
-                </span>
-              </div>
-            ))}
+            ) : null}
+            {state === "on" ? (
+              <>
+                <TestButton />
+                <button type="button" className="btn btn-ghost" onClick={async () => setState(await disablePush())}>
+                  {t("Turn off here")}
+                </button>
+              </>
+            ) : null}
           </div>
-        ) : null}
-      </section>
+          <Devices devices={devices} phones={phones} />
+        </section>
+      )}
 
       <section className="panel">
         <div className="panel-head">
@@ -188,5 +192,123 @@ export function NotifySettings({ prefs, devices, feed, mail }: { prefs: NotifyPr
         </div>
       </section>
     </div>
+  );
+}
+
+/** "Send a test": to all of my devices (browsers and phones with the app). */
+function TestButton() {
+  const t = useT();
+  const toast = useToast();
+  return (
+    <button
+      type="button"
+      className="btn btn-primary"
+      onClick={async () => {
+        const r = await testPush();
+        toast(r.sent ? t.n(r.sent, "Sent a test to {n} device.", "Sent a test to {n} devices.") : t("Nothing sent: no devices answered."));
+      }}
+    >
+      <Send size={16} /> {t("Send a test")}
+    </button>
+  );
+}
+
+/** My devices that get notifications: browsers, and phones with the Android app. */
+function Devices({ devices, phones }: { devices: { id: number; ua: string; createdAt: number; lastOk: number | null }[]; phones: { id: number; app: string; createdAt: number; lastOk: number | null }[] }) {
+  const t = useT();
+  if (!devices.length && !phones.length) return null;
+  const when = (createdAt: number, lastOk: number | null) => (
+    <span className="tiny muted">
+      {t("added")} <Time t={createdAt} mode="date" />
+      {lastOk ? <> · {t("last notified")} <Time t={lastOk} /></> : null}
+    </span>
+  );
+  return (
+    <div className="list inset">
+      {phones.map((d) => (
+        <div key={`app-${d.id}`} className="list-row">
+          <Smartphone size={18} className="muted" />
+          <span className="grow small" style={{ minWidth: 0 }}>
+            <span className="ellipsis" style={{ display: "block" }}>
+              {t("The Android app")}
+            </span>
+            {when(d.createdAt, d.lastOk)}
+          </span>
+        </div>
+      ))}
+      {devices.map((d) => (
+        <div key={d.id} className="list-row">
+          {/iPhone|Android|Mobile|iPad/.test(d.ua) ? <Smartphone size={18} className="muted" /> : <Monitor size={18} className="muted" />}
+          <span className="grow small" style={{ minWidth: 0 }}>
+            <span className="ellipsis" style={{ display: "block" }}>
+              {d.ua.replace(/\(.*?\)/g, "").split(" ").filter((x) => /Chrome|Firefox|Safari|Edg|Mobile/.test(x)).slice(0, 2).join(" ") || t("A device")}
+            </span>
+            {when(d.createdAt, d.lastOk)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * This phone, in the Android app: its notifications come through the app (Firebase), so whether
+ * Android lets the app show them, and whether the server has the app's notifications set up.
+ */
+function AppPushSection({ status, onChange, devices }: { status: AppPushStatus | "none"; onChange: (s: AppPushStatus | "none") => void; devices: React.ReactNode }) {
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+  // (an app without its bridge answers nothing)
+  const s: AppPushStatus = status === "none" ? { permission: "ask", configured: false, ready: false } : status;
+  const text =
+    status === "none"
+      ? t("This version of the app can't show notifications: update it.")
+      : !s.configured
+        ? t("Notifications in the app aren't set up on this site yet (an admin does that under Admin → Notifications & voice).")
+        : s.permission === "denied"
+          ? t("Android has blocked the app's notifications. Allow them in the app's settings.")
+          : s.permission === "ask"
+            ? t("Notifications are off for this phone.")
+            : s.ready
+              ? t("Notifications are on for this phone.")
+              : t("Signing this phone up…");
+  return (
+    <section className="panel panel-pad stack">
+      <div className="row">
+        <span className="kind-icon event">
+          <BellRing size={20} />
+        </span>
+        <div className="grow">
+          <h2 className="h2">{t("This phone")}</h2>
+          <div className="small muted">{text}</div>
+        </div>
+      </div>
+      {status !== "none" && s.configured ? (
+        <div className="row wrap">
+          {s.permission === "ask" ? (
+            <button
+              type="button"
+              className={`btn btn-primary ${busy ? "loading" : ""}`}
+              onClick={async () => {
+                setBusy(true);
+                // (the app answers with where notifications stand now, once Android has asked)
+                const r = await askApp<AppPushStatus>({ t: "push-on" }, 60_000, "push-status");
+                setBusy(false);
+                if (r) onChange(r);
+              }}
+            >
+              <BellRing size={16} /> {t("Turn on notifications here")}
+            </button>
+          ) : null}
+          {s.permission === "denied" ? (
+            <button type="button" className="btn btn-primary" onClick={() => tellApp({ t: "push-settings" })}>
+              {t("Open the app's settings")}
+            </button>
+          ) : null}
+          {s.permission === "granted" && s.ready ? <TestButton /> : null}
+        </div>
+      ) : null}
+      {devices}
+    </section>
   );
 }

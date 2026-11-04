@@ -3,6 +3,7 @@ import webpush from "web-push";
 import { db, now } from "./db";
 import { getMeta, getSettings, setMeta } from "./settings";
 import { siteIcons } from "./siteIcons";
+import { pushToApps } from "./fcm";
 
 /**
  * Web Push: notifications on phones, tablets and computers, even with the site closed. The VAPID
@@ -98,7 +99,13 @@ export function devices(userId: number) {
   }[];
 }
 
+/** A push to all of someone's devices: browsers (web push) and phones with the Android app (Firebase). */
 export async function pushTo(userId: number, payload: PushPayload): Promise<{ sent: number; failed: number }> {
+  const [web, app] = await Promise.all([pushToBrowsers(userId, payload), pushToApps(userId, payload)]);
+  return { sent: web.sent + app.sent, failed: web.failed + app.failed };
+}
+
+async function pushToBrowsers(userId: number, payload: PushPayload): Promise<{ sent: number; failed: number }> {
   const subs = db().prepare("select id, endpoint, p256dh, auth, fails from push_subs where user_id = ?").all(userId) as SubRow[];
   if (!subs.length) return { sent: 0, failed: 0 };
   const k = keys();

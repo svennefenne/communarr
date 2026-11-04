@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- a notification's small icon: the site's stripes, in white (Android colours it) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="512" android:viewportHeight="512">
+    <path android:fillColor="#ffffff" android:pathData="M107.315,92.16h31.13a4.915,4.915 0,0 1,4.915,4.915v317.85a4.915,4.915 0,0 1,-4.915,4.915h-31.13a4.915,4.915 0,0 1,-4.915,-4.915v-317.85a4.915,4.915 0,0 1,4.915,-4.915z" />
+    <path android:fillColor="#ffffff" android:pathData="M160.563,92.16h31.13a4.915,4.915 0,0 1,4.915,4.915v317.85a4.915,4.915 0,0 1,-4.915,4.915h-31.13a4.915,4.915 0,0 1,-4.915,-4.915v-317.85a4.915,4.915 0,0 1,4.915,-4.915z" />
+    <path android:fillColor="#ffffff" android:pathData="M213.811,92.16h31.13a4.915,4.915 0,0 1,4.915,4.915v317.85a4.915,4.915 0,0 1,-4.915,4.915h-31.13a4.915,4.915 0,0 1,-4.915,-4.915v-317.85a4.915,4.915 0,0 1,4.915,-4.915z" />
+    <path android:fillColor="#ffffff" android:pathData="M267.059,92.16h31.13a4.915,4.915 0,0 1,4.915,4.915v317.85a4.915,4.915 0,0 1,-4.915,4.915h-31.13a4.915,4.915 0,0 1,-4.915,-4.915v-317.85a4.915,4.915 0,0 1,4.915,-4.915z" />
+    <path android:fillColor="#ffffff" android:pathData="M320.307,92.16h31.13a4.915,4.915 0,0 1,4.915,4.915v317.85a4.915,4.915 0,0 1,-4.915,4.915h-31.13a4.915,4.915 0,0 1,-4.915,-4.915v-317.85a4.915,4.915 0,0 1,4.915,-4.915z" />
+    <path android:fillColor="#ffffff" android:pathData="M373.555,92.16h31.13a4.915,4.915 0,0 1,4.915,4.915v317.85a4.915,4.915 0,0 1,-4.915,4.915h-31.13a4.915,4.915 0,0 1,-4.915,-4.915v-317.85a4.915,4.915 0,0 1,4.915,-4.915z" />
+</vector>

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useRef, useState, useTransition } from "react";
-import { Bookmark, Languages, LogOut, MessageSquareText, Moon, Palette, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { Bookmark, Download, Languages, LogOut, MessageSquareText, Moon, Palette, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
 import { useApp, useT } from "@/components/app/AppProvider";
 import { LanguageToggle } from "@/components/app/LanguageToggle";
 import { Avatar } from "@/components/ui/Avatar";
@@ -13,6 +13,7 @@ import { StatusDialog } from "./StatusDialog";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { logoutAction, setPrefsAction } from "@/app/actions/me";
 import { setSoundsOn } from "@/components/app/sfx";
+import { appUpdate, tellApp } from "@/components/app/androidApp";
 import type { ThemePrefs } from "@/lib/types";
 
 /** Dark, light or the device's choice. */
@@ -48,7 +49,7 @@ export function ModeSwitch({ mode }: { mode: ThemePrefs["mode"] }) {
 }
 
 export function UserMenu() {
-  const { me } = useApp();
+  const { me, site } = useApp();
   const t = useT();
   const { open, setOpen, toggle, ref } = useDropdown();
   const [status, setStatus] = useState(false);
@@ -57,6 +58,9 @@ export function UserMenu() {
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
   const router = useRouter();
+  // in the Android app: a newer version of it on the server (a dot on the button, and a row in the menu)
+  const [update, setUpdate] = useState<{ version: string; url: string } | null>(null);
+  useEffect(() => setUpdate(appUpdate(site.androidApps)), [site.androidApps]);
   // a phone's screen can be shorter than the menu: it ends above the bottom bar and scrolls itself
   // (--menu-top: where it starts), and the page behind it stays still while it's open
   const menuRef = useRef<HTMLDivElement>(null);
@@ -91,6 +95,7 @@ export function UserMenu() {
       <button type="button" className="user-btn" onClick={toggle} aria-haspopup="menu" aria-expanded={open} aria-label={t("Your menu")}>
         <Avatar user={me} size={30} presence />
         <span className="user-btn-name">{me.name}</span>
+        {update ? <span className="dot user-btn-dot" aria-hidden /> : null}
       </button>
       {open ? (
         <div ref={menuRef} className="panel menu down right user-menu" role="menu" onClick={(e) => (e.target as HTMLElement).closest("a") && setOpen(false)}>
@@ -145,6 +150,23 @@ export function UserMenu() {
           >
             <MessageSquareText size={17} /> {t("Send feedback")}
           </button>
+          {update ? (
+            <div className="menu-item app-update" style={{ cursor: "default" }}>
+              <Download size={17} />
+              <span className="grow">{t("New version {version}", { version: update.version })}</span>
+              <button
+                type="button"
+                className="btn btn-primary btn-xs"
+                onClick={() => {
+                  setOpen(false);
+                  // the app downloads it and opens Android's installer (an older app without that: the browser)
+                  if (!tellApp({ t: "update", url: update.url })) window.location.href = update.url;
+                }}
+              >
+                {t("Update")}
+              </button>
+            </div>
+          ) : null}
           <div className="menu-sep" />
           <div style={{ padding: "6px 8px" }}>
             <ModeSwitch mode={me.theme.mode} />
