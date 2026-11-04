@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
         val to = server
         thread {
             val st = if (Push.permission(this) == "granted") Push.register(this, to) else Push.status(this, this)
-            runOnUiThread { reply?.postMessage(Push.status(this, this).copy(configured = st.configured, ready = st.ready).json()) }
+            runOnUiThread { reply?.postMessage(st.copy(permission = Push.permission(this, this)).json()) }
         }
     }
 
@@ -459,7 +459,7 @@ class MainActivity : ComponentActivity() {
                 thread {
                     // (signs the phone up first if it isn't yet)
                     val st = if (Push.status(this).ready) Push.status(this) else Push.register(this, to)
-                    runOnUiThread { reply.postMessage(Push.status(this, this).copy(configured = st.configured, ready = st.ready).json()) }
+                    runOnUiThread { reply.postMessage(st.copy(permission = Push.permission(this, this)).json()) }
                 }
             }
             "push-on" -> askForNotifications(reply)
@@ -488,7 +488,7 @@ class MainActivity : ComponentActivity() {
             val to = server
             thread {
                 val st = Push.register(this, to)
-                runOnUiThread { reply?.postMessage(Push.status(this, this).copy(configured = st.configured, ready = st.ready).json()) }
+                runOnUiThread { reply?.postMessage(st.copy(permission = Push.permission(this, this)).json()) }
             }
         }
     }

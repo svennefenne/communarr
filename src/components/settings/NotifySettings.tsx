@@ -30,6 +30,8 @@ interface AppPushStatus {
   configured: boolean;
   /** this phone is signed up (its token is on the server) */
   ready: boolean;
+  /** why it couldn't sign up, the last time it tried */
+  error?: string;
 }
 
 export function NotifySettings({
@@ -271,7 +273,9 @@ function AppPushSection({ status, onChange, devices }: { status: AppPushStatus |
             ? t("Notifications are off for this phone.")
             : s.ready
               ? t("Notifications are on for this phone.")
-              : t("Signing this phone up…");
+              : s.error
+                ? t("Couldn't sign this phone up: {error}", { error: s.error })
+                : t("Signing this phone up…");
   return (
     <section className="panel panel-pad stack">
       <div className="row">
@@ -285,7 +289,7 @@ function AppPushSection({ status, onChange, devices }: { status: AppPushStatus |
       </div>
       {status !== "none" && s.configured ? (
         <div className="row wrap">
-          {s.permission === "ask" ? (
+          {s.permission === "ask" || (s.permission === "granted" && !s.ready && s.error) ? (
             <button
               type="button"
               className={`btn btn-primary ${busy ? "loading" : ""}`}
@@ -297,7 +301,7 @@ function AppPushSection({ status, onChange, devices }: { status: AppPushStatus |
                 if (r) onChange(r);
               }}
             >
-              <BellRing size={16} /> {t("Turn on notifications here")}
+              <BellRing size={16} /> {s.permission === "ask" ? t("Turn on notifications here") : t("Try again")}
             </button>
           ) : null}
           {s.permission === "denied" ? (
