@@ -1,0 +1,15 @@
+<resources>
+    <string name="intro">Logga in på din server</string>
+    <string name="server">Server</string>
+    <string name="username">Användarnamn</string>
+    <string name="password">Lösenord</string>
+    <string name="log_in">Logga in</string>
+    <string name="logging_in">Loggar in…</string>
+    <string name="fill_in">Fyll i servern, ditt användarnamn och ditt lösenord.</string>
+    <string name="bad_address">Det där är ingen webbadress.</string>
+    <string name="unreachable">Kunde inte nå %1$s (%2$s).</string>
+    <string name="not_communarr">Adressen svarar, men inte som en Communarr-server.</string>
+    <string name="server_error">%1$s svarade med ett fel (%2$d).</string>
+    <string name="try_again">Försök igen</string>
+    <string name="other_server">Logga in någon annanstans</string>
+</resources>

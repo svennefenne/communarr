@@ -121,6 +121,7 @@ const RULES: [RegExp, string][] = [
   [/^app\/actions\/admin/, "Admin (messages)"],
   [/^app\/actions\/chat/, "Chat (messages)"],
   [/^app\/actions\/(auth|language)/, "Log in, sign up (messages)"],
+  [/^lib\/login/, "Log in, sign up (messages)"],
   [/^app\/actions\//, "Messages when you do something"],
   [/^lib\/textPlaces/, "Admin → Texts"],
   [/^lib\/types/, "Settings → Notifications"],

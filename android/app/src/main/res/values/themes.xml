@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Communarr" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/communarr_bg</item>
+        <item name="android:colorAccent">@color/communarr_accent</item>
+    </style>
+    <!-- the site's own dark colours (its background and accent) -->
+    <color name="communarr_bg">#070b10</color>
+    <color name="communarr_accent">#d65a2b</color>
+</resources>

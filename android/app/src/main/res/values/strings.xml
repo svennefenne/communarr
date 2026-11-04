@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Communarr</string>
+    <string name="intro">Log in to your server</string>
+    <string name="server">Server</string>
+    <string name="server_hint">communarr.example.com</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="log_in">Log in</string>
+    <string name="logging_in">Logging in…</string>
+    <string name="fill_in">Fill in the server, your username and your password.</string>
+    <string name="bad_address">That isn\'t a web address.</string>
+    <string name="unreachable">Couldn\'t reach %1$s (%2$s).</string>
+    <string name="not_communarr">That address answers, but not as a Communarr server.</string>
+    <string name="server_error">%1$s answered with an error (%2$d).</string>
+    <string name="try_again">Try again</string>
+    <string name="other_server">Log in somewhere else</string>
+</resources>

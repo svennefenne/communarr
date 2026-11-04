@@ -2,15 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { db, now } from "@/lib/db";
-import { audit, clearFailures, clientInfo, hasAnyUser, hashPassword, noteFailure, startSession, tooManyAttempts, verifyPassword } from "@/lib/auth";
-import { announceNewMember, createUser, inviteState, pendingUser, seedSite, redeemInvite, undoSignup, validateNewUser } from "@/lib/accounts";
+import { audit, clientInfo, hasAnyUser, hashPassword, startSession } from "@/lib/auth";
+import { announceNewMember, createUser, inviteState, seedSite, redeemInvite, undoSignup, validateNewUser } from "@/lib/accounts";
 import { getSettings } from "@/lib/settings";
-import { memberLang, requestT, setLangCookie } from "@/lib/t";
-import { isUnconfirmed, type UserRow } from "@/lib/users";
-import { emailTaken, forgotPassword, resendSignupLink, setAllMail, startConfirmation, throttled } from "@/lib/accountMail";
-import { hourCycle } from "@/lib/clock";
-import { mailReady, maskEmail, normEmail, validEmail } from "@/lib/mail";
+import { requestT } from "@/lib/t";
+import { emailTaken, forgotPassword, setAllMail, startConfirmation, throttled } from "@/lib/accountMail";
+import { mailReady, normEmail, validEmail } from "@/lib/mail";
 import { UserError } from "@/lib/errors";
+import { logIn } from "@/lib/login";
 
 export interface FormState {
   error?: string;
@@ -51,38 +50,8 @@ export async function setupAction(_: FormState, fd: FormData): Promise<FormState
 }
 
 export async function loginAction(_: FormState, fd: FormData): Promise<FormState> {
-  const username = str(fd, "username").trim();
-  const password = str(fd, "password");
-  const { ip } = await clientInfo();
-  const t = await requestT();
-  const name = username.toLowerCase();
-  // per address (when there is one) and per name from anywhere: made-up addresses don't help
-  const key = ip ? `${ip}|${name}` : null;
-  const nameKey = `*|${name}`;
-  if ((key && tooManyAttempts(key)) || tooManyAttempts(nameKey, 30)) return { error: t("Too many tries. Wait ten minutes and try again.") };
-  const row = db().prepare("select * from users where username = ?").get(username) as UserRow | undefined;
-  if (!row || !(await verifyPassword(password, row.password_hash))) {
-    if (key) noteFailure(key);
-    noteFailure(nameKey);
-    return { error: t("That username and password don't match.") };
-  }
-  if (row.banned) return { error: row.ban_reason ? t("This account has been closed: {reason}", { reason: row.ban_reason }) : t("This account has been closed.") };
-  // signed up but hasn't clicked the link yet: a new one (the right password shows it's them)
-  if (isUnconfirmed(row)) {
-    const to = await resendSignupLink(row);
-    return to
-      ? { ok: t("Your account opens when you confirm your email address. We've sent a new link to {email}: click it, then log in.", { email: maskEmail(to) }) }
-      : { error: t("Your account opens when you confirm your email address: click the link in the mail we sent (look in the spam folder too). No mail? Ask an admin to let you in.") };
-  }
-  if (pendingUser(row)) return { error: t("Your account is waiting for an admin to let you in. Try again a bit later.") };
-  if (row.suspended_until && row.suspended_until > now()) {
-    return { error: t("This account is suspended until {date}.", { date: new Date(row.suspended_until).toLocaleString(t.locale ?? "en-GB", { dateStyle: "medium", timeStyle: "short", ...hourCycle(getSettings()) }) }) };
-  }
-  if (key) clearFailures(key);
-  await startSession(row.id);
-  // their own language, so this browser's log-in page keeps it after logging out
-  const own = memberLang(row.id);
-  if (own) await setLangCookie(own);
+  const r = await logIn(str(fd, "username").trim(), str(fd, "password"));
+  if (r) return r;
   redirect(safeNext(str(fd, "next")));
 }
 

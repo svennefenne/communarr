@@ -99,6 +99,31 @@ setups below show how). On an **iPhone or iPad**, open the site in Safari, tap S
 Screen*, open it from the home screen and turn notifications on (Settings → Notifications on the site).
 On Android, Chrome offers *Install app*. The site asks on the front page once per device.
 
+### Android app
+
+`android/` holds a small Android app: the site itself in a web view, as it looks in a browser. Logged
+out, it shows only its own log-in screen: the **server's address, a username and a password** (http on
+the local network works too). It logs in with `POST /api/app/login` (the log-in page's own checks, a
+JSON request so other sites can't send it) and hands the session cookie to the web view; logging out on
+the site, or a session that has run out, brings the log-in screen back with the server and username
+filled in. The microphone works in voice rooms (over HTTPS), pictures can be posted from the phone, and
+links to other sites open in the browser. The site hides its *Get the app* in the app, and in a browser
+its steps link to the APK. Push notifications aren't in the app yet; a browser or the installed site
+gets them.
+
+Install it from <https://github.com/svennefenne/communarr/releases/latest/download/communarr-android.apk>
+(the phone asks once to allow installs from the browser); later versions install over it. GitHub
+Actions builds and signs it whenever `android/` changes (`.github/workflows/android.yml`), with the key
+in the repository's secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD` and
+`ANDROID_KEY_ALIAS`; Android only updates an app signed with the same key, so keep a copy of it. To
+build it yourself:
+
+```sh
+cd android && ./gradlew assembleRelease    # JDK 17+ and the Android SDK (platform 36.1)
+# app/build/outputs/apk/release/app-release.apk, signed with the key that
+# ~/.config/communarr-android/keystore.properties names (or the debug key without it)
+```
+
 ## Install on the NUC (Docker Compose)
 
 The image is built by GitHub Actions and published as `ghcr.io/svennefenne/communarr:latest` on every
