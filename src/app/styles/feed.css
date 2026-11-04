@@ -177,6 +177,7 @@
 .post-card,
 .poll-card,
 .event-card,
+.list-card,
 .thread-feed-card {
   padding: 16px 18px;
   min-width: 0;
@@ -185,6 +186,7 @@
   .post-card,
   .poll-card,
   .event-card,
+  .list-card,
   .thread-feed-card {
     padding: 14px;
     border-radius: var(--radius-sm);
@@ -193,6 +195,8 @@
 /* the front page: a strip along the top of each card saying which part of the site it's from */
 .card-section {
   display: flex;
+  /* (in a row even with a kind's class that means something else too, like .list) */
+  flex-direction: row;
   align-items: center;
   gap: 7px;
   margin: -16px -18px 14px;
@@ -262,7 +266,8 @@
 }
 a.post-title:hover,
 a.poll-q:hover,
-a.event-title:hover {
+a.event-title:hover,
+a.list-card-title:hover {
   color: var(--accent-2);
 }
 .post-headline {

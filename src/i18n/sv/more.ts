@@ -370,7 +370,7 @@ const sv: Record<string, string> = {
   "Delete the list": "Ta bort listan",
   "Delete “{title}” and everything written in it?": "Ta bort ”{title}” och allt som står i den?",
   "Only {name} fills it in": "Bara {name} fyller i den",
-  "Everyone fills it in; a filled-in row is its filler's": "Alla fyller i den; en ifylld rad är dens som fyllde i den",
+  "Everyone can contribute to the list - you can edit your rows": "Alla kan bidra till listan - Du kan redigera dina rader",
   "Everyone fills it in": "Alla fyller i den",
   Row: "Rad",
   "{name}'s row": "{name}s rad",

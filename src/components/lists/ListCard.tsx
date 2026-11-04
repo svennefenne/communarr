@@ -17,7 +17,7 @@ export function ListCardView({ list: l, section = false }: { list: ListCard; sec
   const me = useMe();
   const share = l.rows ? Math.round((l.filled / l.rows) * 100) : 0;
   return (
-    <article className="panel list-card">
+    <article className="panel list-card" id={`list-${l.id}`}>
       {section ? <CardSection kind="list" /> : null}
       <header className="post-head">
         <span className="kind-icon list">
@@ -38,10 +38,10 @@ export function ListCardView({ list: l, section = false }: { list: ListCard; sec
           </div>
         </div>
       </header>
-      <Link href={`/lists/${l.id}`} className="list-card-title">
+      <Link href={`/lists/${l.id}`} className="h3 list-card-title">
         {l.title}
       </Link>
-      {l.text ? <p className="list-card-text small muted">{l.text}</p> : null}
+      {l.text ? <p className="list-card-text">{l.text}</p> : null}
       <div className="list-card-cols">
         {l.columns.slice(0, 6).map((c) => {
           const Icon = typeIcon(c.type);
@@ -53,7 +53,7 @@ export function ListCardView({ list: l, section = false }: { list: ListCard; sec
         })}
         {l.columns.length > 6 ? <span className="list-col-chip">+{l.columns.length - 6}</span> : null}
       </div>
-      <div className="list-card-foot">
+      <div className="list-card-meta">
         {/* (automatic rows: no set size, so just how many) */}
         {l.autoRows ? (
           <span className="small muted">{t.n(l.filled, "{n} row filled in", "{n} rows filled in")}</span>

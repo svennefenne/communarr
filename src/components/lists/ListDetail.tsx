@@ -165,7 +165,7 @@ export function ListDetail({ list: initial }: { list: ListView }) {
         <p className="tiny muted" style={{ margin: 0 }}>
           {l.autoRows ? t.n(filledCount, "{n} row filled in", "{n} rows filled in") : t("{n} of {total} rows filled in", { n: filledCount, total: l.rowList.length })}
           {" · "}
-          {l.fill === "owner" ? t("Only {name} fills it in", { name: l.author.name }) : l.ownRows ? t("Everyone fills it in; a filled-in row is its filler's") : t("Everyone fills it in")}
+          {l.fill === "owner" ? t("Only {name} fills it in", { name: l.author.name }) : l.ownRows ? t("Everyone can contribute to the list - you can edit your rows") : t("Everyone fills it in")}
         </p>
       </article>
 
