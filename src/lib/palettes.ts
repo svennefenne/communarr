@@ -33,7 +33,7 @@ export interface Palette {
   light: Colors;
 }
 
-// the project's own scheme (its slug and category stay "communarr": sites and members have that saved)
+// the project's own scheme
 export const COMMUNARR: Palette = {
   slug: "communarr",
   name: "Communarr",

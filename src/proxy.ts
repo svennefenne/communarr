@@ -8,7 +8,7 @@ const OPEN = [/^\/login$/, /^\/setup$/, /^\/signup$/, /^\/invite\//, /^\/reset\/
 
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
-  // the server's own Android app (/communarr-0.1.0.apk, in the data folder's apps/), for anyone: it's
+  // the server's own Android app (/friends-0.1.0.apk, in the data folder's apps/), for anyone: it's
   // installed before logging in
   if (/^\/[A-Za-z0-9][\w.-]*\.apk$/.test(pathname)) {
     const url = req.nextUrl.clone();

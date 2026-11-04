@@ -3,7 +3,7 @@ import { appFile } from "@/lib/apps";
 
 export const dynamic = "force-dynamic";
 
-/** GET /communarr-0.1.0.apk (the proxy sends it here): one of the server's own copies of the Android app, for anyone. */
+/** GET /friends-0.1.0.apk (the proxy sends it here): one of the server's own copies of the Android app, for anyone. */
 export async function GET(_: Request, { params }: { params: Promise<{ file: string }> }) {
   const { file: name } = await params;
   const file = appFile(name);

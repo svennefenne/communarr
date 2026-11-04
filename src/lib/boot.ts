@@ -17,7 +17,7 @@ export function me(u: User): Me {
   return { ...summary(u), isAdmin: u.isAdmin, isMod: u.isMod, presence: u.presence, theme: u.theme, groups };
 }
 
-/** The server's own Android app, where its file is: /communarr-0.1.0.apk. */
+/** The server's own Android app, where its file is: /friends-0.1.0.apk. */
 function androidApp() {
   const f = latestApp();
   return f ? `/${f}` : null;

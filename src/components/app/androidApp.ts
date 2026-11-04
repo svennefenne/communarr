@@ -2,7 +2,7 @@
 
 /**
  * The Android app (android/) as the page sees it: its name and version, which it says in its user
- * agent ("CommunarrApp/0.1.0 (Communarr)"), and messages to it through its bridge (window.CommunarrApp,
+ * agent ("CommunarrApp/0.1.0 (Friends)"), and messages to it through its bridge (window.CommunarrApp,
  * there only on the server's own pages in the app).
  */
 export interface AppInfo {

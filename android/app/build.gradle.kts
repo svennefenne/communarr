@@ -13,7 +13,7 @@ fun signing(env: String, prop: String): String? = System.getenv(env)?.takeIf { i
 val keystore = signing("COMMUNARR_KEYSTORE", "storeFile")
 
 // a server's own copy of the app: a name (and id, so it installs beside Communarr) of its own, the
-// rest the same: ./gradlew assembleRelease -PappName=Communarr -PappId=io.github.svennefenne.communarr
+// rest the same: ./gradlew assembleRelease -PappName=Friends -PappId=com.example.friends
 val appName = providers.gradleProperty("appName").getOrElse("Communarr")
 val appId = providers.gradleProperty("appId").getOrElse("io.github.svennefenne.communarr")
 

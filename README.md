@@ -122,8 +122,8 @@ phone's token lasts as long as the log-in it came with, and the app asks Android
 notify the first time. In the background the page counts as hidden, so the phone gets pushed to; a tap
 opens the notification's page.
 
-**Updates.** When the server's `apps/` has a newer version of the app (by the app's name: the Communarr
-copy looks for `communarr-<version>.apk`), the app's user menu offers *New version …* and *Update*, and a
+**Updates.** When the server's `apps/` has a newer version of the app (by the app's name: a copy named
+Friends looks for `friends-<version>.apk`), the app's user menu offers *New version …* and *Update*, and a
 dot shows on the menu's button. The app downloads it and hands it to Android's installer (which, the
 first time, asks to allow installing from the app).
 
@@ -141,8 +141,8 @@ cd android && ./gradlew assembleRelease    # JDK 17+ and the Android SDK (platfo
 ```
 
 **A server's own copy.** The same app with a name of its own, and its own id so it installs beside
-Communarr: `./gradlew assembleRelease -PappName=Communarr -PappId=io.github.svennefenne.communarr`. Put it in
-the data folder's `apps/` as, say, `communarr-0.1.0.apk`: the site serves it at `/communarr-0.1.0.apk` to
+Communarr: `./gradlew assembleRelease -PappName=Friends -PappId=com.example.friends`. Put it in
+the data folder's `apps/` as, say, `friends-0.1.0.apk`: the site serves it at `/friends-0.1.0.apk` to
 anyone (it's installed before logging in), and *Get the app* links to the highest version there
 instead of GitHub.
 
@@ -196,21 +196,6 @@ With the **Compose Manager** plugin you can also use `docker-compose.yml` as is:
 
 If the image ever needs a login to pull (GitHub makes new packages private until you change it):
 GitHub → your profile → Packages → communarr → Package settings → *Change visibility* → Public.
-
-## Set up when it was called Communarr?
-
-The project used to be called Communarr. A site set up back then carries on as it is: it keeps its name,
-texts and colour scheme (they're saved in its database), its database file (`communarr.db`), everyone's
-log-ins, installed apps, push notifications and calendar feeds.
-
-- **The image** is now `ghcr.io/svennefenne/communarr`. The old `ghcr.io/svennefenne/communarr` stopped
-  getting updates on 25 October 2026 (it stays at that version): change the `image:` line in your
-  `docker-compose.yml` to the new name, then `docker compose pull && docker compose up -d`.
-- **Your `.env`** keeps working: `COMMUNARR_DATA`, `COMMUNARR_PORT` and `COMMUNARR_DOMAIN` are read when the
-  `COMMUNARR_` ones aren't set.
-- **If you swap in the new `docker-compose.yml`** instead of editing yours, the service is now called
-  `communarr`: point a Cloudflare Tunnel's public hostname at `http://communarr:3000`, and note the
-  containers are named `communarr`, `communarr-tunnel` and so on.
 
 ## First start
 

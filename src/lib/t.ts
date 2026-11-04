@@ -17,15 +17,12 @@ import { isLang, makeT, type Lang, type T } from "./i18n";
 
 /** Set by the language switch, so the log-in page keeps someone's choice. */
 export const LANG_COOKIE = "communarr_lang";
-// (what it was called before the rename: still read, so a browser keeps its choice)
-const OLD_LANG_COOKIE = "communarr_lang";
 
 /** Remember a language for this browser (the log-in page uses it); null forgets it. */
 export async function setLangCookie(lang: Lang | null) {
   const jar = await cookies();
   if (lang) jar.set(LANG_COOKIE, lang, { path: "/", maxAge: 365 * 86_400, sameSite: "lax", httpOnly: true });
   else jar.delete(LANG_COOKIE);
-  jar.delete(OLD_LANG_COOKIE);
 }
 
 /** A member's own language, or null when they follow the site's. */
@@ -53,7 +50,7 @@ export const requestLang = cache(async (): Promise<Lang> => {
   const own = u ? memberLang(u.id) : null;
   if (own) return own;
   const jar = await cookies();
-  const c = jar.get(LANG_COOKIE)?.value ?? jar.get(OLD_LANG_COOKIE)?.value;
+  const c = jar.get(LANG_COOKIE)?.value;
   return isLang(c) ? c : getSetting("language");
 });
 

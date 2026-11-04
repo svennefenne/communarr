@@ -264,7 +264,7 @@ function AppPush({ fcm }: { fcm: { project: string | null; apps: string[]; accou
         <summary style={{ cursor: "pointer" }}>{t("How to set it up")}</summary>
         <ol style={{ margin: "6px 0 0", paddingLeft: 20 }}>
           <li>{t("At console.firebase.google.com, make a project (it's free; Google Analytics isn't needed).")}</li>
-          <li>{t("Add an Android app for each copy of the app, by its package name (Communarr: io.github.svennefenne.communarr; a copy of your own: its own, such as io.github.svennefenne.communarr). Skip the steps about the SDK.")}</li>
+          <li>{t("Add an Android app for each copy of the app, by its package name (Communarr: io.github.svennefenne.communarr; a copy of your own: its own, such as com.example.friends). Skip the steps about the SDK.")}</li>
           <li>{t("Project settings → General: download google-services.json (after adding the apps, so they're all in it).")}</li>
           <li>{t("Project settings → Service accounts: Generate new private key.")}</li>
           <li>{t("Paste both here and save. Phones that already have the app sign up the next time it's opened.")}</li>

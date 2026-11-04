@@ -49,7 +49,7 @@ export interface SiteInfo {
   registration: "invite" | "open" | "closed";
   /** 24-hour or 12-hour times, and the first day of the week */
   clock: Clock;
-  /** the server's own Android app to download (/communarr-0.1.0.apk), or null: the one on GitHub */
+  /** the server's own Android app to download (/friends-0.1.0.apk), or null: the one on GitHub */
   androidApp: string | null;
   /** each of the server's own apps' newest version (by the app's name, lower case), for the app to offer an update */
   androidApps: { name: string; version: string; url: string }[];

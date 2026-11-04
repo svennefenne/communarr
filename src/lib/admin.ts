@@ -289,7 +289,7 @@ export async function backupFile(): Promise<string> {
 export function system() {
   const mem = process.memoryUsage();
   return {
-    version: process.env.COMMUNARR_VERSION || process.env.COMMUNARR_VERSION || "dev",
+    version: process.env.COMMUNARR_VERSION || "dev",
     node: process.version,
     uptime: process.uptime(),
     rss: mem.rss,

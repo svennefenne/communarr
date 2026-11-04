@@ -4,7 +4,7 @@ import { DATA_DIR } from "@/lib/db";
 
 /**
  * The server's own copies of the Android app (built with a name of their own, android/ -PappName):
- * .apk files put in the data folder's apps/, downloaded from the site's root (/communarr-0.1.0.apk) by
+ * .apk files put in the data folder's apps/, downloaded from the site's root (/friends-0.1.0.apk) by
  * anyone, as the app is installed before logging in.
  */
 export const APPS_DIR = path.join(DATA_DIR, "apps");
@@ -27,7 +27,7 @@ const compare = (a: number[], b: number[]) => {
   return 0;
 };
 
-/** The apps there, newest first: the highest version in its name (communarr-0.2.0.apk), else the one put there last. */
+/** The apps there, newest first: the highest version in its name (friends-0.2.0.apk), else the one put there last. */
 function apps(): string[] {
   let names: string[];
   try {
@@ -45,8 +45,8 @@ export function latestApp(): string | null {
 }
 
 /**
- * Each app's newest version, by its name (the file's, before its version: "communarr" for
- * communarr-0.2.0.apk): what the app compares itself with, to offer an update.
+ * Each app's newest version, by its name (the file's, before its version: "friends" for
+ * friends-0.2.0.apk): what the app compares itself with, to offer an update.
  */
 export function latestApps(): { name: string; version: string; url: string }[] {
   const out = new Map<string, { name: string; version: string; url: string }>();
