@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "@/components/app/AppProvider";
 import { clock, weekDays } from "@/lib/clock";
@@ -25,6 +26,7 @@ export function DateField({
   placeholder,
   clearable = false,
   small = false,
+  floating = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -38,23 +40,33 @@ export function DateField({
   /** an "empty" choice (an optional day) */
   clearable?: boolean;
   small?: boolean;
+  /** the month opens over the page (in something that scrolls and would cut it off, like a table) */
+  floating?: boolean;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [right, setRight] = useState(false);
+  const [at, setAt] = useState<{ left: number; top: number } | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
   const picked = parse(value);
   const shown = picked
     ? picked.toLocaleDateString(t.locale, { weekday: "short", day: "numeric", month: "short", year: "numeric" })
     : (placeholder ?? t("Pick a day"));
 
-  // closes on a click outside, and on Escape (focus back on the field)
+  // closes on a click outside, and on Escape (focus back on the field); floating, also when what's
+  // around it scrolls (it would stay where the field was)
   useEffect(() => {
     if (!open) return;
-    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setOpen(false);
+    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && !pop.current?.contains(e.target as Node) && setOpen(false);
+    const scrolled = (e: Event) => !pop.current?.contains(e.target as Node) && setOpen(false);
     window.addEventListener("pointerdown", away);
-    return () => window.removeEventListener("pointerdown", away);
-  }, [open]);
+    if (floating) window.addEventListener("scroll", scrolled, true);
+    return () => {
+      window.removeEventListener("pointerdown", away);
+      window.removeEventListener("scroll", scrolled, true);
+    };
+  }, [open, floating]);
 
   return (
     <div
@@ -79,30 +91,60 @@ export function DateField({
           // near the right edge, the month opens to the left
           const r = wrap.current?.getBoundingClientRect();
           setRight(!!r && r.left + 300 > window.innerWidth - 8);
+          // floating: under the field (above it when there's no room), on screen
+          if (r && floating) {
+            const below = r.bottom + 6;
+            setAt({ left: Math.max(8, Math.min(r.left, window.innerWidth - 300)), top: below + 340 > window.innerHeight && r.top - 346 > 8 ? r.top - 346 : below });
+          }
           setOpen((x) => !x);
         }}
       >
         <CalendarDays size={15} aria-hidden />
         <span className="ellipsis">{shown}</span>
       </button>
-      {open ? (
-        <Month
-          value={value}
-          min={min}
-          right={right}
-          clearable={clearable}
-          onPick={(v) => {
-            onChange(v);
-            setOpen(false);
-            wrap.current?.querySelector<HTMLButtonElement>(".date-btn")?.focus();
-          }}
-        />
-      ) : null}
+      {open
+        ? (() => {
+            const month = (
+              <Month
+                value={value}
+                min={min}
+                right={right}
+                clearable={clearable}
+                popRef={pop}
+                at={floating ? at : null}
+                onPick={(v) => {
+                  onChange(v);
+                  setOpen(false);
+                  wrap.current?.querySelector<HTMLButtonElement>(".date-btn")?.focus();
+                }}
+              />
+            );
+            // (on the page itself, still inside this field for React: Escape and clicks work as before)
+            return floating && at ? createPortal(month, document.body) : month;
+          })()
+        : null}
     </div>
   );
 }
 
-function Month({ value, min, right, clearable, onPick }: { value: string; min?: string; right: boolean; clearable: boolean; onPick: (v: string) => void }) {
+function Month({
+  value,
+  min,
+  right,
+  clearable,
+  onPick,
+  popRef,
+  at,
+}: {
+  value: string;
+  min?: string;
+  right: boolean;
+  clearable: boolean;
+  onPick: (v: string) => void;
+  popRef?: React.RefObject<HTMLDivElement | null>;
+  /** floating: where on the screen */
+  at?: { left: number; top: number } | null;
+}) {
   const t = useT();
   const today = iso(new Date());
   const start = parse(value) ?? parse(min ?? "") ?? new Date();
@@ -129,7 +171,7 @@ function Month({ value, min, right, clearable, onPick }: { value: string; min?: 
     if (to.getMonth() !== shown.getMonth() || to.getFullYear() !== shown.getFullYear()) setShown(new Date(to.getFullYear(), to.getMonth(), 1, 12));
   };
   return (
-    <div className={`date-pop panel ${right ? "right" : ""}`} role="dialog" aria-labelledby={titleId}>
+    <div ref={popRef} className={`date-pop panel ${right && !at ? "right" : ""} ${at ? "floating" : ""}`} style={at ? { left: at.left, top: at.top } : undefined} role="dialog" aria-labelledby={titleId}>
       <div className="date-head">
         <button type="button" className="icon-btn xs" onClick={() => move(0, -1)} aria-label={t("Previous month")}>
           <ChevronLeft size={16} />

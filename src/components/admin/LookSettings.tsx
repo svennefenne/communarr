@@ -213,6 +213,7 @@ const FEATURES: [keyof SiteSettings["features"], string, string][] = [
   ["forum", "Forum", "Categories and threads"],
   ["calendar", "Calendar", "Events, RSVPs, reminders"],
   ["polls", "Polls", ""],
+  ["lists", "Lists", "Tables of your own making that others fill in"],
   ["groups", "Groups", ""],
   ["news", "News", "Admin news on the front page"],
 ];
@@ -246,6 +247,7 @@ export function FeatureSettings({ s, bggToken }: { s: SiteSettings; bggToken: bo
             ["rooms", t("Chat rooms")],
             ["events", t("Events")],
             ["polls", t("Polls")],
+            ["lists", t("Lists")],
           ] as const
         ).map(([k, label]) => (
           <div key={k} className="setting-row">

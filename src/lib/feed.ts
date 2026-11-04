@@ -5,13 +5,14 @@ import { toPostViews, type PostRow } from "./posts";
 import { toThreadCards, type ThreadRow } from "./forum";
 import { closeDuePolls, toPollViews, type PollRow } from "./polls";
 import { toEventViews, type EventRow } from "./events";
+import { toListCards, type ListRow } from "./lists";
 import { readableGroupIds } from "./groups";
 import { getSettings } from "./settings";
 import type { User } from "./users";
 import type { FeedFilter, FeedItem } from "./contentTypes";
 
 /**
- * The front page's feed: posts, news, new forum threads, polls and events, newest first, in pages
+ * The front page's feed: posts, news, new forum threads, polls, events and lists, newest first, in pages
  * (`before` is the time of the last item shown).
  */
 export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?: number; groupId?: number; authorId?: number } = {}): { items: FeedItem[]; next: number | null } {
@@ -69,6 +70,13 @@ export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?:
     // "Only me" events stay in their author's calendar (like "only me" posts, out of the feed)
     const rows = db().prepare(`select * from events where ${s.sql}${a.sql} and private = 0 and created_at < ? order by created_at desc limit ?`).all(...s.params, ...a.params, before, limit + 1) as EventRow[];
     for (const e of toEventViews(u, rows)) items.push({ type: "event", at: e.createdAt, event: e });
+  }
+  if ((f === "all" || f === "lists") && feats.lists) {
+    const s = scope();
+    const a = by("author_id");
+    // ("only me" lists stay out of the feed, like "only me" events)
+    const rows = db().prepare(`select * from lists where ${s.sql}${a.sql} and private = 0 and created_at < ? order by created_at desc limit ?`).all(...s.params, ...a.params, before, limit + 1) as ListRow[];
+    for (const l of toListCards(u, rows)) items.push({ type: "list", at: l.createdAt, list: l });
   }
   items.sort((a, b) => b.at - a.at);
   const page = items.slice(0, limit);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, FileText, Hash, MessageCircle, MessagesSquare, Newspaper, UserRound, UsersRound, Vote, MessageSquareText } from "lucide-react";
+import { CalendarDays, FileText, Hash, ListChecks, MessageCircle, MessagesSquare, Newspaper, UserRound, UsersRound, Vote, MessageSquareText } from "lucide-react";
 import type { SearchHit, SearchKind } from "@/lib/search";
 import { Time } from "@/components/ui/Time";
 import { useT } from "@/components/app/AppProvider";
@@ -18,6 +18,7 @@ export const KIND_ICON: Record<SearchKind, React.ComponentType<{ size?: number }
   group: UsersRound,
   user: UserRound,
   room: Hash,
+  list: ListChecks,
 };
 
 export const KIND_NAMES: Record<SearchKind, string> = {
@@ -32,6 +33,7 @@ export const KIND_NAMES: Record<SearchKind, string> = {
   group: "Groups",
   user: "Members",
   room: "Chat rooms",
+  list: "Lists",
 };
 
 /** One of a kind, for a hit's line ("News" alone would read as the whole section). */
@@ -47,6 +49,7 @@ const KIND_ONE: Record<SearchKind, string> = {
   group: "Group",
   user: "Member",
   room: "Chat room",
+  list: "List",
 };
 
 /** Text with the search words marked (\u0001…\u0002 from the server). */

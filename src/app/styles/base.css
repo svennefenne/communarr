@@ -912,6 +912,11 @@ input[type="radio"] {
   padding: 12px;
   box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
 }
+/* over the page (in a table that scrolls): the popups' layer, see .modal-back */
+.date-pop.floating {
+  position: fixed;
+  z-index: 270;
+}
 .date-pop.right {
   left: auto;
   right: 0;

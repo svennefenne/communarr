@@ -1,4 +1,4 @@
-import { Bookmark, CalendarDays, House, MessageCircle, MessagesSquare, Newspaper, Palette, Settings, ShieldCheck, UserRound, Users, UsersRound, Vote, type LucideIcon } from "lucide-react";
+import { Bookmark, CalendarDays, House, ListChecks, MessageCircle, MessagesSquare, Newspaper, Palette, Settings, ShieldCheck, UserRound, Users, UsersRound, Vote, type LucideIcon } from "lucide-react";
 import type { Features } from "@/lib/bootTypes";
 
 export interface Section {
@@ -16,6 +16,7 @@ export const SECTIONS: Section[] = [
   { href: "/chat", label: "Chat", icon: MessageCircle, feature: "chat" },
   { href: "/calendar", label: "Calendar", icon: CalendarDays, feature: "calendar" },
   { href: "/polls", label: "Polls", icon: Vote, feature: "polls" },
+  { href: "/lists", label: "Lists", icon: ListChecks, feature: "lists" },
   { href: "/groups", label: "Groups", icon: UsersRound, feature: "groups" },
 ];
 

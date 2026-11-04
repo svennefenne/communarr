@@ -28,7 +28,7 @@ export function siteInfo(u: User | null, lang?: Lang): SiteInfo {
     tagline: defaultTextIn("tagline", s.tagline, lang ?? s.language),
     footer: defaultTextIn("footer", s.footer, lang ?? s.language),
     features: s.features,
-    can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod, emojis: may(s.canCreate.emojis) },
+    can: { groups: may(s.canCreate.groups), rooms: may(s.canCreate.rooms), events: may(s.canCreate.events), polls: may(s.canCreate.polls), news: !!u?.isMod, emojis: may(s.canCreate.emojis), lists: may(s.canCreate.lists) },
     emojis: u ? listEmojis() : [],
     emojiLibrary: s.emojiLibrary,
     bgg: u ? bggMode() : "off",

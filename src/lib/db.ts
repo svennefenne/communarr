@@ -516,6 +516,36 @@ const MIGRATIONS: string[] = [
     fetched_at integer not null
   );
   `,
+  /* 14: lists (Lists): columns of their own (text, a checkbox, a member, a date, a time, a number, a
+         choice) as JSON, and rows that people fill in; filled_by is whose row it is */ `
+  create table lists (
+    id integer primary key,
+    author_id integer not null references users(id) on delete cascade,
+    title text not null,
+    description_html text not null default '',
+    description_text text not null default '',
+    columns_json text not null,
+    group_id integer references groups(id) on delete cascade,
+    private integer not null default 0,
+    fill text not null default 'members',
+    add_rows integer not null default 1,
+    own_rows integer not null default 1,
+    created_at integer not null,
+    edited_at integer,
+    updated_at integer not null
+  );
+  create index lists_updated on lists(updated_at);
+  create table list_rows (
+    id integer primary key,
+    list_id integer not null references lists(id) on delete cascade,
+    position integer not null,
+    cells_json text not null default '{}',
+    filled_by integer references users(id) on delete set null,
+    updated_by integer references users(id) on delete set null,
+    updated_at integer
+  );
+  create index list_rows_list on list_rows(list_id, position);
+  `,
 ];
 
 function open(): Database.Database {
