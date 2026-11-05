@@ -8,7 +8,7 @@ import { addComment, deleteComment, editComment, listComments, type CommentTarge
 import { toggleReaction, type ReactTarget } from "@/lib/reactions";
 import { addOption, closePoll, createPoll, deletePoll, getPoll, updatePoll, vote, type PollInput } from "@/lib/polls";
 import { cancelEvent, createEvent, deleteEvent, eventsBetween, getEvent, rsvp, updateEvent, type EventInput } from "@/lib/events";
-import { createThread, deleteReply, deleteThread, editReply, editThread, follow, moderateThread, quoteFor, reply } from "@/lib/forum";
+import { createThread, deleteReply, deleteThread, editReply, editThread, findThreads, follow, mergeThread, moderateThread, moveReply, quoteFor, reply } from "@/lib/forum";
 import { feed } from "@/lib/feed";
 import { report, type ReportTarget } from "@/lib/reports";
 import { canSeeTarget } from "@/lib/visibility";
@@ -250,6 +250,29 @@ export async function moderateThreadAction(id: number, o: { pinned?: boolean; lo
     moderateThread(u, id, o);
     revalidatePath(`/forum/t/${id}`);
     return true;
+  });
+}
+
+/** Moderators: threads to move something into (the latest, or by words in the title). */
+export async function findThreadsAction(q: string, not: number) {
+  return act((u) => findThreads(u, q.slice(0, 100), not));
+}
+
+/** Moderators: a reply to another thread, or out into a new one. Returns the thread it's in now. */
+export async function moveReplyAction(id: number, to: { threadId: number } | { categoryId: number; title: string }) {
+  return act((u) => {
+    const tid = moveReply(u, id, to);
+    revalidatePath("/forum", "layout");
+    return tid;
+  });
+}
+
+/** Moderators: a whole thread into another. Returns that one. */
+export async function mergeThreadAction(id: number, intoId: number) {
+  return act((u) => {
+    const tid = mergeThread(u, id, intoId);
+    revalidatePath("/forum", "layout");
+    return tid;
   });
 }
 

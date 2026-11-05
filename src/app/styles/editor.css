@@ -319,6 +319,48 @@
   text-overflow: ellipsis;
   text-decoration: underline;
 }
+.ed-link-url svg {
+  vertical-align: -2px;
+}
+
+/* the Link dialog: places and things on the site, found as you type; the one Enter takes is marked */
+.chat-search.link-search {
+  margin: 0;
+  height: 42px;
+}
+.link-found {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.link-places .pill {
+  flex: none;
+  min-height: 30px;
+}
+.link-places .pill.on {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+.link-hits {
+  display: flex;
+  flex-direction: column;
+  max-height: min(320px, 40dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.link-hits .list-row {
+  padding: 8px 12px;
+}
+.link-hits .hit-snip {
+  display: block;
+}
+.link-hits .list-row.on {
+  background: var(--hover);
+  box-shadow: inset 3px 0 0 var(--accent-2);
+}
 
 /* popovers from the toolbar (the popups' layer: see .modal-back) */
 .popover {

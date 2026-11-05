@@ -87,15 +87,19 @@
   font-size: 30px;
   border-radius: 16px;
 }
+/* the rows share the list's columns (subgrid), so the counts and the last posts line up */
 .thread-list {
   overflow: hidden;
   container-type: inline-size;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(3.5em, auto) minmax(3.5em, auto) minmax(0, max-content);
+  column-gap: 14px;
 }
 .thread-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto 110px;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 12px;
   padding: 12px 16px;
   border-top: 1px solid var(--line);
   transition: background 120ms;
@@ -131,22 +135,37 @@
   flex: none;
   color: var(--accent-2);
 }
+/* (its counts are the row's columns) */
 .thread-stats {
-  display: flex;
-  gap: 12px;
-  font-size: 0.8125rem;
-  color: var(--muted);
+  display: contents;
 }
 .thread-stats span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 .thread-last {
   display: flex;
   align-items: center;
-  gap: 6px;
-  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  max-width: 190px;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+}
+.thread-last-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.thread-last-text > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .thread-meta {
   display: flex;
@@ -161,8 +180,8 @@
    latest, and the replies (after the rules above, so it wins) */
 @container (max-width: 560px) {
   .thread-row {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr) minmax(2.75em, auto);
+    column-gap: 10px;
     padding: 11px 14px;
   }
   .thread-last,
@@ -188,6 +207,32 @@
     font-weight: 600;
     color: var(--text-dim);
   }
+}
+/* the forum's Move (moderators): what's moved, where to */
+.move-what {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--line-strong);
+}
+.chat-search.move-search {
+  margin: 0;
+  height: 40px;
+}
+.move-list {
+  display: flex;
+  flex-direction: column;
+  max-height: min(300px, 40dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.move-list .list-row {
+  padding: 9px 12px;
+}
+.move-list .list-row.on {
+  background: var(--hover);
+  box-shadow: inset 3px 0 0 var(--accent-2);
 }
 .thread-h1 {
   font-size: clamp(1.4rem, 3.6vw, 2.1rem);

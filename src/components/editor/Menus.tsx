@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { useEditorState } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { NodeSelection } from "@tiptap/pm/state";
-import { AlignCenter, AlignLeft, AlignRight, Bold, ExternalLink, Highlighter, ImagePlus, Italic, Link2, LoaderCircle, Pencil, RemoveFormatting, Strikethrough, Trash2, Underline, Unlink } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, ExternalLink, FileText, Highlighter, ImagePlus, Italic, Link2, LoaderCircle, MessagesSquare, Pencil, RemoveFormatting, Search, Strikethrough, Trash2, Underline, Unlink } from "lucide-react";
 import { HIGHLIGHTS, TEXT_COLORS } from "./Toolbar";
 import { Modal } from "@/components/ui/ui";
-import { useT } from "@/components/app/AppProvider";
+import { Time } from "@/components/ui/Time";
+import { useSite, useT } from "@/components/app/AppProvider";
+import { KIND_ICON, KIND_ONE, Marked } from "@/components/search/SearchResults";
+import { allSections } from "@/components/shell/nav";
+import { isAddress, plainTitle, useLinkSearch, useLinkTarget } from "./linkTargets";
 
 const isImage = (e: Editor) => e.state.selection instanceof NodeSelection && e.state.selection.node.type.name === "image";
 const touch = () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
@@ -103,10 +107,14 @@ export function TextBubble({ editor, onLink }: { editor: Editor; onLink: () => v
   );
 }
 
-/** The link under the cursor: where it goes, edit, open, remove. */
+/** The link under the cursor: where it goes (for a link on the site, what it is), edit, open, remove. */
 export function LinkBubble({ editor, onEdit }: { editor: Editor; onEdit: () => void }) {
   const t = useT();
+  const site = useSite();
   const href = useEditorState({ editor, selector: ({ editor: e }) => (e.isActive("link") ? (e.getAttributes("link").href as string) : "") });
+  const target = useLinkTarget(href);
+  const place = allSections(site.features).find((p) => p.href === href);
+  const Icon = target ? KIND_ICON[target.kind] : place?.icon;
   return (
     <BubbleMenu
       editor={editor}
@@ -116,7 +124,7 @@ export function LinkBubble({ editor, onEdit }: { editor: Editor; onEdit: () => v
       className="panel ed-bubble"
     >
       <a href={href} target="_blank" rel="noopener noreferrer" className="ed-link-url" title={href}>
-        {href.replace(/^https?:\/\//, "")}
+        {Icon ? <Icon size={13} /> : null} {target ? target.title : place ? t(place.label) : href.replace(/^https?:\/\//, "")}
       </a>
       <B label={t("Edit link")} onClick={onEdit}>
         <Pencil size={15} />
@@ -204,33 +212,64 @@ export function ImageBubble({ editor }: { editor: Editor }) {
   );
 }
 
-/** Add or change a link: the words shown and where it goes. */
+/**
+ * Add or change a link. Where it goes: anything on the site, found by typing in the same field as an
+ * address (before anything is typed: the site's sections and the latest things), linked with a tap;
+ * or an address. Without words selected, the words to show (else the title of what it goes to).
+ */
 export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () => void }) {
   const t = useT();
+  const site = useSite();
   const existing = editor.isActive("link") ? (editor.getAttributes("link").href as string) : "";
   const { from, to, empty } = editor.state.selection;
   const selected = empty ? "" : editor.state.doc.textBetween(from, to, " ");
   const [url, setUrl] = useState(existing);
   const [text, setText] = useState(selected);
   const needsText = empty && !existing;
+  const term = url.trim();
+  const searching = !isAddress(term);
+  const { found, busy } = useLinkSearch(searching ? term : null);
+  const low = term.toLowerCase();
+  // the sections (and, for what's typed, the forum's categories) whose names match
+  const places = searching
+    ? [
+        ...allSections(site.features).map((p) => ({ label: t(p.label), url: p.href, Icon: p.icon, cat: false })),
+        ...(found?.categories ?? []).map((c) => ({ label: c.name, url: c.url, Icon: MessagesSquare, cat: true })),
+      ].filter((p) => (low ? p.label.toLowerCase().includes(low) : !p.cat))
+    : [];
+  const hits = searching ? (found?.hits ?? []) : [];
+  const options = [...places.map((p) => ({ url: p.url, label: p.label })), ...hits.map((h) => ({ url: h.url, label: plainTitle(h.title) }))];
+  // typing: the first match is the one Enter takes
+  const [active, setActive] = useState(-1);
+  useEffect(() => setActive(term && searching ? 0 : -1), [term, searching]);
+  useEffect(() => document.getElementById(`ld-o${active}`)?.scrollIntoView({ block: "nearest", inline: "nearest" }), [active]);
+
+  const link = (href: string, label: string) => {
+    if (needsText) editor.chain().focus().insertContent({ type: "text", text: text.trim() || label, marks: [{ type: "link", attrs: { href } }] }).insertContent(" ").run();
+    else editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
+    onClose();
+  };
+  const pick = options[Math.min(active, options.length - 1)];
+  // closed without a link: back to writing where you were
+  const cancel = () => {
+    editor.commands.focus();
+    onClose();
+  };
   const save = () => {
-    let href = url.trim();
-    if (!href) {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      onClose();
+    if (searching) {
+      if (active >= 0 && pick) link(pick.url, pick.label);
       return;
     }
+    let href = term;
+    // this site's own address: a link on the site (it opens here, and keeps working if the address changes)
+    if (href.startsWith(`${location.origin}/`)) href = href.slice(location.origin.length);
     if (!/^(https?:|mailto:|tel:|\/)/i.test(href)) href = href.includes("@") && !href.includes("/") ? `mailto:${href}` : `https://${href}`;
-    if (needsText) {
-      const label = text.trim() || href.replace(/^https?:\/\//, "");
-      editor.chain().focus().insertContent({ type: "text", text: label, marks: [{ type: "link", attrs: { href } }] }).insertContent(" ").run();
-    } else editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
-    onClose();
+    link(href, href.replace(/^https?:\/\//, ""));
   };
   return (
     <Modal
       title={existing ? t("Edit the link") : t("Add a link")}
-      onClose={onClose}
+      onClose={cancel}
       footer={
         <>
           {existing ? (
@@ -245,7 +284,7 @@ export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () =>
               <Unlink size={15} /> {t("Remove link")}
             </button>
           ) : null}
-          <button type="button" className="btn btn-primary" onClick={save}>
+          <button type="button" className="btn btn-primary" disabled={searching && !(active >= 0 && pick)} onClick={save}>
             {existing ? t("Save") : t("Add link")}
           </button>
         </>
@@ -258,19 +297,92 @@ export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () =>
           save();
         }}
       >
-        <div className="field">
-          <label htmlFor="ld-url">{t("Address")}</label>
-          <input id="ld-url" className="input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder={t("https://… or paste a link")} inputMode="url" autoComplete="off" autoFocus />
-        </div>
         {needsText ? (
           <div className="field">
             <label htmlFor="ld-text">{t("Text to show")}</label>
-            <input id="ld-text" className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Optional: the address is shown otherwise")} />
+            <input id="ld-text" className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Optional: the title or address is shown otherwise")} />
           </div>
         ) : null}
-        <p className="hint" style={{ margin: 0 }}>
-          {t("Tip: paste a link straight into the text and it becomes a link by itself. Select words first and paste a link over them to link those words.")}
-        </p>
+        <div className="field">
+          <label htmlFor="ld-url">{t("Link to")}</label>
+          <div className="chat-search link-search">
+            <Search size={15} />
+            <input
+              id="ld-url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (!options.length || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+                e.preventDefault();
+                setActive((a) => (e.key === "ArrowDown" ? Math.min(a + 1, options.length - 1) : Math.max(a - 1, 0)));
+              }}
+              placeholder={t("Search the site, or paste an address")}
+              role="combobox"
+              aria-expanded={searching}
+              aria-controls="ld-list"
+              aria-autocomplete="list"
+              aria-activedescendant={searching && active >= 0 && pick ? `ld-o${Math.min(active, options.length - 1)}` : undefined}
+              autoComplete="off"
+              autoFocus
+            />
+          </div>
+        </div>
+        {searching ? (
+          <div id="ld-list" className="link-found" role="listbox" aria-label={t("On the site")}>
+            {places.length ? (
+              <div className="chip-row link-places" role="group" aria-label={t("Places")}>
+                {places.map((p, i) => (
+                  <button key={p.url} id={`ld-o${i}`} type="button" role="option" aria-selected={active === i} className={`pill soft ${active === i ? "on" : ""}`} onClick={() => link(p.url, p.label)}>
+                    <p.Icon size={14} /> {p.cat ? `${t("Forum")} · ${p.label}` : p.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {hits.length && !term ? <span className="eyebrow">{t("Latest")}</span> : null}
+            {hits.length ? (
+              <div className="link-hits" role="group" aria-label={term ? t("Found") : t("Latest")}>
+                {hits.map((h, j) => {
+                  const i = places.length + j;
+                  const Icon = KIND_ICON[h.kind] || FileText;
+                  return (
+                    <button key={h.url} id={`ld-o${i}`} type="button" role="option" aria-selected={active === i} className={`list-row search-hit ${active === i ? "on" : ""}`} onClick={() => link(h.url, plainTitle(h.title))}>
+                      <span className="hit-icon">
+                        <Icon size={16} />
+                      </span>
+                      <span className="grow" style={{ minWidth: 0 }}>
+                        <span className="hit-title ellipsis">
+                          <Marked text={h.title} />
+                        </span>
+                        {/* (a reply or a comment has its thread's or post's title: what it says tells them apart) */}
+                        {h.snippet && (h.kind === "reply" || h.kind === "comment") ? (
+                          <span className="hit-snip ellipsis">
+                            <Marked text={h.snippet} />
+                          </span>
+                        ) : null}
+                        <span className="tiny faint">
+                          {t(KIND_ONE[h.kind])}
+                          {h.author && h.kind !== "user" ? ` · ${h.author.name}` : ""}
+                          {h.kind !== "user" && h.kind !== "group" && h.kind !== "room" ? (
+                            <>
+                              {" · "}
+                              <Time t={h.createdAt} />
+                            </>
+                          ) : null}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+            {term && found && !busy && !options.length ? <p className="small muted" style={{ margin: 0 }}>{t("Nothing on the site matches “{q}”. To link to another site, paste its address.", { q: term })}</p> : null}
+          </div>
+        ) : null}
+        {!term || !searching ? (
+          <p className="hint" style={{ margin: 0 }}>
+            {t("Tip: paste a link straight into the text and it becomes a link by itself. Select words first and paste a link over them to link those words.")}
+          </p>
+        ) : null}
         <button type="submit" hidden />
       </form>
     </Modal>
