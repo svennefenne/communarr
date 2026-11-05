@@ -7,6 +7,7 @@ import type { Boot, Me, SiteInfo } from "@/lib/bootTypes";
 import type { LiveState, NotificationItem } from "@/lib/types";
 import { makeT, setClientLang, type T } from "@/lib/i18n";
 import { setClock } from "@/lib/clock";
+import { keepLook } from "@/lib/look";
 
 /**
  * Everything the pages share in the browser: who you are, the site's switches, unread counts,
@@ -86,6 +87,13 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
 
   // the server's fresh counts after a navigation
   useEffect(() => setCounts(boot.counts), [boot.counts]);
+
+  // this device keeps the look it has (once a page load: the cookie lasts another while)
+  const look = useRef(boot.me?.theme);
+  look.current = boot.me?.theme;
+  useEffect(() => {
+    if (meId && look.current) keepLook(meId, look.current);
+  }, [meId]);
 
   const emit = useCallback((type: string, data: unknown) => {
     handlers.current.get(type)?.forEach((h) => {

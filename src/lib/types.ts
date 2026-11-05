@@ -29,6 +29,8 @@ export interface ThemePrefs {
   textSize: number;
   /** compact lists */
   density: "comfy" | "compact";
+  /** the same look on all your devices (else each device keeps its own: lib/look.ts) */
+  mirror: boolean;
 }
 
 export const NOTIFY_KINDS = {
