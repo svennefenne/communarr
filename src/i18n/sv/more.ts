@@ -447,6 +447,29 @@ const sv: Record<string, string> = {
   "The same look on all of them: change it on one and the others follow.": "Samma utseende på alla: ändrar du på en följer de andra med.",
   "For this device: your phone and your computer can each have their own theme.": "Gäller den här enheten: din telefon och din dator kan ha var sitt tema.",
   "The same theme on all your devices.": "Samma tema på alla dina enheter.",
+  // the forum: the latest post's column; moderators move posts
+  "Latest post": "Senaste inlägget",
+  "Move the reply": "Flytta svaret",
+  "Move the thread": "Flytta tråden",
+  "Move…": "Flytta…",
+  "To another thread": "Till en annan tråd",
+  "As a new thread": "Som en ny tråd",
+  "To another category": "Till en annan kategori",
+  "Into another thread": "In i en annan tråd",
+  "Where to": "Vart",
+  "Find a thread": "Hitta en tråd",
+  Threads: "Trådar",
+  "No thread's title has those words.": "Ingen tråd har de orden i titeln.",
+  "There's no other thread yet.": "Det finns ingen annan tråd än.",
+  "It goes in among that thread's replies, by when it was written.": "Det hamnar bland den trådens svar, i den ordning det skrevs.",
+  "Its first post and every reply go in among that thread's, by when they were written. This thread is then gone.":
+    "Första inlägget och alla svar hamnar bland den trådens, i den ordning de skrevs. Den här tråden försvinner sedan.",
+  "What the new thread is about": "Vad den nya tråden handlar om",
+  "Moved to “{title}”.": "Flyttat till “{title}”.",
+  "Moved out into a thread of its own: “{title}”.": "Flyttat till en egen tråd: “{title}”.",
+  "Moved into “{title}”.": "Flyttat in i “{title}”.",
+  "Moved to {category}.": "Flyttat till {category}.",
+  "Pick another thread.": "Välj en annan tråd.",
 };
 
 export default sv;

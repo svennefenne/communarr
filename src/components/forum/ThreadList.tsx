@@ -9,9 +9,10 @@ import { CategoryChip } from "@/components/feed/ThreadCard";
 import { useT } from "@/components/app/AppProvider";
 
 /**
- * Threads as rows: title and who started it, replies and views, the last post. In a narrow column
- * (the forum's side, a phone) one line under the title instead: the category, who was last active and
- * when, with the replies on the right. bare: no panel round it (it's inside one already).
+ * Threads as rows: title and who started it, replies and views, the last post (who and when). The
+ * rows share their columns, so the counts and the last posts line up. In a narrow column (the forum's
+ * side, a phone) one line under the title instead: the category, who was last active and when, with
+ * the replies on the right. bare: no panel round it (it's inside one already).
  */
 export function ThreadList({ threads, showCategory = false, bare = false }: { threads: ThreadCard[]; showCategory?: boolean; bare?: boolean }) {
   const tr = useT();
@@ -48,10 +49,13 @@ export function ThreadList({ threads, showCategory = false, bare = false }: { th
               <Eye size={14} /> {t.views}
             </span>
           </span>
-          <span className="thread-last">
-            {t.lastBy ? <Avatar user={t.lastBy} size={22} /> : null}
-            <span className="tiny muted">
-              <Time t={t.lastPostAt} />
+          <span className="thread-last" title={tr("Latest post")}>
+            <Avatar user={t.lastBy ?? t.author} size={26} />
+            <span className="thread-last-text">
+              <span className="small">{(t.lastBy ?? t.author).name}</span>
+              <span className="tiny muted">
+                <Time t={t.lastPostAt} />
+              </span>
             </span>
           </span>
         </Link>

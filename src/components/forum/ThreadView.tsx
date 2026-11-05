@@ -9,13 +9,27 @@ import type { ReplyView } from "@/lib/forum";
 import { useLive, useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, ROLE_LABEL, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
-import { useConfirm, Modal } from "@/components/ui/ui";
+import { useConfirm } from "@/components/ui/ui";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { RichText } from "@/components/content/RichText";
 import { Reactions } from "@/components/content/Reactions";
 import { ItemMenu } from "@/components/content/ItemMenu";
 import { CategoryChip } from "@/components/feed/ThreadCard";
+import { MoveDialog } from "./MoveDialog";
 import { deleteReplyAction, deleteThreadAction, editReplyAction, editThreadAction, followAction, moderateThreadAction, quoteAction, replyAction, saveAction } from "@/app/actions/content";
+
+/** A post's words, for showing which one is being moved. */
+const plainText = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 
 interface Props {
   thread: ThreadCard;
@@ -31,7 +45,26 @@ interface Props {
   categories: { id: number; name: string; icon: string }[];
 }
 
-function ForumPost({ r, threadId, isOpening, onQuote, title, onEdited, newSince }: { r: ReplyView; threadId: number; isOpening: boolean; onQuote: (id: number) => void; title?: string; onEdited: () => void; newSince: number }) {
+function ForumPost({
+  r,
+  threadId,
+  isOpening,
+  onQuote,
+  title,
+  onEdited,
+  newSince,
+  onMove,
+}: {
+  r: ReplyView;
+  threadId: number;
+  isOpening: boolean;
+  onQuote: (id: number) => void;
+  title?: string;
+  onEdited: () => void;
+  newSince: number;
+  /** (moderators) */
+  onMove?: () => void;
+}) {
   const me = useMe();
   const toast = useToast();
   const t = useT();
@@ -86,6 +119,13 @@ function ForumPost({ r, threadId, isOpening, onQuote, title, onEdited, newSince 
                 : undefined
             }
             report={r.author.id !== me?.id ? { type: isOpening ? "thread" : "reply", id: isOpening ? threadId : r.id } : undefined}
+            extra={
+              onMove ? (
+                <button type="button" className="menu-item" data-close onClick={onMove}>
+                  <FolderInput size={16} /> {t("Move…")}
+                </button>
+              ) : undefined
+            }
           />
         </div>
         {editing ? (
@@ -126,7 +166,8 @@ export function ThreadView(p: Props) {
   const boxWrap = useRef<HTMLDivElement>(null);
   const [following, setFollowing] = useState(p.following);
   const [saved, setSaved] = useState(p.saved);
-  const [moving, setMoving] = useState(false);
+  // (moderators) the thread, or one of its replies
+  const [moving, setMoving] = useState<null | { reply?: ReplyView }>(null);
   const [newReplies, setNewReplies] = useState(0);
   const [pending, start] = useTransition();
   const t = p.thread;
@@ -258,7 +299,7 @@ export function ThreadView(p: Props) {
               <button type="button" className="btn btn-sm" onClick={() => mod({ locked: !t.locked })}>
                 {t.locked ? <LockOpen size={15} /> : <Lock size={15} />} {t.locked ? tr("Unlock") : tr("Lock")}
               </button>
-              <button type="button" className="btn btn-sm" onClick={() => setMoving(true)}>
+              <button type="button" className="btn btn-sm" onClick={() => setMoving({})}>
                 <FolderInput size={15} /> {tr("Move")}
               </button>
             </>
@@ -266,9 +307,9 @@ export function ThreadView(p: Props) {
         </div>
       </div>
       {pager}
-      {p.page === 1 ? <ForumPost r={p.opening} threadId={t.id} isOpening onQuote={quote} title={t.title} onEdited={() => router.refresh()} newSince={p.lastRead} /> : null}
+      {p.page === 1 ? <ForumPost r={p.opening} threadId={t.id} isOpening onQuote={quote} title={t.title} onEdited={() => router.refresh()} newSince={p.lastRead} onMove={p.canModerate ? () => setMoving({}) : undefined} /> : null}
       {p.replies.map((r) => (
-        <ForumPost key={r.id} r={r} threadId={t.id} isOpening={false} onQuote={quote} onEdited={() => router.refresh()} newSince={p.lastRead} />
+        <ForumPost key={r.id} r={r} threadId={t.id} isOpening={false} onQuote={quote} onEdited={() => router.refresh()} newSince={p.lastRead} onMove={p.canModerate ? () => setMoving({ reply: r }) : undefined} />
       ))}
       {newReplies ? (
         <button
@@ -305,23 +346,12 @@ export function ThreadView(p: Props) {
         </div>
       )}
       {moving ? (
-        <Modal title={tr("Move to…")} onClose={() => setMoving(false)}>
-          <div className="stack tight">
-            {p.categories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={`menu-item ${c.id === t.category.id ? "sel" : ""}`}
-                onClick={async () => {
-                  setMoving(false);
-                  await mod({ categoryId: c.id });
-                }}
-              >
-                {c.icon} {c.name}
-              </button>
-            ))}
-          </div>
-        </Modal>
+        <MoveDialog
+          thread={{ id: t.id, title: t.title, categoryId: t.category.id }}
+          reply={moving.reply ? { id: moving.reply.id, text: plainText(moving.reply.html) } : undefined}
+          categories={p.categories}
+          onClose={() => setMoving(null)}
+        />
       ) : null}
     </div>
   );

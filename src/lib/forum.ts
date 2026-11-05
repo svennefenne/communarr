@@ -8,6 +8,7 @@ import { indexItem, unindex } from "./search";
 import { canPostInGroup, canReadGroup, groupRow, groupScope, readableGroupIds } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
+import { audit } from "./auth";
 import { groupRefs } from "./posts";
 import { userT } from "./t";
 import type { CategoryView, ThreadCard } from "./contentTypes";
@@ -399,6 +400,109 @@ export function moderateThread(u: User, id: number, o: { pinned?: boolean; locke
     const c = categoryRow(o.categoryId)!;
     db().prepare("update search_index set scope = ? where (kind = 'thread' and ref = ?) or (kind = 'reply' and ref in (select id from forum_posts where thread_id = ?))").run(threadScope(c), id, id);
   }
+}
+
+/** A thread's reply count and last post, counted again (after replies came or went other than one by one). */
+function recount(threadId: number) {
+  const t = threadRow(threadId);
+  if (!t) return;
+  const n = (db().prepare("select count(*) n from forum_posts where thread_id = ?").get(threadId) as { n: number }).n;
+  const last = db().prepare("select created_at, author_id from forum_posts where thread_id = ? order by created_at desc, id desc limit 1").get(threadId) as { created_at: number; author_id: number } | undefined;
+  db().prepare("update forum_threads set reply_count = ?, last_post_at = ?, last_post_by = ? where id = ?").run(n, last?.created_at ?? t.created_at, last?.author_id ?? t.author_id, threadId);
+}
+
+/** Threads a moderator can move something into: the latest, or those whose titles have the words. */
+export function findThreads(u: User, q: string, not: number): { id: number; title: string; category: string; replies: number; lastPostAt: number }[] {
+  if (!u.isMod) return [];
+  const cats = visibleCategoryIds(u);
+  if (!cats.length) return [];
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
+  const like = words.map(() => "lower(t.title) like ? escape '\\'").join(" and ");
+  const rows = db()
+    .prepare(
+      `select t.id, t.title, c.name category, t.reply_count replies, t.last_post_at from forum_threads t join forum_categories c on c.id = t.category_id
+       where t.category_id in (${cats.map(() => "?").join(",")}) and t.id != ? ${like ? `and ${like}` : ""} order by t.last_post_at desc limit 12`,
+    )
+    .all(...cats, not, ...words.map((w) => `%${w.replace(/[\\%_]/g, (m) => `\\${m}`)}%`)) as { id: number; title: string; category: string; replies: number; last_post_at: number }[];
+  return rows.map((r) => ({ id: r.id, title: r.title, category: r.category, replies: r.replies, lastPostAt: r.last_post_at }));
+}
+
+/**
+ * Moderators move a reply: in among another thread's replies (by when it was written), or out into a
+ * thread of its own in a category, with a title (those who'd read it where it was have read it there
+ * too). Its reactions go with it. Returns the thread it's in now.
+ */
+export function moveReply(u: User, id: number, to: { threadId: number } | { categoryId: number; title: string }): number {
+  if (!u.isMod) throw new ForumError("Only moderators can do that.");
+  const r = db().prepare("select * from forum_posts where id = ?").get(id) as ReplyRow | undefined;
+  if (!r) throw new ForumError("That reply is gone.");
+  const from = threadRow(r.thread_id)!;
+  if ("threadId" in to) {
+    const t = threadRow(to.threadId);
+    if (!t) throw new ForumError("That thread is gone.");
+    if (t.id === from.id) return t.id;
+    tx(() => {
+      db().prepare("update forum_posts set thread_id = ? where id = ?").run(t.id, id);
+      db().prepare("insert or ignore into forum_subs (thread_id, user_id) values (?, ?)").run(t.id, r.author_id);
+      recount(from.id);
+      recount(t.id);
+      indexItem("reply", id, threadScope(categoryRow(t.category_id)!), r.author_id, r.created_at, t.title, r.body_text);
+    });
+    audit(u.id, "forum reply moved", `#${id}`, `${from.title} → ${t.title}`);
+    return t.id;
+  }
+  const c = categoryRow(to.categoryId);
+  if (!c) throw new ForumError("Pick a category.");
+  const title = cleanLine(to.title, 160);
+  if (!title) throw new ForumError("Give the thread a title.");
+  const tid = tx(() => {
+    const tid = Number(
+      db()
+        .prepare("insert into forum_threads (category_id, author_id, title, body_html, body_text, last_post_at, last_post_by, created_at, edited_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .run(c.id, r.author_id, title, r.body_html, r.body_text, r.created_at, r.author_id, r.created_at, r.edited_at).lastInsertRowid,
+    );
+    db().prepare("update reactions set target_type = 'thread', target_id = ? where target_type = 'reply' and target_id = ?").run(tid, id);
+    db().prepare("delete from forum_posts where id = ?").run(id);
+    db().prepare("insert or ignore into forum_subs (thread_id, user_id) values (?, ?)").run(tid, r.author_id);
+    db().prepare("insert into forum_reads (thread_id, user_id, read_at) select ?, user_id, read_at from forum_reads where thread_id = ? and read_at >= ?").run(tid, from.id, r.created_at);
+    recount(from.id);
+    unindex("reply", id);
+    indexItem("thread", tid, threadScope(c), r.author_id, r.created_at, title, r.body_text);
+    return tid;
+  });
+  audit(u.id, "forum reply made a thread", `#${id}`, `${from.title} → ${title}`);
+  return tid;
+}
+
+/**
+ * Moderators move a whole thread into another: its first post and its replies go in among that
+ * one's, by when they were written, with their reactions; its followers follow that one, and those
+ * who saved it have that one saved. Returns the thread it's in now.
+ */
+export function mergeThread(u: User, id: number, intoId: number): number {
+  if (!u.isMod) throw new ForumError("Only moderators can do that.");
+  const t = threadRow(id);
+  if (!t) throw new ForumError("That thread is gone.");
+  const into = threadRow(intoId);
+  if (!into || into.id === t.id) throw new ForumError("Pick another thread.");
+  const scope = threadScope(categoryRow(into.category_id)!);
+  const replies = db().prepare("select id, author_id, created_at, body_text from forum_posts where thread_id = ?").all(t.id) as { id: number; author_id: number; created_at: number; body_text: string }[];
+  tx(() => {
+    const first = Number(
+      db().prepare("insert into forum_posts (thread_id, author_id, body_html, body_text, created_at, edited_at) values (?, ?, ?, ?, ?, ?)").run(into.id, t.author_id, t.body_html, t.body_text, t.created_at, t.edited_at).lastInsertRowid,
+    );
+    db().prepare("update reactions set target_type = 'reply', target_id = ? where target_type = 'thread' and target_id = ?").run(first, t.id);
+    db().prepare("update forum_posts set thread_id = ? where thread_id = ?").run(into.id, t.id);
+    db().prepare("insert or ignore into forum_subs (thread_id, user_id) select ?, user_id from forum_subs where thread_id = ?").run(into.id, t.id);
+    db().prepare("insert or ignore into bookmarks (user_id, target_type, target_id, created_at) select user_id, 'thread', ?, created_at from bookmarks where target_type = 'thread' and target_id = ?").run(into.id, t.id);
+    db().prepare("delete from bookmarks where target_type = 'thread' and target_id = ?").run(t.id);
+    unindex("thread", t.id);
+    db().prepare("delete from forum_threads where id = ?").run(t.id);
+    recount(into.id);
+    for (const r of [{ id: first, author_id: t.author_id, created_at: t.created_at, body_text: t.body_text }, ...replies]) indexItem("reply", r.id, scope, r.author_id, r.created_at, into.title, r.body_text);
+  });
+  audit(u.id, "forum thread merged", `#${id}`, `${t.title} → ${into.title}`);
+  return into.id;
 }
 
 export function follow(u: User, id: number, on: boolean) {

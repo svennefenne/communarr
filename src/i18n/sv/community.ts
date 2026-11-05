@@ -191,7 +191,6 @@ const sv: Record<string, string> = {
   "Write a reply… (select text in a post and press Quote to quote it)": "Skriv ett svar… (markera text i ett inlägg och tryck på Citera för att citera den)",
   "Post reply": "Skicka svar",
   "This thread is locked.": "Den här tråden är låst.",
-  "Move to…": "Flytta till…",
 
   // forum: errors and notifications (lib/forum.ts)
   "Pick a category.": "Välj en kategori.",
