@@ -39,7 +39,10 @@ function B({ on, label, onClick, children }: { on?: boolean; label: string; onCl
   );
 }
 
-/** Quick formatting over selected text. */
+/**
+ * Quick formatting over selected text. On a touch screen it's under the selection, clear of the
+ * selection's handles (the phone's own menu, cut, copy, …, is above it).
+ */
 export function TextBubble({ editor, onLink }: { editor: Editor; onLink: () => void }) {
   const s = useEditorState({
     editor,
@@ -52,7 +55,7 @@ export function TextBubble({ editor, onLink }: { editor: Editor; onLink: () => v
     <BubbleMenu
       editor={editor}
       pluginKey="textBubble"
-      options={{ placement: touch() ? "bottom" : "top", offset: 8, flip: clearOfToolbar(editor) }}
+      options={{ placement: touch() ? "bottom" : "top", offset: touch() ? 32 : 8, flip: clearOfToolbar(editor) }}
       shouldShow={({ editor: e, state }) => !state.selection.empty && !isImage(e) && !e.isActive("codeBlock") && e.isEditable}
       className="panel ed-bubble"
     >
