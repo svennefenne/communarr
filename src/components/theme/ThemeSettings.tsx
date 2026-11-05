@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Pencil, Plus, Search, Share2, Shuffle, Trash2, Users } from "lucide-react";
+import { Copy, MonitorSmartphone, Pencil, Plus, Search, Share2, Shuffle, Trash2, Users } from "lucide-react";
 import { CATEGORY_LABEL, PALETTES, type PaletteCategory } from "@/lib/palettes";
 import { resolveTheme, type SiteLook } from "@/lib/theme";
 import type { ThemeInfo } from "@/lib/themes";
@@ -53,6 +53,10 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
 
   return (
     <div className="stack loose">
+      {/* (kept on this device: lib/look.ts) */}
+      <p className="small muted row" style={{ gap: 6, margin: 0 }}>
+        <MonitorSmartphone size={14} /> {t("For this device: your phone and your computer can each have their own theme.")}
+      </p>
       <section className="panel panel-pad row between wrap">
         <div>
           <h2 className="h2">{t("Light or dark")}</h2>

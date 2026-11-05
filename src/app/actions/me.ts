@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db, now } from "@/lib/db";
-import { endSession, requireUser } from "@/lib/auth";
+import { endSession, requireUser, savePrefs } from "@/lib/auth";
 import { refreshPresence, broadcast } from "@/lib/hub";
 import { PALETTE_BY_SLUG } from "@/lib/palettes";
 import type { Presence, ThemePrefs } from "@/lib/types";
@@ -14,7 +14,7 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-/** Change some of your display preferences (scheme, mode, wipes, motion, text size, density, theme). */
+/** Change some of your display preferences (scheme, mode, wipes, motion, text size, density, theme); the look is for this device. */
 export async function setPrefsAction(patch: Partial<ThemePrefs>) {
   const u = await requireUser();
   const next: ThemePrefs = { ...u.theme };
@@ -33,7 +33,7 @@ export async function setPrefsAction(patch: Partial<ThemePrefs>) {
     const t = themeFor(patch.custom, u.id);
     if (t) next.custom = t.id;
   }
-  db().prepare("update users set theme_json = ? where id = ?").run(JSON.stringify(next), u.id);
+  await savePrefs(u, next);
   revalidatePath("/", "layout");
   return next;
 }

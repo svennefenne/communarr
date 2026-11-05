@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { act } from "@/lib/act";
 import { UserError } from "@/lib/errors";
-import { currentSessionId, endSession } from "@/lib/auth";
+import { currentSessionId, endSession, savePrefs } from "@/lib/auth";
 import { changePassword, changeUsername, deleteOwnAccount, endSessionById, setAlias, setNotifyPrefs, updateProfile, type ProfileInput } from "@/lib/profile";
 import { saveTheme } from "@/lib/themes";
 import { cleanTheme, type ThemeData } from "@/lib/theme";
@@ -61,17 +61,17 @@ export async function deleteAccountAction(confirmName: string) {
 }
 
 export async function saveThemeAction(id: number | null, name: string, data: ThemeData, shared: boolean, use: boolean) {
-  return act((u) => {
+  return act(async (u) => {
     if (!getSettings().allowCustomThemes) throw new UserError("Custom themes are switched off.");
     const tid = saveTheme(u.id, id, name, cleanTheme(data), shared);
-    if (use) db().prepare("update users set theme_json = json_set(coalesce(theme_json, '{}'), '$.custom', ?) where id = ?").run(tid, u.id);
+    if (use) await savePrefs(u, { ...u.theme, custom: tid });
     revalidatePath("/", "layout");
     return tid;
   });
 }
 
 export async function deleteThemeAction(id: number) {
-  return act((u) => {
+  return act(async (u) => {
     const r = db().prepare("delete from themes where id = ? and (user_id = ? or ? = 1)").run(id, u.id, u.isAdmin ? 1 : 0);
     if (!r.changes) throw new UserError("You can only delete your own themes.");
     // anyone using it goes back to their scheme
@@ -83,6 +83,8 @@ export async function deleteThemeAction(id: number) {
         /* leave it */
       }
     }
+    // this device too (another one still set to it draws its scheme)
+    if (u.theme.custom === id) await savePrefs(u, { ...u.theme, custom: null });
     revalidatePath("/", "layout");
     return true;
   });

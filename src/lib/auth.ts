@@ -6,6 +6,9 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db, now } from "./db";
 import { toUser, type User, type UserRow } from "./users";
+import { decodeLook, encodeLook, LOOK_DAYS, lookCookie } from "./look";
+import { PALETTE_BY_SLUG } from "./palettes";
+import type { ThemePrefs } from "./types";
 
 export const SESSION_COOKIE = "hd_session";
 const SESSION_DAYS = 90;
@@ -82,10 +85,27 @@ export async function currentSessionId(): Promise<string | null> {
 
 /** Who is signed in (once per request). Banned, suspended and unapproved accounts count as signed out. */
 export const getUser = cache(async (): Promise<User | null> => {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return userForToken(token);
+  const u = userForToken(token);
+  if (!u) return null;
+  // how the site looks is this device's own (lib/look.ts)
+  const look = decodeLook(jar.get(lookCookie(u.id))?.value);
+  if (look.scheme && !PALETTE_BY_SLUG.has(look.scheme)) delete look.scheme;
+  u.theme = { ...u.theme, ...look };
+  return u;
 });
+
+/**
+ * Save someone's display preferences: the look on this device (its cookie), and all of it in their
+ * account, where the look is the latest one, for a new device to start with.
+ */
+export async function savePrefs(u: User, next: ThemePrefs) {
+  db().prepare("update users set theme_json = ? where id = ?").run(JSON.stringify(next), u.id);
+  (await cookies()).set(lookCookie(u.id), encodeLook(next), { sameSite: "lax", secure: await secureRequest(), path: "/", maxAge: LOOK_DAYS * 86_400 });
+  u.theme = next;
+}
 
 export function userForToken(token: string): User | null {
   const id = sha(token);

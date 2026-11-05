@@ -439,6 +439,11 @@ const sv: Record<string, string> = {
   "Clear all": "Rensa allt",
   "Empty the whole of “{title}”? Everything written in it goes, and it can't be undone.": "Tömma hela “{title}”? Allt som står i den försvinner, och det går inte att ångra.",
   "Only the one who made the list can clear it.": "Bara den som gjorde listan kan rensa den.",
+  // Settings → Display: the look is each device's own
+  "On this device": "På den här enheten",
+  "On all your devices": "På alla dina enheter",
+  "Your phone and your computer can each look their own way. So can your theme.": "Din telefon och din dator kan se ut på var sitt sätt. Temat också.",
+  "For this device: your phone and your computer can each have their own theme.": "Gäller den här enheten: din telefon och din dator kan ha var sitt tema.",
 };
 
 export default sv;
