@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Lock, MessageSquare, Megaphone, Pin } from "lucide-react";
 import type { PostView } from "@/lib/contentTypes";
-import { useMe, useT, useToast } from "@/components/app/AppProvider";
+import { useCompact, useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, ROLE_LABEL, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
@@ -24,9 +24,33 @@ export function GroupChip({ g }: { g: { slug: string; name: string; color: strin
   );
 }
 
+/** The comment button under a card: "2 comments", or in compact just the icon and the count. */
+export function CommentCount({ count, compact, href, ...rest }: { count: number; compact: boolean; href?: string } & React.ComponentProps<"button">) {
+  const t = useT();
+  const label = count ? t.n(count, "{n} comment", "{n} comments") : t("Comment{verb}", { verb: "" });
+  const inner = (
+    <>
+      <MessageSquare size={16} /> {compact ? count || null : label}
+    </>
+  );
+  const a11y = compact ? { "aria-label": label, title: label } : {};
+  if (href)
+    return (
+      <Link href={href} className={rest.className} {...a11y}>
+        {inner}
+      </Link>
+    );
+  return (
+    <button type="button" {...rest} {...a11y}>
+      {inner}
+    </button>
+  );
+}
+
 /** A post or news item, in the feed or on its own page (`full`). */
 export function PostCard({ post, full = false, onGone, section = false }: { post: PostView; full?: boolean; onGone?: () => void; section?: boolean }) {
   const me = useMe();
+  const compact = useCompact();
   const t = useT();
   const toast = useToast();
   const router = useRouter();
@@ -126,14 +150,12 @@ export function PostCard({ post, full = false, onGone, section = false }: { post
         )
       ) : null}
       <div className="post-body">
-        <RichText html={p.html} fold={full ? 0 : 560} foldBg="var(--surface)" />
+        <RichText html={p.html} fold={full ? 0 : compact ? 280 : 560} foldBg="var(--surface)" />
       </div>
       <footer className="post-foot">
         <Reactions type="post" id={p.id} initial={p.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
-        <button type="button" className={`btn btn-ghost btn-sm ${open ? "on" : ""}`} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-          <MessageSquare size={16} /> {count ? t.n(count, "{n} comment", "{n} comments") : t("Comment{verb}", { verb: "" })}
-        </button>
+        <CommentCount count={count} compact={compact} className={`btn btn-ghost btn-sm ${open ? "on" : ""}`} onClick={() => setOpen((o) => !o)} aria-expanded={open} />
       </footer>
       {open ? <Comments type="post" id={p.id} locked={p.commentsLocked} onCount={setCount} /> : null}
       {node}

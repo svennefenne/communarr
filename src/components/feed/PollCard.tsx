@@ -4,9 +4,9 @@ import { CardSection } from "./CardSection";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, Clock, EyeOff, Lock, MessageSquare, Plus, RotateCcw, Vote } from "lucide-react";
+import { Check, Clock, EyeOff, Lock, Plus, RotateCcw, Vote } from "lucide-react";
 import type { PollView } from "@/lib/contentTypes";
-import { useLive, useMe, useT, useToast } from "@/components/app/AppProvider";
+import { useCompact, useLive, useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, UserLink } from "@/components/ui/Avatar";
 import { relative, Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
@@ -14,12 +14,13 @@ import { RichText } from "@/components/content/RichText";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
 import { ItemMenu } from "@/components/content/ItemMenu";
-import { GroupChip } from "./PostCard";
+import { CommentCount, GroupChip } from "./PostCard";
 import { addOptionAction, closePollAction, deletePollAction, pollAction, saveAction, voteAction } from "@/app/actions/content";
 
 /** A poll: vote right here, see how it's going, and talk about it. */
 export function PollCard({ poll, full = false, section = false }: { poll: PollView; full?: boolean; section?: boolean }) {
   const me = useMe();
+  const compact = useCompact();
   const t = useT();
   const toast = useToast();
   const router = useRouter();
@@ -123,7 +124,7 @@ export function PollCard({ poll, full = false, section = false }: { poll: PollVi
       )}
       {p.html ? (
         <div className="post-body">
-          <RichText html={p.html} fold={full ? 0 : 220} />
+          <RichText html={p.html} fold={full ? 0 : compact ? 80 : 220} />
         </div>
       ) : null}
       <div className="poll-options" role={voting ? "group" : undefined} aria-label={t("Choices")}>
@@ -166,7 +167,7 @@ export function PollCard({ poll, full = false, section = false }: { poll: PollVi
           <span className="small muted">{p.maxChoices ? t("Pick up to {n}", { n: p.maxChoices }) : t("Pick as many as you like")}</span>
         </div>
       ) : null}
-      {p.allowAdd && !p.closed ? (
+      {p.allowAdd && !p.closed && (full || !compact) ? (
         <form
           className="input-group poll-add"
           onSubmit={(e) => {
@@ -218,9 +219,7 @@ export function PollCard({ poll, full = false, section = false }: { poll: PollVi
       <footer className="post-foot">
         <Reactions type="poll" id={p.id} initial={p.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => !o)}>
-          <MessageSquare size={16} /> {count ? t.n(count, "{n} comment", "{n} comments") : t("Comment{verb}", { verb: "" })}
-        </button>
+        <CommentCount count={count} compact={compact} className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => !o)} />
       </footer>
       {open ? <Comments type="poll" id={p.id} onCount={setCount} /> : null}
       {node}

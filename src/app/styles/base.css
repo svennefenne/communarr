@@ -1596,13 +1596,20 @@ html[data-motion="off"] .spin {
   animation: spin 900ms linear infinite;
 }
 
-/* ── Compact (Settings → Display): smaller text, and tighter pages, cards, rows, chat and comments,
-   so more fits on the screen ── */
+/* ── Compact (Settings → Display): smaller text, tighter pages, rows, chat and comments, and cards
+   that show less (one line for who and when, no excerpts or extra details, small pictures), so more
+   fits on the screen. What a card is stays plain: its strip, its icon or its date. ── */
 html[data-density="compact"] .page {
   padding-top: 16px;
 }
+html[data-density="compact"] .page-head {
+  margin: 2px 0 14px;
+}
+html[data-density="compact"] .page-head .eyebrow {
+  margin-bottom: 4px;
+}
 html[data-density="compact"] .page-title {
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-size: clamp(1.35rem, 3vw, 2rem);
 }
 html[data-density="compact"] .stack {
   gap: 10px;
@@ -1634,18 +1641,239 @@ html[data-density="compact"] .post-cover {
 html[data-density="compact"] .card-section + .post-cover {
   margin-top: -9px;
 }
+/* the top of a card: who and when on one line, a small face; the kind icon only where no strip
+   above says what the card is */
 html[data-density="compact"] .post-head {
-  gap: 9px;
-  margin-bottom: 6px;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+html[data-density="compact"] .post-head > .grow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}
+html[data-density="compact"] .post-head > .avatar {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 11px !important;
 }
 html[data-density="compact"] .kind-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+html[data-density="compact"] .kind-icon svg {
+  width: 16px;
+  height: 16px;
+}
+html[data-density="compact"] .card-section ~ .post-head .kind-icon {
+  display: none;
+}
+html[data-density="compact"] :is(.post-title, .poll-q, .list-card-title) {
+  margin: 0 0 4px;
+}
+html[data-density="compact"] .post-headline {
+  font-size: clamp(1.25rem, 3vw, 1.7rem);
+  margin: 2px 0 6px;
+}
+/* the bottom of a card: reactions and a comment count */
+html[data-density="compact"] .post-foot {
+  gap: 6px 12px;
+  margin-top: 8px;
+  padding-top: 6px;
+}
+html[data-density="compact"] .post-foot .btn-sm {
+  min-height: 28px;
+  padding: 2px 10px;
+}
+html[data-density="compact"] .react-chip {
+  height: 26px;
+  padding: 0 8px;
+}
+html[data-density="compact"] .react-add {
+  width: 26px;
+  height: 26px;
+}
+/* pictures and link previews in the feed: small, the whole picture still there */
+html[data-density="compact"] .feed-list .post-body .prose img:not(.emoji-custom) {
+  width: auto;
+  max-height: 180px;
+}
+html[data-density="compact"] .link-previews {
+  gap: 6px;
+  margin-top: 8px;
+}
+html[data-density="compact"] .link-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+}
+html[data-density="compact"] .link-card-pic {
+  width: 64px;
+  aspect-ratio: 1;
+  border-radius: 6px;
+}
+html[data-density="compact"] .link-card-desc {
+  display: none;
+}
+html[data-density="compact"] .link-card.pic-only img {
+  max-height: 180px;
+}
+/* events: the strip and the date say what it is, so no "planned something" line */
+html[data-density="compact"] .event-card > .post-head {
+  display: none;
+}
+html[data-density="compact"] .event-row {
+  gap: 11px;
+}
+html[data-density="compact"] .event-card .date-tile {
+  width: 46px;
+  padding-bottom: 4px;
+  border-radius: 8px;
+}
+html[data-density="compact"] .event-card .dt-m {
+  padding: 3px 0 2px;
+  font-size: 0.5625rem;
+}
+html[data-density="compact"] .event-card .dt-d {
+  margin-top: 3px;
+  font-size: 1.15rem;
+}
+html[data-density="compact"] .event-card .dt-w {
+  margin-top: 2px;
+  font-size: 0.5625rem;
+}
+html[data-density="compact"] .event-foot {
+  gap: 6px 10px;
+  margin-top: 8px;
+  padding-top: 7px;
+}
+html[data-density="compact"] .event-foot .avatar-stack .avatar {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 9px !important;
+}
+html[data-density="compact"] .rsvp {
+  gap: 4px;
+}
+html[data-density="compact"] .rsvp .btn-sm {
+  min-height: 28px;
+  padding: 2px 9px;
+}
+/* on a phone the words alone, so the answers fit beside who's going */
+@media (max-width: 520px) {
+  html[data-density="compact"] .rsvp .btn-sm svg {
+    display: none;
+  }
+}
+/* polls: low choices, no "add a choice" (that's on the poll's page) */
+html[data-density="compact"] .poll-options {
+  gap: 5px;
+  margin-top: 8px;
+}
+html[data-density="compact"] .poll-opt {
+  min-height: 34px;
+  padding: 5px 10px;
+}
+html[data-density="compact"] .poll-meta {
+  margin-top: 8px;
+}
+/* forum threads and lists: the title, not the excerpt, the description or the columns */
+html[data-density="compact"] .thread-feed-body {
+  padding: 7px 10px;
+}
+html[data-density="compact"] .thread-feed-body .clamp-3,
+html[data-density="compact"] .list-card-text,
+html[data-density="compact"] .list-card-cols {
+  display: none;
+}
+html[data-density="compact"] .list-card-meta {
+  margin-top: 6px;
+}
+/* the forum's categories: a smaller icon, one line about each */
+html[data-density="compact"] .cat-grid {
+  gap: 10px;
+}
+html[data-density="compact"] .cat-card {
+  gap: 11px;
+  padding: 10px 12px;
+}
+html[data-density="compact"] .cat-card .cat-icon {
   width: 34px;
   height: 34px;
   border-radius: 10px;
+  font-size: 17px;
 }
-html[data-density="compact"] .post-foot {
-  margin-top: 8px;
-  padding-top: 6px;
+html[data-density="compact"] .cat-card .clamp-2 {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+/* the front page: the news on top, the composer, the feed, the strips on a phone */
+html[data-density="compact"] .home-head {
+  margin-bottom: 12px;
+}
+html[data-density="compact"] .news-hero {
+  min-height: 0;
+}
+html[data-density="compact"] .news-hero-text {
+  gap: 5px;
+  padding: 14px 16px 12px;
+}
+html[data-density="compact"] .news-hero-title {
+  font-size: clamp(1.25rem, 3vw, 1.8rem);
+}
+html[data-density="compact"] .news-hero-text .clamp-2 {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+html[data-density="compact"] .composer.closed {
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 8px 10px;
+}
+html[data-density="compact"] .composer-fake {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 19px;
+  font-size: 0.9375rem;
+}
+html[data-density="compact"] .composer-quick {
+  width: auto;
+  padding-top: 0;
+  border-top: 0;
+}
+html[data-density="compact"] .composer-quick .icon-btn {
+  width: 32px;
+  height: 32px;
+}
+html[data-density="compact"] :is(.feed, .feed-body) {
+  gap: 10px;
+}
+html[data-density="compact"] .feed-list {
+  gap: 10px;
+}
+html[data-density="compact"] .widget .list-row {
+  padding: 6px 14px;
+}
+@media (max-width: 1060px) {
+  html[data-density="compact"] .mobile-strip {
+    gap: 8px;
+    margin: -4px 0 12px;
+  }
+  html[data-density="compact"] .strip-online .online-person {
+    width: 46px;
+  }
+  html[data-density="compact"] .strip-online .avatar {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 13px !important;
+  }
+  html[data-density="compact"] .strip-event {
+    width: 210px;
+    padding: 7px 9px;
+  }
 }
 /* rows in lists */
 html[data-density="compact"] .list-row {
