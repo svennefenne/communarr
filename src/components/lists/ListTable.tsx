@@ -12,7 +12,6 @@ import { DateField, TimeField } from "@/components/ui/DateTime";
 import { loadMembers } from "@/components/editor/mention";
 import { clock, hourCycle } from "@/lib/clock";
 import { addRowAction, clearRowAction, listAction, moveRowAction, removeRowAction, setCellAction } from "@/app/actions/lists";
-import { typeIcon } from "./columnTypes";
 
 /** A list as the site has it, kept so: live as others fill it in, and after one's own changes. onGone: it was deleted (or can't be seen any more). */
 export function useListView(initial: ListView, onGone: () => void) {
@@ -33,6 +32,18 @@ export function useListView(initial: ListView, onGone: () => void) {
 
 /** How many columns are out of view at each side of a table that scrolls sideways (past the row's number and its "…", which stay). */
 type Hidden = { left: number; right: number };
+
+/**
+ * How wide a column is at least: as wide as its widest value (in characters, within bounds, plus its
+ * field's padding), since inputs and menus don't size themselves to what's in them. A header, a
+ * checkbox, a date or a time sizes itself; more room on a wide screen shares out among the columns.
+ */
+const FIT: Partial<Record<ListColumn["type"], { min: number; max: number; px: number }>> = {
+  text: { min: 8, max: 30, px: 32 },
+  number: { min: 3, max: 12, px: 32 },
+  member: { min: 4, max: 22, px: 54 },
+  choice: { min: 3, max: 22, px: 54 },
+};
 
 /** The edges of what's in view between the frozen columns, and the columns' boxes. */
 function view(wrap: HTMLElement) {
@@ -60,6 +71,22 @@ export function ListTable({ l, setL, refresh, onBig, big = false }: { l: ListVie
     void loadMembers().then((all) => setMembers([...all].sort((a, b) => Number(b.id === me?.id) - Number(a.id === me?.id) || a.name.localeCompare(b.name))));
   }, [me?.id]);
   const people = new Map<number, UserSummary>([...Object.entries(l.people).map(([k, v]) => [Number(k), v] as const), ...members.map((m) => [m.id, m] as const)]);
+  // each column as wide as what's written in it (what its cells show: a number as written, a member's name)
+  const shown = (c: ListColumn, v: ListCell) => {
+    if (c.type === "number") return Number(v).toLocaleString(t.locale);
+    if (c.type !== "member") return String(v);
+    const u = people.get(Number(v));
+    return u ? (u.id === me?.id ? t("Me ({name})", { name: u.name }) : u.name) : "—";
+  };
+  // (on the cells, in their own font, which the header's bigger one isn't)
+  const minWidth = new Map(
+    l.columns.map((c) => {
+      const fit = FIT[c.type];
+      if (!fit) return [c.id, undefined];
+      const widest = Math.max(0, ...l.rowList.map((r) => r.cells[c.id]).map((v) => (v === undefined || v === "" ? 0 : shown(c, v).length)));
+      return [c.id, `calc(${Math.min(Math.max(widest, fit.min), fit.max)}ch + ${fit.px}px)`];
+    }),
+  );
 
   // a cell: shown at once, saved, and the row as the site has it after
   const save = async (row: ListRowView, col: ListColumn, value: ListCell | null) => {
@@ -183,16 +210,11 @@ export function ListTable({ l, setL, refresh, onBig, big = false }: { l: ListVie
                   <th className="lt-n" aria-label={t("Row")}>
                     #
                   </th>
-                  {l.columns.map((c) => {
-                    const Icon = typeIcon(c.type);
-                    return (
-                      <th key={c.id} className={`lt-col-${c.type}`}>
-                        <span className="lt-head">
-                          <Icon size={13} aria-hidden /> {c.name}
-                        </span>
-                      </th>
-                    );
-                  })}
+                  {l.columns.map((c) => (
+                    <th key={c.id} className={`lt-col-${c.type}`}>
+                      <span className="lt-head">{c.name}</span>
+                    </th>
+                  ))}
                   <th className="lt-act" aria-label={t("More")} />
                 </tr>
               </thead>
@@ -209,7 +231,7 @@ export function ListTable({ l, setL, refresh, onBig, big = false }: { l: ListVie
                       )}
                     </td>
                     {l.columns.map((c) => (
-                      <td key={c.id} className={`lt-col-${c.type}`}>
+                      <td key={c.id} className={`lt-col-${c.type}`} style={{ minWidth: minWidth.get(c.id) }}>
                         <Cell col={c} value={r.cells[c.id]} edit={r.canEdit} members={members} people={people} onSave={(v) => void save(r, c, v)} />
                       </td>
                     ))}
@@ -326,6 +348,8 @@ function TextCell({ value, onSave, label, numeric = false }: { value: string; on
       className={`lt-input ${numeric ? "num" : ""}`}
       value={v}
       inputMode={numeric ? "decimal" : undefined}
+      // (a number's field asks for no room past its column's width, so a wide screen's room goes to text)
+      size={numeric ? 1 : undefined}
       maxLength={300}
       aria-label={label}
       onFocus={() => (inside.current = true)}
