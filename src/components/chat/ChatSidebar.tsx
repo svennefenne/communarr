@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
-import { ArrowUpDown, Hash, Headphones, Lock, Mail, Plus, Search, UsersRound } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowUpDown, Hash, Headphones, Lock, Mail, PanelLeftClose, PanelLeftOpen, Plus, Search, UsersRound } from "lucide-react";
 import { byPlace, type RoomInfo } from "@/lib/chatTypes";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
@@ -12,6 +12,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { relative } from "@/components/ui/Time";
 import { NewChat } from "./NewChat";
 import { ArrangeRooms } from "./ArrangeRooms";
+import { useChatUi } from "./ChatShell";
 import { declineInviteAction, joinRoomAction, roomsAction } from "@/app/actions/chat";
 
 export function RoomIcon({ r, size = 38 }: { r: Pick<RoomInfo, "kind" | "emoji" | "visibility" | "other">; size?: number }) {
@@ -54,7 +55,26 @@ function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unr
   );
 }
 
-/** The list of chats: invitations, your rooms and messages, and open rooms you could join. */
+/** A chat as only its icon (the list made narrow): its name when pointed at, a count of what's new, a sign if people are talking. */
+function RailItem({ r, active, unread, talking, join = false }: { r: RoomInfo; active: boolean; unread: number; talking: number; join?: boolean }) {
+  const t = useT();
+  return (
+    <Link href={`/chat/${r.id}`} className={`rail-item ${active ? "active" : ""} ${join ? "join" : ""}`} title={r.name} aria-label={r.name} aria-current={active ? "page" : undefined}>
+      <RoomIcon r={r} size={40} />
+      {unread ? <span className="count-badge">{unread > 99 ? "99+" : unread}</span> : null}
+      {talking ? (
+        <span className="rail-talk" title={t("{n} talking", { n: talking })}>
+          <Headphones size={10} />
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
+/**
+ * The list of chats: invitations, your rooms and messages, and open rooms you could join. On a
+ * computer it can be made narrow, only the chats' icons (as on Discord), and back.
+ */
 export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: RoomInfo[]; invites: RoomInfo[] } }) {
   const { counts, site, me } = useApp();
   const t = useT();
@@ -67,6 +87,16 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   const [creating, setCreating] = useState<null | "dm" | "room">(null);
   const [arranging, setArranging] = useState(false);
   const activeId = Number(pathname.split("/")[2]) || 0;
+  // (only the icons: a computer's or a tablet's; a phone shows the whole list or the room)
+  const ui = useChatUi();
+  const [roomy, setRoomy] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 700px)");
+    const f = () => setRoomy(mq.matches);
+    f();
+    mq.addEventListener("change", f);
+    return () => mq.removeEventListener("change", f);
+  }, []);
 
   const refresh = useCallback(async () => {
     const r = await roomsAction();
@@ -105,6 +135,47 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
       </aside>
     );
 
+  if (ui.rail && roomy)
+    return (
+      <aside className="panel chat-side rail" aria-label={t("Chat")}>
+        <div className="rail-head">
+          <button type="button" className="icon-btn framed sm" onClick={() => ui.setRail(false)} title={t("Show the names")} aria-label={t("Show the names")}>
+            <PanelLeftOpen size={16} />
+          </button>
+        </div>
+        <div className="rail-list">
+          {data.invites.map((r) => (
+            <button key={r.id} type="button" className="rail-item invite" onClick={() => ui.setRail(false)} title={t("Invitation: {name}", { name: r.name })} aria-label={t("Invitation: {name}", { name: r.name })}>
+              <RoomIcon r={r} size={40} />
+            </button>
+          ))}
+          {data.invites.length ? <span className="rail-sep" /> : null}
+          {rooms.map((r) => (
+            <RailItem key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
+          ))}
+          {dms.length ? <span className="rail-sep" /> : null}
+          {dms.map((r) => (
+            <RailItem key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
+          ))}
+          {open.length ? <span className="rail-sep" /> : null}
+          {open.map((r) => (
+            <RailItem key={r.id} r={r} active={r.id === activeId} unread={0} talking={voice.channels[r.id]?.length ?? 0} join />
+          ))}
+        </div>
+        <div className="rail-foot">
+          <button type="button" className="icon-btn framed sm" onClick={() => setCreating("dm")} title={t("Message someone")} aria-label={t("Message someone")}>
+            <Mail size={16} />
+          </button>
+          {site.can.rooms ? (
+            <button type="button" className="icon-btn framed sm" onClick={() => setCreating("room")} title={t("New room")} aria-label={t("New room")}>
+              <Plus size={17} />
+            </button>
+          ) : null}
+        </div>
+        {creating ? <NewChat initial={creating} onClose={() => setCreating(null)} /> : null}
+      </aside>
+    );
+
   return (
     <aside className="panel chat-side">
       <div className="chat-side-head">
@@ -123,6 +194,18 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
             <ArrowUpDown size={16} />
           </button>
         ) : null}
+        <button
+          type="button"
+          className="icon-btn framed sm rail-toggle"
+          onClick={() => {
+            setQ("");
+            ui.setRail(true);
+          }}
+          title={t("Only the icons")}
+          aria-label={t("Only the icons")}
+        >
+          <PanelLeftClose size={16} />
+        </button>
       </div>
       <div className="chat-search">
         <Search size={15} />

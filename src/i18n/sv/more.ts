@@ -470,6 +470,14 @@ const sv: Record<string, string> = {
   "Moved into “{title}”.": "Flyttat in i “{title}”.",
   "Moved to {category}.": "Flyttat till {category}.",
   "Pick another thread.": "Välj en annan tråd.",
+  // the chat: the list as only icons, the members beside the room
+  "Only the icons": "Bara ikonerna",
+  "Show the names": "Visa namnen",
+  "Invitation: {name}": "Inbjudan: {name}",
+  "Show the members": "Visa medlemmarna",
+  "Hide the members": "Dölj medlemmarna",
+  "Online · {n}": "Online · {n}",
+  "Offline · {n}": "Offline · {n}",
 };
 
 export default sv;

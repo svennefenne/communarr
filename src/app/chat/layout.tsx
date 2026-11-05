@@ -1,9 +1,11 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { roomsFor } from "@/lib/chat";
 import { getSettings } from "@/lib/settings";
 import { requestT } from "@/lib/t";
 import { ChatShell } from "@/components/chat/ChatShell";
+import { CHAT_UI_COOKIE, readChatUi } from "@/lib/chatTypes";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 
 export async function generateMetadata() {
@@ -15,7 +17,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
   const u = await requireUser();
   if (!getSettings().features.chat) notFound();
   return (
-    <ChatShell>
+    <ChatShell initial={readChatUi((await cookies()).get(CHAT_UI_COOKIE)?.value)}>
       <ChatSidebar initial={roomsFor(u)} />
       {children}
     </ChatShell>

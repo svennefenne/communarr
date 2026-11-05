@@ -58,3 +58,12 @@ export function byPlace(a: Pick<RoomInfo, "position" | "lastMessageAt">, b: Pick
   if (b.position != null) return 1;
   return (b.lastMessageAt ?? 0) - (a.lastMessageAt ?? 0);
 }
+
+/** How the chat is laid out on a computer: the list of chats as only their icons, and the members beside the room. */
+export interface ChatUi {
+  rail: boolean;
+  people: boolean;
+}
+export const CHAT_UI_COOKIE = "hd_chat";
+/** "10": the list as icons (1) or whole (0), then the members shown (1) or hidden (0) */
+export const readChatUi = (raw: string | undefined): ChatUi => ({ rail: raw?.[0] === "1", people: raw?.[1] !== "0" });
