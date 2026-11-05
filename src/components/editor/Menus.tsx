@@ -13,6 +13,24 @@ import { useT } from "@/components/app/AppProvider";
 const isImage = (e: Editor) => e.state.selection instanceof NodeSelection && e.state.selection.node.type.name === "image";
 const touch = () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
+type Flip = NonNullable<NonNullable<React.ComponentProps<typeof BubbleMenu>["options"]>["flip"]>;
+
+/**
+ * Where a bubble may go: in a full editor, whose toolbar is above the text (and stays at the top as
+ * the page scrolls), only below that toolbar, so a bubble over the first lines turns to under the
+ * selection instead of covering the toolbar. A compact editor's bubbles go anywhere on screen.
+ */
+const clearOfToolbar =
+  (editor: Editor): Flip =>
+  () => {
+    const ed = editor.view.dom.closest(".editor");
+    const bar = ed?.classList.contains("full") ? ed.querySelector(".ed-toolbar") : null;
+    const body = ed?.querySelector(".ed-body");
+    if (!bar || !body) return {};
+    const top = Math.max(body.getBoundingClientRect().top, 0);
+    return { boundary: body, padding: { top: Math.max(bar.getBoundingClientRect().bottom - top, 0) + 4 } };
+  };
+
 function B({ on, label, onClick, children }: { on?: boolean; label: string; onClick: () => void; children: React.ReactNode }) {
   return (
     <button type="button" className={`tb-btn ${on ? "on" : ""}`} title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick}>
@@ -34,7 +52,7 @@ export function TextBubble({ editor, onLink }: { editor: Editor; onLink: () => v
     <BubbleMenu
       editor={editor}
       pluginKey="textBubble"
-      options={{ placement: touch() ? "bottom" : "top", offset: 8 }}
+      options={{ placement: touch() ? "bottom" : "top", offset: 8, flip: clearOfToolbar(editor) }}
       shouldShow={({ editor: e, state }) => !state.selection.empty && !isImage(e) && !e.isActive("codeBlock") && e.isEditable}
       className="panel ed-bubble"
     >
@@ -90,7 +108,7 @@ export function LinkBubble({ editor, onEdit }: { editor: Editor; onEdit: () => v
     <BubbleMenu
       editor={editor}
       pluginKey="linkBubble"
-      options={{ placement: "bottom", offset: 8 }}
+      options={{ placement: "bottom", offset: 8, flip: clearOfToolbar(editor) }}
       shouldShow={({ editor: e, state }) => state.selection.empty && e.isActive("link") && e.isEditable}
       className="panel ed-bubble"
     >
@@ -127,7 +145,7 @@ export function ImageBubble({ editor }: { editor: Editor }) {
   };
   return (
     <>
-      <BubbleMenu editor={editor} pluginKey="imageBubble" options={{ placement: "top", offset: 8 }} shouldShow={({ editor: e }) => isImage(e) && e.isEditable} className="panel ed-bubble">
+      <BubbleMenu editor={editor} pluginKey="imageBubble" options={{ placement: "top", offset: 8, flip: clearOfToolbar(editor) }} shouldShow={({ editor: e }) => isImage(e) && e.isEditable} className="panel ed-bubble">
         <B label={t("Small")} onClick={() => width(0.33)}>
           <span className="tb-text">S</span>
         </B>
