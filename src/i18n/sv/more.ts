@@ -428,6 +428,14 @@ const sv: Record<string, string> = {
   Quantity: "Antal",
   "Who's buying?": "Vem köper?",
   "No comments yet": "Inga kommentarer än",
+  // a list's table: Big list, and more columns to the side
+  "Big list": "Stor lista",
+  "Only the list, filling the screen": "Bara listan, över hela skärmen",
+  "Scroll sideways for more columns": "Skrolla åt sidan för fler kolumner",
+  "{n} more column to the left": "{n} kolumn till åt vänster",
+  "{n} more columns to the left": "{n} kolumner till åt vänster",
+  "{n} more column to the right": "{n} kolumn till åt höger",
+  "{n} more columns to the right": "{n} kolumner till åt höger",
 };
 
 export default sv;

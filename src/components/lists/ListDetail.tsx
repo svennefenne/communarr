@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ListChecks, Lock, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ListChecks, Lock, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import type { ListView } from "@/lib/contentTypes";
 import { useMe, useT, useToast } from "@/components/app/AppProvider";
 import { UserLink } from "@/components/ui/Avatar";
@@ -16,7 +16,11 @@ import { GroupChip } from "@/components/feed/PostCard";
 import { deleteListAction } from "@/app/actions/lists";
 import { ListTable, useListView } from "./ListTable";
 
-/** A list on its own page: what it's for, its table (filled in right there, live as others fill it in too), and talk about it. */
+/**
+ * A list on its own page: what it's for, its table (filled in right there, live as others fill it in
+ * too), and talk about it. "Big list" (?view=big) shows the table alone, filling the screen under the
+ * site's top bar; Back (or the phone's back) leaves it.
+ */
 export function ListDetail({ list: initial }: { list: ListView }) {
   const t = useT();
   const me = useMe();
@@ -27,8 +31,40 @@ export function ListDetail({ list: initial }: { list: ListView }) {
   const [comments, setComments] = useState(initial.comments);
   const filledCount = l.rowList.filter((r) => Object.keys(r.cells).length).length;
 
+  const path = usePathname();
+  const big = useSearchParams().get("view") === "big";
+  // (opened here: Back goes back in history, so the phone's back does the same; opened from a link: Back just leaves it)
+  const opened = useRef(false);
+  const back = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (big) back.current?.focus();
+  }, [big]);
+  const openBig = () => {
+    opened.current = true;
+    window.history.pushState(null, "", `${path}?view=big`);
+  };
+  const closeBig = () => {
+    if (opened.current) {
+      opened.current = false;
+      window.history.back();
+    } else window.history.replaceState(null, "", path);
+  };
+
+  if (big)
+    return (
+      <section className="list-big" aria-label={l.title}>
+        <div className="list-big-bar">
+          <button ref={back} type="button" className="back-pill" onClick={closeBig}>
+            <ChevronLeft size={15} /> {t("Back")}
+          </button>
+          <h1 className="list-big-title">{l.title}</h1>
+        </div>
+        <ListTable l={l} setL={setL} refresh={refresh} big />
+      </section>
+    );
+
   return (
-    <div className="stack loose">
+    <div className="stack loose list-main">
       <article className="panel panel-pad list-detail">
         <header className="post-head">
           <span className="kind-icon list">
@@ -80,7 +116,7 @@ export function ListDetail({ list: initial }: { list: ListView }) {
           {l.fill === "owner" ? t("Only {name} fills it in", { name: l.author.name }) : l.ownRows ? t("Everyone can contribute to the list - you can edit your rows") : t("Everyone fills it in")}
         </p>
       </article>
-      <ListTable l={l} setL={setL} refresh={refresh} />
+      <ListTable l={l} setL={setL} refresh={refresh} onBig={openBig} />
       {/* what people think of it, and talk about it */}
       <section className="panel panel-pad list-talk" id="comments" aria-label={t("Comments")}>
         <footer className="post-foot">
