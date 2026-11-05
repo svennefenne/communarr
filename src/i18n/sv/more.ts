@@ -436,6 +436,9 @@ const sv: Record<string, string> = {
   "{n} more columns to the left": "{n} kolumner till åt vänster",
   "{n} more column to the right": "{n} kolumn till åt höger",
   "{n} more columns to the right": "{n} kolumner till åt höger",
+  "Clear all": "Rensa allt",
+  "Empty the whole of “{title}”? Everything written in it goes, and it can't be undone.": "Tömma hela “{title}”? Allt som står i den försvinner, och det går inte att ångra.",
+  "Only the one who made the list can clear it.": "Bara den som gjorde listan kan rensa den.",
 };
 
 export default sv;

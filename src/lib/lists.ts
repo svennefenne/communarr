@@ -506,6 +506,26 @@ export function clearRow(u: User, id: number, rowId: number) {
   if (filled(cellsOf(r))) tellRowsMember(u, l, ownerOf(columnsOf(l), cellsOf(r), r.filled_by), r.id, "{name} emptied your row in “{title}”");
 }
 
+/**
+ * Empty the whole list (the author, or a moderator): with automatic rows back to one empty row, with a
+ * fixed number of rows those rows, emptied. (No one hears about their row: it's the list starting over.)
+ */
+export function clearList(u: User, id: number) {
+  const l = seen(u, id);
+  if (!owns(u, l)) throw new ListError("Only the one who made the list can clear it.");
+  const t = now();
+  tx(() => {
+    if (l.auto_rows) {
+      db().prepare("delete from list_rows where list_id = ?").run(id);
+      keepEmptyLast(l);
+    } else db().prepare("update list_rows set cells_json = '{}', filled_by = null, updated_by = ?, updated_at = ? where list_id = ?").run(u.id, t, id);
+    db().prepare("update lists set updated_at = ? where id = ?").run(t, id);
+  });
+  reindex(id);
+  broadcast("list", { id });
+  if (l.author_id !== u.id) audit(u.id, "list cleared", `#${id}`, l.title);
+}
+
 /** Add a row at the end. after: Tab in that row's last cell, so the row after it if there is one already. */
 export function addRow(u: User, id: number, after?: number): number {
   const l = seen(u, id);

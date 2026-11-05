@@ -11,7 +11,7 @@ import { Popover } from "@/components/ui/Popover";
 import { DateField, TimeField } from "@/components/ui/DateTime";
 import { loadMembers } from "@/components/editor/mention";
 import { clock, hourCycle } from "@/lib/clock";
-import { addRowAction, clearRowAction, listAction, moveRowAction, removeRowAction, setCellAction } from "@/app/actions/lists";
+import { addRowAction, clearListAction, clearRowAction, listAction, moveRowAction, removeRowAction, setCellAction } from "@/app/actions/lists";
 
 /** A list as the site has it, kept so: live as others fill it in, and after one's own changes. onGone: it was deleted (or can't be seen any more). */
 export function useListView(initial: ListView, onGone: () => void) {
@@ -184,6 +184,9 @@ export function ListTable({ l, setL, refresh, onBig, big = false }: { l: ListVie
     w.scrollBy({ left: by, behavior: "smooth" });
   };
   const more = [hidden.left ? "left" : "", hidden.right ? "right" : ""].filter(Boolean).join(" ");
+  // a row with all its boxes ticked (bought, packed) is done: its text struck through
+  const checks = l.columns.filter((c) => c.type === "check");
+  const done = (r: ListRowView) => checks.length > 0 && checks.every((c) => r.cells[c.id] === true);
 
   return (
     <>
@@ -220,7 +223,7 @@ export function ListTable({ l, setL, refresh, onBig, big = false }: { l: ListVie
               </thead>
               <tbody ref={body} onKeyDown={onTab}>
                 {l.rowList.map((r, i) => (
-                  <tr key={r.id} data-row={r.id} className={r.filledBy && r.filledBy.id === me?.id ? "mine" : ""}>
+                  <tr key={r.id} data-row={r.id} className={[r.filledBy && r.filledBy.id === me?.id ? "mine" : "", done(r) ? "done" : ""].filter(Boolean).join(" ") || undefined}>
                     <td className="lt-n">
                       {r.filledBy ? (
                         <span title={t("{name}'s row", { name: r.filledBy.name })}>
@@ -264,10 +267,25 @@ export function ListTable({ l, setL, refresh, onBig, big = false }: { l: ListVie
           ) : null}
         </div>
       </div>
-      {l.canAddRows ? (
-        <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => void run(addRowAction(l.id))}>
-          <Plus size={15} /> {t("Add a row")}
-        </button>
+      {l.canAddRows || l.canEdit ? (
+        <div className="lt-actions">
+          {l.canAddRows ? (
+            <button type="button" className="btn btn-sm" onClick={() => void run(addRowAction(l.id))}>
+              <Plus size={15} /> {t("Add a row")}
+            </button>
+          ) : null}
+          {/* (the list's author: everything emptied, once they've said yes) */}
+          {l.canEdit ? (
+            <button
+              type="button"
+              className="btn btn-sm"
+              disabled={!l.rowList.some((r) => Object.keys(r.cells).length)}
+              onClick={() => confirm(t("Empty the whole of “{title}”? Everything written in it goes, and it can't be undone.", { title: l.title }), t("Clear all"), () => run(clearListAction(l.id)))}
+            >
+              <Eraser size={15} /> {t("Clear all")}
+            </button>
+          ) : null}
+        </div>
       ) : null}
       {node}
     </>

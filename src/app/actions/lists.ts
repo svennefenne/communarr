@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { act } from "@/lib/act";
 import { UserError } from "@/lib/errors";
 import { getSettings } from "@/lib/settings";
-import { addRow, clearRow, createList, deleteList, getList, moveRow, removeRow, setCell, updateList, type ListInput } from "@/lib/lists";
+import { addRow, clearList, clearRow, createList, deleteList, getList, moveRow, removeRow, setCell, updateList, type ListInput } from "@/lib/lists";
 
 /** Lists (when the site has them: Admin → Features & permissions) */
 function on() {
@@ -65,6 +65,14 @@ export async function clearRowAction(id: number, rowId: number) {
   return act((u) => {
     on();
     clearRow(u, Number(id), Number(rowId));
+    return true;
+  });
+}
+
+export async function clearListAction(id: number) {
+  return act((u) => {
+    on();
+    clearList(u, Number(id));
     return true;
   });
 }

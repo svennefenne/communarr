@@ -1332,6 +1332,13 @@ div.backdrop-tile {
 .list-table tr.mine td {
   background: rgb(var(--accent-2-rgb) / 0.07);
 }
+/* a row with its boxes ticked (bought, packed): done, its text struck through and quieter (in its
+   fields too, which don't take it from the cell) */
+.list-table tr.done td:not(.lt-n):not(.lt-act),
+.list-table tr.done td :is(input, select, .date-btn) {
+  color: var(--muted);
+  text-decoration: line-through;
+}
 .list-table .lt-n {
   width: 36px;
   border-left: 0;
@@ -1383,6 +1390,12 @@ div.backdrop-tile {
 }
 .list-table td.lt-col-check {
   text-align: center;
+}
+/* under the table: "Add a row" and (its author) "Clear all" */
+.lt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 /* above the table: "Big list", and a line when it's wider than the screen */
 .lt-block {
@@ -1490,7 +1503,7 @@ html:has(.list-big) .bottom-nav {
   overflow: auto;
   overscroll-behavior: contain;
 }
-.list-big > .btn {
+.list-big > .lt-actions {
   flex: none;
 }
 @media (max-width: 620px) {
@@ -1504,8 +1517,8 @@ html:has(.list-big) .bottom-nav {
     border-inline: 0;
     border-radius: 0;
   }
-  .list-big > .btn {
-    margin-left: 12px;
+  .list-big > .lt-actions {
+    padding-inline: 12px;
   }
 }
 .lt-input,
