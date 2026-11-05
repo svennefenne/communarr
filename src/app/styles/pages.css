@@ -1261,9 +1261,6 @@ div.backdrop-tile {
   font-size: 0.75rem;
   color: var(--text-dim);
 }
-.list-col-chip svg {
-  color: var(--muted);
-}
 .list-card-meta {
   display: flex;
   align-items: center;
@@ -1294,12 +1291,14 @@ div.backdrop-tile {
   overflow-wrap: anywhere;
 }
 
-/* the table: as wide as its columns need, sideways on a narrow screen */
+/* the table: a card of its own, each column as wide as what's in it (see ListTable), sideways on a
+   narrow screen */
 .list-table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  box-shadow: var(--shadow);
 }
 .list-table {
   width: 100%;
@@ -1312,18 +1311,11 @@ div.backdrop-tile {
   padding: 10px 10px;
   background: color-mix(in srgb, var(--stripe-4) 30%, var(--surface-2));
   color: var(--text);
+  font-size: 1.0625rem;
   font-weight: 700;
   text-align: left;
   white-space: nowrap;
   border-bottom: 1px solid var(--line-strong);
-}
-.lt-head {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.lt-head svg {
-  opacity: 0.7;
 }
 .list-table td {
   padding: 4px 6px;
@@ -1360,11 +1352,13 @@ div.backdrop-tile {
   z-index: 1;
   background: var(--surface);
 }
+/* (a pixel past the edge: columns as wide as their text end part-way through a pixel, which would
+   otherwise show at the edge) */
 .list-table td.lt-n {
-  left: 0;
+  left: -1px;
 }
 .list-table td.lt-act {
-  right: 0;
+  right: -1px;
   border-left: 1px solid var(--line);
 }
 .list-table tr.mine td.lt-n,
@@ -1372,29 +1366,22 @@ div.backdrop-tile {
   background: linear-gradient(rgb(var(--accent-2-rgb) / 0.07), rgb(var(--accent-2-rgb) / 0.07)), var(--surface);
 }
 .list-table th.lt-n {
-  left: 0;
+  left: -1px;
   z-index: 2;
 }
 .list-table th.lt-act {
-  right: 0;
+  right: -1px;
   z-index: 2;
 }
-.list-table td.lt-col-text {
-  min-width: 200px;
-}
-.list-table td.lt-col-member,
+/* (a date or a time on one line; a checkbox's column as wide as its name, the room left to the others) */
 .list-table td.lt-col-date,
-.list-table td.lt-col-choice {
-  min-width: 160px;
-}
 .list-table td.lt-col-time {
-  min-width: 150px;
+  white-space: nowrap;
 }
-.list-table td.lt-col-number {
-  min-width: 90px;
+.list-table .lt-col-check {
+  width: 1px;
 }
 .list-table td.lt-col-check {
-  width: 64px;
   text-align: center;
 }
 /* above the table: "Big list", and a line when it's wider than the screen */
@@ -1455,16 +1442,6 @@ div.backdrop-tile {
 }
 html[data-density="compact"] .lt-more {
   top: 4px;
-}
-/* on a phone the table on a list's page goes edge to edge */
-@media (max-width: 620px) {
-  .list-main .lt-frame {
-    margin-inline: -16px;
-  }
-  .list-main .list-table-wrap {
-    border-inline: 0;
-    border-radius: 0;
-  }
 }
 /* Big list: the table alone under the site's top bar, filling the screen (no bottom bar), scrolling
    both ways inside itself with its header row kept on top */

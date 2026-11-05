@@ -64,7 +64,7 @@ export function ListDetail({ list: initial }: { list: ListView }) {
     );
 
   return (
-    <div className="stack loose list-main">
+    <div className="stack loose">
       <article className="panel panel-pad list-detail">
         <header className="post-head">
           <span className="kind-icon list">

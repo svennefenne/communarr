@@ -10,7 +10,6 @@ import { UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { CardSection } from "@/components/feed/CardSection";
 import { CommentCount, GroupChip } from "@/components/feed/PostCard";
-import { typeIcon } from "./columnTypes";
 import { ListTable, useListView } from "./ListTable";
 
 /**
@@ -68,14 +67,11 @@ function CardBody({ l, section, children }: { l: ListCard; section: boolean; chi
       {l.text ? <p className="list-card-text">{l.text}</p> : null}
       {children ?? (
         <div className="list-card-cols">
-          {l.columns.slice(0, 6).map((c) => {
-            const Icon = typeIcon(c.type);
-            return (
-              <span key={c.id} className="list-col-chip">
-                <Icon size={12} /> {c.name}
-              </span>
-            );
-          })}
+          {l.columns.slice(0, 6).map((c) => (
+            <span key={c.id} className="list-col-chip">
+              {c.name}
+            </span>
+          ))}
           {l.columns.length > 6 ? <span className="list-col-chip">+{l.columns.length - 6}</span> : null}
         </div>
       )}
