@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from "react";
-import { ArrowDown, ArrowUp, Ellipsis, Eraser, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Ellipsis, Eraser, Maximize2, MoveHorizontal, Plus, Trash2, X } from "lucide-react";
 import type { ListCell, ListColumn, ListRowView, ListView } from "@/lib/contentTypes";
 import type { UserSummary } from "@/lib/types";
 import { useLive, useMe, useT, useToast } from "@/components/app/AppProvider";
@@ -31,12 +31,26 @@ export function useListView(initial: ListView, onGone: () => void) {
   return { l, setL, refresh };
 }
 
+/** How many columns are out of view at each side of a table that scrolls sideways (past the row's number and its "…", which stay). */
+type Hidden = { left: number; right: number };
+
+/** The edges of what's in view between the frozen columns, and the columns' boxes. */
+function view(wrap: HTMLElement) {
+  const r = wrap.getBoundingClientRect();
+  const n = wrap.querySelector("th.lt-n")?.getBoundingClientRect().width ?? 0;
+  const a = wrap.querySelector("th.lt-act")?.getBoundingClientRect().width ?? 0;
+  const cols = [...wrap.querySelectorAll("thead th:not(.lt-n):not(.lt-act)")].map((th) => th.getBoundingClientRect());
+  return { from: r.left + wrap.clientLeft + n, to: r.left + wrap.clientLeft + wrap.clientWidth - a, cols };
+}
+
 /**
  * A list's table, filled in right there (each cell as its column says: text, a number, a checkbox, a
  * member, a date, a time, a choice), and its "Add a row": on the list's page, and on its card in Lists
- * when it's shown whole.
+ * when it's shown whole. A table wider than the screen says so: a line above it, a shadow by the frozen
+ * columns, and a round button at each side with more ("+3 ›") that brings the next column into view.
+ * onBig: a "Big list" button above it (the list's page); big: it's in the big view (nothing above it).
  */
-export function ListTable({ l, setL, refresh }: { l: ListView; setL: Dispatch<SetStateAction<ListView>>; refresh: () => Promise<void> }) {
+export function ListTable({ l, setL, refresh, onBig, big = false }: { l: ListView; setL: Dispatch<SetStateAction<ListView>>; refresh: () => Promise<void>; onBig?: () => void; big?: boolean }) {
   const t = useT();
   const me = useMe();
   const toast = useToast();
@@ -109,60 +123,124 @@ export function ListTable({ l, setL, refresh }: { l: ListView; setL: Dispatch<Se
     });
   };
 
+  // wider than the screen: which columns are out of view, kept as it scrolls, resizes and changes
+  const wrap = useRef<HTMLDivElement>(null);
+  const [hidden, setHidden] = useState<Hidden>({ left: 0, right: 0 });
+  useEffect(() => {
+    const w = wrap.current;
+    if (!w) return;
+    const measure = () => {
+      const { from, to, cols } = view(w);
+      const left = cols.filter((c) => c.left < from - 2).length;
+      const right = cols.filter((c) => c.right > to + 2).length;
+      setHidden((h) => (h.left === left && h.right === right ? h : { left, right }));
+    };
+    measure();
+    w.addEventListener("scroll", measure, { passive: true });
+    const resized = new ResizeObserver(measure);
+    resized.observe(w);
+    const table = w.querySelector("table");
+    if (table) resized.observe(table);
+    return () => {
+      w.removeEventListener("scroll", measure);
+      resized.disconnect();
+    };
+  }, []);
+  // the next column that way to the edge (or most of a screen, for a column wider than it)
+  const scrollCols = (dir: 1 | -1) => {
+    const w = wrap.current;
+    if (!w) return;
+    const { from, to, cols } = view(w);
+    const next = dir > 0 ? cols.find((c) => c.right > to + 2) : cols.findLast((c) => c.left < from - 2);
+    let by = next ? next.left - from : 0;
+    if (Math.abs(by) < 8) by = dir * (to - from) * 0.8;
+    w.scrollBy({ left: by, behavior: "smooth" });
+  };
+  const more = [hidden.left ? "left" : "", hidden.right ? "right" : ""].filter(Boolean).join(" ");
+
   return (
     <>
-      <div className="list-table-wrap">
-        <table className="list-table">
-          <thead>
-            <tr>
-              <th className="lt-n" aria-label={t("Row")}>
-                #
-              </th>
-              {l.columns.map((c) => {
-                const Icon = typeIcon(c.type);
-                return (
-                  <th key={c.id} className={`lt-col-${c.type}`}>
-                    <span className="lt-head">
-                      <Icon size={13} aria-hidden /> {c.name}
-                    </span>
+      <div className="lt-block">
+        {!big && (onBig || more) ? (
+          <div className="lt-tools">
+            {onBig ? (
+              <button type="button" className="btn btn-sm" onClick={onBig} title={t("Only the list, filling the screen")}>
+                <Maximize2 size={14} /> {t("Big list")}
+              </button>
+            ) : null}
+            {more ? (
+              <span className="tiny muted lt-swipe">
+                <MoveHorizontal size={14} /> {t("Scroll sideways for more columns")}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="lt-frame" data-more={more || undefined}>
+          <div className="list-table-wrap" ref={wrap}>
+            <table className="list-table">
+              <thead>
+                <tr>
+                  <th className="lt-n" aria-label={t("Row")}>
+                    #
                   </th>
-                );
-              })}
-              <th className="lt-act" aria-label={t("More")} />
-            </tr>
-          </thead>
-          <tbody ref={body} onKeyDown={onTab}>
-            {l.rowList.map((r, i) => (
-              <tr key={r.id} data-row={r.id} className={r.filledBy && r.filledBy.id === me?.id ? "mine" : ""}>
-                <td className="lt-n">
-                  {r.filledBy ? (
-                    <span title={t("{name}'s row", { name: r.filledBy.name })}>
-                      <Avatar user={r.filledBy} size={20} />
-                    </span>
-                  ) : (
-                    <span className="mono muted">{i + 1}</span>
-                  )}
-                </td>
-                {l.columns.map((c) => (
-                  <td key={c.id} className={`lt-col-${c.type}`}>
-                    <Cell col={c} value={r.cells[c.id]} edit={r.canEdit} members={members} people={people} onSave={(v) => void save(r, c, v)} />
-                  </td>
+                  {l.columns.map((c) => {
+                    const Icon = typeIcon(c.type);
+                    return (
+                      <th key={c.id} className={`lt-col-${c.type}`}>
+                        <span className="lt-head">
+                          <Icon size={13} aria-hidden /> {c.name}
+                        </span>
+                      </th>
+                    );
+                  })}
+                  <th className="lt-act" aria-label={t("More")} />
+                </tr>
+              </thead>
+              <tbody ref={body} onKeyDown={onTab}>
+                {l.rowList.map((r, i) => (
+                  <tr key={r.id} data-row={r.id} className={r.filledBy && r.filledBy.id === me?.id ? "mine" : ""}>
+                    <td className="lt-n">
+                      {r.filledBy ? (
+                        <span title={t("{name}'s row", { name: r.filledBy.name })}>
+                          <Avatar user={r.filledBy} size={20} />
+                        </span>
+                      ) : (
+                        <span className="mono muted">{i + 1}</span>
+                      )}
+                    </td>
+                    {l.columns.map((c) => (
+                      <td key={c.id} className={`lt-col-${c.type}`}>
+                        <Cell col={c} value={r.cells[c.id]} edit={r.canEdit} members={members} people={people} onSave={(v) => void save(r, c, v)} />
+                      </td>
+                    ))}
+                    <td className="lt-act">
+                      <RowMenu
+                        first={!i}
+                        last={i === l.rowList.length - 1}
+                        canClear={r.canEdit && Object.keys(r.cells).length > 0}
+                        canArrange={l.canEdit}
+                        onClear={() => void run(clearRowAction(l.id, r.id))}
+                        onMove={(by) => void run(moveRowAction(l.id, r.id, by))}
+                        onRemove={() => confirm(t("Remove row {n}?", { n: i + 1 }), t("Remove"), () => run(removeRowAction(l.id, r.id)))}
+                      />
+                    </td>
+                  </tr>
                 ))}
-                <td className="lt-act">
-                  <RowMenu
-                    first={!i}
-                    last={i === l.rowList.length - 1}
-                    canClear={r.canEdit && Object.keys(r.cells).length > 0}
-                    canArrange={l.canEdit}
-                    onClear={() => void run(clearRowAction(l.id, r.id))}
-                    onMove={(by) => void run(moveRowAction(l.id, r.id, by))}
-                    onRemove={() => confirm(t("Remove row {n}?", { n: i + 1 }), t("Remove"), () => run(removeRowAction(l.id, r.id)))}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+          {hidden.left ? (
+            <button type="button" className="lt-more left" tabIndex={-1} onClick={() => scrollCols(-1)} aria-label={t.n(hidden.left, "{n} more column to the left", "{n} more columns to the left")}>
+              <ChevronLeft size={15} />+{hidden.left}
+            </button>
+          ) : null}
+          {hidden.right ? (
+            <button type="button" className="lt-more right" tabIndex={-1} onClick={() => scrollCols(1)} aria-label={t.n(hidden.right, "{n} more column to the right", "{n} more columns to the right")}>
+              +{hidden.right}
+              <ChevronRight size={15} />
+            </button>
+          ) : null}
+        </div>
       </div>
       {l.canAddRows ? (
         <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => void run(addRowAction(l.id))}>

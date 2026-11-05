@@ -1397,6 +1397,140 @@ div.backdrop-tile {
   width: 64px;
   text-align: center;
 }
+/* above the table: "Big list", and a line when it's wider than the screen */
+.lt-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.lt-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.lt-swipe {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+/* wider than the screen: a shadow by the frozen columns on the side with more, and a round "+3 ›"
+   over the frozen column's header (not over a column's name) that brings the next column into view */
+.lt-frame {
+  position: relative;
+  min-width: 0;
+}
+.lt-frame[data-more~="left"] .list-table .lt-n {
+  box-shadow: 7px 0 9px -6px rgb(0 0 0 / 0.55);
+}
+.lt-frame[data-more~="right"] .list-table .lt-act {
+  box-shadow: -7px 0 9px -6px rgb(0 0 0 / 0.55);
+}
+.lt-more {
+  position: absolute;
+  z-index: 3;
+  top: 7px;
+  display: inline-flex;
+  align-items: center;
+  height: 27px;
+  padding: 0 5px;
+  border-radius: 14px;
+  border: 1px solid var(--accent-2);
+  background: var(--surface-2);
+  color: var(--accent-2);
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.6);
+  cursor: pointer;
+}
+.lt-more.left {
+  left: 2px;
+  padding-left: 1px;
+}
+.lt-more.right {
+  right: 2px;
+  padding-right: 1px;
+}
+html[data-density="compact"] .lt-more {
+  top: 4px;
+}
+/* on a phone the table on a list's page goes edge to edge */
+@media (max-width: 620px) {
+  .list-main .lt-frame {
+    margin-inline: -16px;
+  }
+  .list-main .list-table-wrap {
+    border-inline: 0;
+    border-radius: 0;
+  }
+}
+/* Big list: the table alone under the site's top bar, filling the screen (no bottom bar), scrolling
+   both ways inside itself with its header row kept on top */
+html:has(.list-big) {
+  overflow: hidden;
+}
+html:has(.list-big) .bottom-nav {
+  display: none;
+}
+.list-big {
+  position: fixed;
+  z-index: 55;
+  top: var(--header-h);
+  left: var(--frame);
+  right: var(--frame);
+  bottom: var(--frame-b);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+.list-big-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.list-big-title {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.125rem;
+}
+.list-big .lt-block,
+.list-big .lt-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.list-big .list-table-wrap {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.list-big > .btn {
+  flex: none;
+}
+@media (max-width: 620px) {
+  .list-big {
+    padding-inline: 0;
+  }
+  .list-big-bar {
+    padding-inline: 12px;
+  }
+  .list-big .list-table-wrap {
+    border-inline: 0;
+    border-radius: 0;
+  }
+  .list-big > .btn {
+    margin-left: 12px;
+  }
+}
 .lt-input,
 .lt-select {
   width: 100%;
