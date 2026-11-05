@@ -390,6 +390,8 @@ a.list-card-title:hover {
   place-items: center;
   width: 30px;
   height: 30px;
+  /* (no button padding: in the small circle it pushed the smiley to the right) */
+  padding: 0;
   border-radius: 15px;
   border: 1px dashed var(--line-strong);
   background: none;

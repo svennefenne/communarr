@@ -18,6 +18,8 @@ import { applyReaction } from "@/components/content/Reactions";
 import { RoomIcon } from "./ChatSidebar";
 import { Message, type MessageHandlers } from "./Message";
 import { RoomSettings } from "./RoomSettings";
+import { useChatUi } from "./ChatShell";
+import { ChatPeople, ManageMember } from "./ChatPeople";
 import {
   declineInviteAction,
   deleteMessageAction,
@@ -32,10 +34,8 @@ import {
   pinMessageAction,
   pinnedAction,
   reactMessageAction,
-  removeMemberAction,
   roomInfoAction,
   sendAction,
-  setMemberRoleAction,
   setNotifyAction,
   typingAction,
   archiveRoomAction,
@@ -81,6 +81,16 @@ export function ChatRoom(p: Props) {
   const [highlight, setHighlight] = useState<number | null>(Number(search.get("m")) || null);
   const [newBelow, setNewBelow] = useState(0);
   const [panel, setPanel] = useState<null | "members" | "pinned" | "settings" | "invite">(null);
+  // on a wide screen the members are beside the room (shown or hidden); otherwise in a dialog
+  const ui = useChatUi();
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1100px)");
+    const f = () => setWide(mq.matches);
+    f();
+    mq.addEventListener("change", f);
+    return () => mq.removeEventListener("change", f);
+  }, []);
   const [pinnedList, setPinnedList] = useState<ChatMessage[] | null>(null);
   const [reporting, setReporting] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
@@ -347,335 +357,317 @@ export function ChatRoom(p: Props) {
 
   if (!me) return null;
   return (
-    <section className="panel chat-room">
-      <header className="chat-head">
-        <Link href="/chat" className="icon-btn sm chat-back" aria-label={t("All chats")}>
-          <ChevronLeft size={20} />
-        </Link>
-        <RoomIcon r={info} size={36} />
-        <button type="button" className="chat-title" onClick={() => setPanel(info.kind === "dm" ? "members" : "settings")}>
-          <b className="ellipsis">{info.name}</b>
-          <span className="tiny muted ellipsis">
-            {info.kind === "dm" ? (info.other?.statusText ? `${info.other.statusEmoji} ${info.other.statusText}` : t("Direct message")) : info.topic || t.n(info.memberCount, "{n} member", "{n} members")}
-          </span>
-        </button>
-        {/* the buttons: beside the name on a computer, their own row under it on a phone */}
-        <div className="chat-actions">
-          {isMember || info.visibility === "open" ? (
-            <div className="chat-voice">
-              <VoiceButton room={id} name={info.name} compact />
-            </div>
-          ) : null}
-          <button
-            type="button"
-            className="icon-btn sm"
-            title={t("Pinned messages")}
-            aria-label={t("Pinned messages")}
-            onClick={async () => {
-              setPanel("pinned");
-              const r = await pinnedAction(id);
-              if (r.ok) setPinnedList(r.data);
-            }}
-          >
-            <Pin size={18} />
+    <>
+      <section className="panel chat-room">
+        <header className="chat-head">
+          <Link href="/chat" className="icon-btn sm chat-back" aria-label={t("All chats")}>
+            <ChevronLeft size={20} />
+          </Link>
+          <RoomIcon r={info} size={36} />
+          <button type="button" className="chat-title" onClick={() => setPanel(info.kind === "dm" ? "members" : "settings")}>
+            <b className="ellipsis">{info.name}</b>
+            <span className="tiny muted ellipsis">
+              {info.kind === "dm" ? (info.other?.statusText ? `${info.other.statusEmoji} ${info.other.statusText}` : t("Direct message")) : info.topic || t.n(info.memberCount, "{n} member", "{n} members")}
+            </span>
           </button>
-          {info.kind !== "dm" ? (
-            <button type="button" className="icon-btn sm" title={t("Members")} aria-label={t("Members")} onClick={() => setPanel("members")}>
+          {/* the buttons: beside the name on a computer, their own row under it on a phone */}
+          <div className="chat-actions">
+            {isMember || info.visibility === "open" ? (
+              <div className="chat-voice">
+                <VoiceButton room={id} name={info.name} compact />
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className="icon-btn sm"
+              title={t("Pinned messages")}
+              aria-label={t("Pinned messages")}
+              onClick={async () => {
+                setPanel("pinned");
+                const r = await pinnedAction(id);
+                if (r.ok) setPinnedList(r.data);
+              }}
+            >
+              <Pin size={18} />
+            </button>
+            <button
+              type="button"
+              className={`icon-btn sm ${wide && ui.people ? "on" : ""}`}
+              title={wide ? (ui.people ? t("Hide the members") : t("Show the members")) : t("Members")}
+              aria-label={t("Members")}
+              aria-pressed={wide ? ui.people : undefined}
+              onClick={() => (wide ? ui.setPeople(!ui.people) : setPanel("members"))}
+            >
               <Users size={18} />
             </button>
-          ) : null}
-          {isMember ? (
-            <Dropdown label={t("Room menu")} button={<Ellipsis size={18} />}>
-              <div className="menu-label">{t("Notify me about")}</div>
-              {(
-                [
-                  ["all", Bell, "Every message"],
-                  ["mentions", AtSign, "Only @mentions"],
-                  ["none", BellOff, "Nothing"],
-                ] as const
-              ).map(([mode, Icon, label]) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={`menu-item ${info.notify === mode ? "sel" : ""}`}
-                  data-close
-                  onClick={async () => {
-                    const r = await setNotifyAction(id, mode);
-                    if (r.ok) setInfo((i) => ({ ...i, notify: r.data }));
-                  }}
-                >
-                  <Icon size={16} /> {t(label)}
-                </button>
-              ))}
-              {info.kind !== "dm" ? (
-                <>
-                  <div className="menu-sep" />
-                  {info.kind === "room" ? (
-                    <button type="button" className="menu-item" data-close onClick={() => setPanel("invite")}>
-                      <UserPlus size={16} /> {t("Invite people")}
-                    </button>
-                  ) : null}
-                  {p.canManage ? (
-                    <button type="button" className="menu-item" data-close onClick={() => setPanel("settings")}>
-                      <Settings size={16} /> {t("Room settings")}
-                    </button>
-                  ) : null}
-                  {p.canManage ? (
-                    <button
-                      type="button"
-                      className="menu-item"
-                      data-close
-                      onClick={async () => {
-                        const r = await archiveRoomAction(id, !info.archived);
-                        if (r.ok) {
-                          toast(r.data ? t("Archived: it's hidden from the lists.") : t("Back from the archive."));
-                          router.push("/chat");
+            {isMember ? (
+              <Dropdown label={t("Room menu")} button={<Ellipsis size={18} />}>
+                <div className="menu-label">{t("Notify me about")}</div>
+                {(
+                  [
+                    ["all", Bell, "Every message"],
+                    ["mentions", AtSign, "Only @mentions"],
+                    ["none", BellOff, "Nothing"],
+                  ] as const
+                ).map(([mode, Icon, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={`menu-item ${info.notify === mode ? "sel" : ""}`}
+                    data-close
+                    onClick={async () => {
+                      const r = await setNotifyAction(id, mode);
+                      if (r.ok) setInfo((i) => ({ ...i, notify: r.data }));
+                    }}
+                  >
+                    <Icon size={16} /> {t(label)}
+                  </button>
+                ))}
+                {info.kind !== "dm" ? (
+                  <>
+                    <div className="menu-sep" />
+                    {info.kind === "room" ? (
+                      <button type="button" className="menu-item" data-close onClick={() => setPanel("invite")}>
+                        <UserPlus size={16} /> {t("Invite people")}
+                      </button>
+                    ) : null}
+                    {p.canManage ? (
+                      <button type="button" className="menu-item" data-close onClick={() => setPanel("settings")}>
+                        <Settings size={16} /> {t("Room settings")}
+                      </button>
+                    ) : null}
+                    {p.canManage ? (
+                      <button
+                        type="button"
+                        className="menu-item"
+                        data-close
+                        onClick={async () => {
+                          const r = await archiveRoomAction(id, !info.archived);
+                          if (r.ok) {
+                            toast(r.data ? t("Archived: it's hidden from the lists.") : t("Back from the archive."));
+                            router.push("/chat");
+                          }
+                        }}
+                      >
+                        <Archive size={16} /> {info.archived ? t("Unarchive") : t("Archive")}
+                      </button>
+                    ) : null}
+                    {info.kind === "room" ? (
+                      <button
+                        type="button"
+                        className="menu-item"
+                        data-close
+                        onClick={() =>
+                          confirm(t("Leave {name}?", { name: info.name }), t("Leave"), async () => {
+                            await leaveRoomAction(id);
+                            router.push("/chat");
+                          })
                         }
-                      }}
-                    >
-                      <Archive size={16} /> {info.archived ? t("Unarchive") : t("Archive")}
-                    </button>
-                  ) : null}
-                  {info.kind === "room" ? (
-                    <button
-                      type="button"
-                      className="menu-item"
-                      data-close
-                      onClick={() =>
-                        confirm(t("Leave {name}?", { name: info.name }), t("Leave"), async () => {
-                          await leaveRoomAction(id);
-                          router.push("/chat");
-                        })
-                      }
-                    >
-                      <LogOut size={16} /> {t("Leave the room")}
-                    </button>
-                  ) : null}
-                  {p.isOwner || me.isAdmin ? (
-                    <button
-                      type="button"
-                      className="menu-item danger"
-                      data-close
-                      onClick={() =>
-                        confirm(t("Delete {name} and all its messages for everyone?", { name: info.name }), t("Delete"), async () => {
-                          const r = await deleteRoomAction(id);
-                          if (r.ok) router.push("/chat");
-                          else toast(r.error, { kind: "err" });
-                        })
-                      }
-                    >
-                      <Trash2 size={16} /> {t("Delete the room")}
-                    </button>
-                  ) : null}
-                </>
-              ) : null}
-            </Dropdown>
-          ) : null}
-        </div>
-      </header>
-
-      <div className="chat-scroll" ref={scroller} onScroll={onScroll}>
-        {more ? <div className="chat-more tiny faint">{t("Loading older messages…")}</div> : <div className="chat-start">
-          <RoomIcon r={info} size={56} />
-          <b className="h3">{info.kind === "dm" ? t("You and {name}", { name: info.name }) : info.name}</b>
-          <span className="small muted">{info.kind === "dm" ? t("This is the start of your messages.") : info.topic || t("The very beginning of the room.")}</span>
-        </div>}
-        {msgs.map((m, i) => {
-          const prev = msgs[i - 1];
-          const newDay = !prev || dayOf(prev.createdAt) !== dayOf(m.createdAt);
-          const compact = !newDay && !!prev && prev.kind === "text" && m.kind === "text" && prev.author?.id === m.author?.id && m.createdAt - prev.createdAt < 5 * 60_000 && !m.replyTo;
-          const unreadLine = firstUnread.current && m.id > firstUnread.current && (!prev || prev.id <= firstUnread.current) && m.author?.id !== me.id;
-          return (
-            <div key={m.id}>
-              {newDay ? (
-                <div className="chat-day">
-                  <span suppressHydrationWarning>{dayLabel(m.createdAt)}</span>
-                </div>
-              ) : null}
-              {unreadLine ? (
-                <div className="chat-new">
-                  <span>{t("New")}</span>
-                </div>
-              ) : null}
-              <Message m={m} me={me} compact={compact} canModerate={canModerate} readers={info.kind === "dm" ? [] : readersAt.get(m.id) ?? []} seen={info.kind === "dm" && m.id === myLast?.id && otherRead >= m.id} highlight={highlight === m.id} h={h} />
-            </div>
-          );
-        })}
-      </div>
-
-      {newBelow ? (
-        <button type="button" className="fresh-pill chat-new-below" onClick={() => scrollToBottom(true)}>
-          <ArrowDown size={15} /> {t.n(newBelow, "{n} new message", "{n} new messages")}
-        </button>
-      ) : null}
-
-      <footer className="chat-foot">
-        <div className="chat-typing tiny muted">{typingNames.length ? t.n(typingNames.length, "{names} is typing…", "{names} are typing…", { names: typingNames.slice(0, 3).join(", ") }) : " "}</div>
-        {info.invited && !isMember ? (
-          <div className="chat-banner">
-            <span className="grow">{t("You're invited to this room.")}</span>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={async () => {
-                const r = await joinRoomAction(id);
-                if (r.ok) setInfo((i) => ({ ...i, myRole: "member", invited: false }));
-                else toast(r.error, { kind: "err" });
-              }}
-            >
-              {t("Join")}
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={async () => {
-                await declineInviteAction(id);
-                router.push("/chat");
-              }}
-            >
-              {t("No thanks")}
-            </button>
-          </div>
-        ) : !isMember ? (
-          <div className="chat-banner">
-            <Hash size={16} />
-            <span className="grow small">{t("You're looking in. Join to get its messages in your list (writing something joins you too).")}</span>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={async () => {
-                const r = await joinRoomAction(id);
-                if (r.ok) setInfo((i) => ({ ...i, myRole: "member" }));
-                else toast(r.error, { kind: "err" });
-              }}
-            >
-              {t("Join")}
-            </button>
-          </div>
-        ) : null}
-        {replyTo ? (
-          <div className="chat-replying">
-            <CornerUpLeft size={14} />
-            <span className="grow ellipsis small">
-              {t("Replying to")} <b>{replyTo.author?.name}</b>: <span className="muted">{replyTo.html.replace(/<[^>]+>/g, " ").trim().slice(0, 120)}</span>
-            </span>
-            <button type="button" className="icon-btn xs" onClick={() => setReplyTo(null)} aria-label={t("Cancel the reply")}>
-              <X size={14} />
-            </button>
-          </div>
-        ) : null}
-        {!info.archived && (isMember || info.visibility === "open") ? (
-          <RichEditor
-            ref={editor}
-            variant="compact"
-            enterSends
-            placeholder={info.kind === "dm" ? t("Message {name}", { name: info.name }) : t("Message {room}", { room: `${info.emoji ? info.emoji + " " : "#"}${info.name}` })}
-            draftKey={`chat-${id}`}
-            onSubmit={send}
-            onChange={onType}
-            label={t("Message")}
-            className="chat-editor"
-            previews="above"
-            actions={
-              <button type="button" className={`btn btn-primary btn-sm chat-send ${sending ? "loading" : ""}`} onClick={send} aria-label={t("Send")} title={t("Send (Enter)")}>
-                <Send size={16} />
-              </button>
-            }
-          />
-        ) : info.archived ? (
-          <div className="chat-banner small muted">{t("This room is archived.")}</div>
-        ) : null}
-      </footer>
-
-      {panel === "members" ? (
-        <Modal title={info.kind === "dm" ? info.name : `${t("Members")} · ${members.length}`} onClose={() => setPanel(null)}>
-          <div className="stack tight">
-            {members.map((mm) => (
-              <div key={mm.user.id} className="row">
-                <UserChip user={mm.user} size={34} presence sub={mm.role !== "member" ? t(mm.role) : mm.user.statusText ? `${mm.user.statusEmoji} ${mm.user.statusText}` : undefined} />
-                <span className="spacer" />
-                {p.canManage && mm.user.id !== me.id && mm.role !== "owner" && info.kind !== "dm" ? (
-                  <Dropdown label={t("Manage")} button={<Ellipsis size={16} />}>
-                    <button
-                      type="button"
-                      className="menu-item"
-                      data-close
-                      onClick={async () => {
-                        await setMemberRoleAction(id, mm.user.id, mm.role === "admin" ? "member" : "admin");
-                        const r = await membersAction(id);
-                        if (r.ok) setMembers(r.data);
-                      }}
-                    >
-                      {mm.role === "admin" ? t("Not admin any more") : t("Make admin")}
-                    </button>
-                    <button
-                      type="button"
-                      className="menu-item danger"
-                      data-close
-                      onClick={async () => {
-                        const r = await removeMemberAction(id, mm.user.id);
-                        if (!r.ok) toast(r.error, { kind: "err" });
-                        const m = await membersAction(id);
-                        if (m.ok) setMembers(m.data);
-                      }}
-                    >
-                      {t("Remove from the room")}
-                    </button>
-                  </Dropdown>
+                      >
+                        <LogOut size={16} /> {t("Leave the room")}
+                      </button>
+                    ) : null}
+                    {p.isOwner || me.isAdmin ? (
+                      <button
+                        type="button"
+                        className="menu-item danger"
+                        data-close
+                        onClick={() =>
+                          confirm(t("Delete {name} and all its messages for everyone?", { name: info.name }), t("Delete"), async () => {
+                            const r = await deleteRoomAction(id);
+                            if (r.ok) router.push("/chat");
+                            else toast(r.error, { kind: "err" });
+                          })
+                        }
+                      >
+                        <Trash2 size={16} /> {t("Delete the room")}
+                      </button>
+                    ) : null}
+                  </>
                 ) : null}
-              </div>
-            ))}
-            {info.kind === "room" && isMember ? (
-              <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start", marginTop: 8 }} onClick={() => setPanel("invite")}>
-                <UserPlus size={15} /> {t("Invite people")}
-              </button>
+              </Dropdown>
             ) : null}
           </div>
-        </Modal>
-      ) : null}
-      {panel === "invite" ? (
-        <PeoplePicker
-          title={t("Invite to {name}", { name: info.name })}
-          exclude={members.map((m) => m.user.id)}
-          onClose={() => setPanel(null)}
-          onDone={async (ids) => {
-            const r = await inviteToRoomAction(id, ids);
-            if (r.ok) {
-              toast(t("Invited {n}.", { n: r.data }));
-              setPanel(null);
-            } else toast(r.error, { kind: "err" });
-          }}
-        />
-      ) : null}
-      {panel === "pinned" ? (
-        <Modal title={t("Pinned")} onClose={() => setPanel(null)}>
-          {!pinnedList ? (
-            <div className="skeleton" style={{ height: 60 }} />
-          ) : pinnedList.length ? (
-            <div className="stack tight">
-              {pinnedList.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className="pinned-item"
-                  onClick={() => {
-                    setPanel(null);
-                    void jump(m.id);
-                  }}
-                >
-                  <b className="small">{m.author?.name}</b>
-                  <span className="small dim clamp-2">{m.html.replace(/<[^>]+>/g, " ").trim()}</span>
-                </button>
-              ))}
+        </header>
+
+        <div className="chat-scroll" ref={scroller} onScroll={onScroll}>
+          {more ? <div className="chat-more tiny faint">{t("Loading older messages…")}</div> : <div className="chat-start">
+            <RoomIcon r={info} size={56} />
+            <b className="h3">{info.kind === "dm" ? t("You and {name}", { name: info.name }) : info.name}</b>
+            <span className="small muted">{info.kind === "dm" ? t("This is the start of your messages.") : info.topic || t("The very beginning of the room.")}</span>
+          </div>}
+          {msgs.map((m, i) => {
+            const prev = msgs[i - 1];
+            const newDay = !prev || dayOf(prev.createdAt) !== dayOf(m.createdAt);
+            const compact = !newDay && !!prev && prev.kind === "text" && m.kind === "text" && prev.author?.id === m.author?.id && m.createdAt - prev.createdAt < 5 * 60_000 && !m.replyTo;
+            const unreadLine = firstUnread.current && m.id > firstUnread.current && (!prev || prev.id <= firstUnread.current) && m.author?.id !== me.id;
+            return (
+              <div key={m.id}>
+                {newDay ? (
+                  <div className="chat-day">
+                    <span suppressHydrationWarning>{dayLabel(m.createdAt)}</span>
+                  </div>
+                ) : null}
+                {unreadLine ? (
+                  <div className="chat-new">
+                    <span>{t("New")}</span>
+                  </div>
+                ) : null}
+                <Message m={m} me={me} compact={compact} canModerate={canModerate} readers={info.kind === "dm" ? [] : readersAt.get(m.id) ?? []} seen={info.kind === "dm" && m.id === myLast?.id && otherRead >= m.id} highlight={highlight === m.id} h={h} />
+              </div>
+            );
+          })}
+        </div>
+
+        {newBelow ? (
+          <button type="button" className="fresh-pill chat-new-below" onClick={() => scrollToBottom(true)}>
+            <ArrowDown size={15} /> {t.n(newBelow, "{n} new message", "{n} new messages")}
+          </button>
+        ) : null}
+
+        <footer className="chat-foot">
+          <div className="chat-typing tiny muted">{typingNames.length ? t.n(typingNames.length, "{names} is typing…", "{names} are typing…", { names: typingNames.slice(0, 3).join(", ") }) : " "}</div>
+          {info.invited && !isMember ? (
+            <div className="chat-banner">
+              <span className="grow">{t("You're invited to this room.")}</span>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={async () => {
+                  const r = await joinRoomAction(id);
+                  if (r.ok) setInfo((i) => ({ ...i, myRole: "member", invited: false }));
+                  else toast(r.error, { kind: "err" });
+                }}
+              >
+                {t("Join")}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={async () => {
+                  await declineInviteAction(id);
+                  router.push("/chat");
+                }}
+              >
+                {t("No thanks")}
+              </button>
             </div>
-          ) : (
-            <p className="muted small">{t("Nothing pinned. Pin a message from its ⋯ menu to keep it handy here.")}</p>
-          )}
-        </Modal>
+          ) : !isMember ? (
+            <div className="chat-banner">
+              <Hash size={16} />
+              <span className="grow small">{t("You're looking in. Join to get its messages in your list (writing something joins you too).")}</span>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={async () => {
+                  const r = await joinRoomAction(id);
+                  if (r.ok) setInfo((i) => ({ ...i, myRole: "member" }));
+                  else toast(r.error, { kind: "err" });
+                }}
+              >
+                {t("Join")}
+              </button>
+            </div>
+          ) : null}
+          {replyTo ? (
+            <div className="chat-replying">
+              <CornerUpLeft size={14} />
+              <span className="grow ellipsis small">
+                {t("Replying to")} <b>{replyTo.author?.name}</b>: <span className="muted">{replyTo.html.replace(/<[^>]+>/g, " ").trim().slice(0, 120)}</span>
+              </span>
+              <button type="button" className="icon-btn xs" onClick={() => setReplyTo(null)} aria-label={t("Cancel the reply")}>
+                <X size={14} />
+              </button>
+            </div>
+          ) : null}
+          {!info.archived && (isMember || info.visibility === "open") ? (
+            <RichEditor
+              ref={editor}
+              variant="compact"
+              enterSends
+              placeholder={info.kind === "dm" ? t("Message {name}", { name: info.name }) : t("Message {room}", { room: `${info.emoji ? info.emoji + " " : "#"}${info.name}` })}
+              draftKey={`chat-${id}`}
+              onSubmit={send}
+              onChange={onType}
+              label={t("Message")}
+              className="chat-editor"
+              previews="above"
+              actions={
+                <button type="button" className={`btn btn-primary btn-sm chat-send ${sending ? "loading" : ""}`} onClick={send} aria-label={t("Send")} title={t("Send (Enter)")}>
+                  <Send size={16} />
+                </button>
+              }
+            />
+          ) : info.archived ? (
+            <div className="chat-banner small muted">{t("This room is archived.")}</div>
+          ) : null}
+        </footer>
+
+        {panel === "members" ? (
+          <Modal title={info.kind === "dm" ? info.name : `${t("Members")} · ${members.length}`} onClose={() => setPanel(null)}>
+            <div className="stack tight">
+              {members.map((mm) => (
+                <div key={mm.user.id} className="row">
+                  <UserChip user={mm.user} size={34} presence sub={mm.role !== "member" ? t(mm.role) : mm.user.statusText ? `${mm.user.statusEmoji} ${mm.user.statusText}` : undefined} />
+                  <span className="spacer" />
+                  {p.canManage && mm.user.id !== me.id && mm.role !== "owner" && info.kind !== "dm" ? <ManageMember roomId={id} m={mm} onChanged={setMembers} /> : null}
+                </div>
+              ))}
+              {info.kind === "room" && isMember ? (
+                <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start", marginTop: 8 }} onClick={() => setPanel("invite")}>
+                  <UserPlus size={15} /> {t("Invite people")}
+                </button>
+              ) : null}
+            </div>
+          </Modal>
+        ) : null}
+        {panel === "invite" ? (
+          <PeoplePicker
+            title={t("Invite to {name}", { name: info.name })}
+            exclude={members.map((m) => m.user.id)}
+            onClose={() => setPanel(null)}
+            onDone={async (ids) => {
+              const r = await inviteToRoomAction(id, ids);
+              if (r.ok) {
+                toast(t("Invited {n}.", { n: r.data }));
+                setPanel(null);
+              } else toast(r.error, { kind: "err" });
+            }}
+          />
+        ) : null}
+        {panel === "pinned" ? (
+          <Modal title={t("Pinned")} onClose={() => setPanel(null)}>
+            {!pinnedList ? (
+              <div className="skeleton" style={{ height: 60 }} />
+            ) : pinnedList.length ? (
+              <div className="stack tight">
+                {pinnedList.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="pinned-item"
+                    onClick={() => {
+                      setPanel(null);
+                      void jump(m.id);
+                    }}
+                  >
+                    <b className="small">{m.author?.name}</b>
+                    <span className="small dim clamp-2">{m.html.replace(/<[^>]+>/g, " ").trim()}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="muted small">{t("Nothing pinned. Pin a message from its ⋯ menu to keep it handy here.")}</p>
+            )}
+          </Modal>
+        ) : null}
+        {panel === "settings" ? <RoomSettings info={info} canManage={p.canManage} onClose={() => setPanel(null)} onSaved={(i) => setInfo(i)} /> : null}
+        {reporting ? <ReportDialog type="message" id={reporting} onClose={() => setReporting(null)} /> : null}
+        {node}
+      </section>
+      {ui.people ? (
+        <ChatPeople info={info} members={members} canManage={p.canManage} onMembers={setMembers} onInvite={() => setPanel("invite")} onClose={() => ui.setPeople(false)} />
       ) : null}
-      {panel === "settings" ? <RoomSettings info={info} canManage={p.canManage} onClose={() => setPanel(null)} onSaved={(i) => setInfo(i)} /> : null}
-      {reporting ? <ReportDialog type="message" id={reporting} onClose={() => setReporting(null)} /> : null}
-      {node}
-    </section>
+    </>
   );
 }
