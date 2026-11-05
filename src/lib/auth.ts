@@ -90,7 +90,8 @@ export const getUser = cache(async (): Promise<User | null> => {
   if (!token) return null;
   const u = userForToken(token);
   if (!u) return null;
-  // how the site looks is this device's own (lib/look.ts)
+  // how the site looks is this device's own (lib/look.ts), unless they mirror their devices
+  if (u.theme.mirror) return u;
   const look = decodeLook(jar.get(lookCookie(u.id))?.value);
   if (look.scheme && !PALETTE_BY_SLUG.has(look.scheme)) delete look.scheme;
   u.theme = { ...u.theme, ...look };

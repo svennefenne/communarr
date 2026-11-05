@@ -25,12 +25,19 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
   };
   return (
     <>
-      {/* (kept on this device: lib/look.ts) */}
+      {/* (kept on this device, unless they mirror their devices: lib/look.ts) */}
       <section className="panel panel-pad">
-        <h2 className="h2">{t("On this device")}</h2>
+        <h2 className="h2">{t("Look")}</h2>
         <p className="small muted" style={{ margin: "4px 0 0" }}>
-          {t("Your phone and your computer can each look their own way. So can your theme.")} <Link href="/settings/theme">{t("Theme")} →</Link>
+          {p.mirror ? t("The same on all your devices, the theme too.") : t("For this device: your phone and your computer can each look their own way, the theme too.")} <Link href="/settings/theme">{t("Theme")} →</Link>
         </p>
+        <div className="setting-row">
+          <div className="grow">
+            <b>{t("Mirror my devices")}</b>
+            <span className="small muted">{t("The same look on all of them: change it on one and the others follow.")}</span>
+          </div>
+          <Switch on={!!p.mirror} label={t("Mirror my devices")} onChange={(v) => void save({ mirror: v })} />
+        </div>
         <div className="setting-row">
           <div className="grow">
             <b>{t("Light or dark")}</b>

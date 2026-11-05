@@ -6,6 +6,9 @@ import type { ThemePrefs } from "./types";
  * per member, so the server draws the page that way from the start (no flash). The account keeps
  * the latest choice, which is what a new device starts with; a device that has no cookie yet gets
  * one with the look it has now (keepLook), so a change on another device doesn't reach it.
+ *
+ * Someone who mirrors their devices (Settings → Display) sees the account's look everywhere. Their
+ * devices' cookies are still kept to the look they show, so turning it off leaves each one as it is.
  */
 export type Look = Pick<ThemePrefs, "scheme" | "mode" | "custom" | "density" | "textSize">;
 

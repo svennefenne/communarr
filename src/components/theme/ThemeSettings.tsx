@@ -53,9 +53,10 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
 
   return (
     <div className="stack loose">
-      {/* (kept on this device: lib/look.ts) */}
-      <p className="small muted row" style={{ gap: 6, margin: 0 }}>
-        <MonitorSmartphone size={14} /> {t("For this device: your phone and your computer can each have their own theme.")}
+      {/* (kept on this device, unless they mirror their devices: lib/look.ts) */}
+      <p className="small muted row wrap" style={{ gap: 6, margin: 0 }}>
+        <MonitorSmartphone size={14} /> {prefs.mirror ? t("The same theme on all your devices.") : t("For this device: your phone and your computer can each have their own theme.")}{" "}
+        <Link href="/settings/display">{t("Display")} →</Link>
       </p>
       <section className="panel panel-pad row between wrap">
         <div>
