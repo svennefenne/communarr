@@ -37,7 +37,7 @@ export const KIND_NAMES: Record<SearchKind, string> = {
 };
 
 /** One of a kind, for a hit's line ("News" alone would read as the whole section). */
-const KIND_ONE: Record<SearchKind, string> = {
+export const KIND_ONE: Record<SearchKind, string> = {
   post: "Post",
   news: "News post",
   comment: "Comment",

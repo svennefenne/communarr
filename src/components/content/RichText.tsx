@@ -55,6 +55,14 @@ export function RichText({
       router.push(`/u/${encodeURIComponent(mention.dataset.id!)}`);
       return;
     }
+    // a link on the site goes there without loading the whole page again (a new tab and such as usual)
+    const a = t.closest<HTMLAnchorElement>("a[href]");
+    const href = a?.getAttribute("href") ?? "";
+    if (a && /^\/(?!\/|media\/)/.test(href) && !a.target && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      router.push(href);
+      return;
+    }
     // (the site's own emoji are text, not pictures to open)
     if (t.tagName === "IMG" && !t.closest("a") && !t.classList.contains("emoji-custom")) {
       const imgs = [...(ref.current?.querySelectorAll<HTMLImageElement>("img:not(.emoji-custom)") ?? [])];

@@ -88,6 +88,11 @@ export function canSeeCategory(u: User, c: CategoryRow) {
   return !!g && canReadGroup(u, g);
 }
 
+/** The forum's categories someone may see, to link to (the editor's Link). */
+export function categoryLinks(u: User): { name: string; url: string }[] {
+  return (db().prepare("select * from forum_categories order by position, name").all() as CategoryRow[]).filter((c) => canSeeCategory(u, c)).map((c) => ({ name: c.name, url: `/forum/${c.slug}` }));
+}
+
 function visibleCategoryIds(u: User): number[] {
   const groups = readableGroupIds(u);
   return (db().prepare("select id, group_id from forum_categories").all() as { id: number; group_id: number | null }[]).filter((c) => !c.group_id || groups.includes(c.group_id)).map((c) => c.id);

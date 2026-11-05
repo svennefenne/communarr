@@ -36,6 +36,11 @@ export function visibleSections(features: Features) {
   return SECTIONS.filter((s) => !s.feature || features[s.feature]);
 }
 
+/** Every place in the menus that's switched on (the editor's Link offers them). */
+export function allSections(features: Features) {
+  return [...SECTIONS, ...MORE].filter((s) => !s.feature || features[s.feature]);
+}
+
 export function isActive(s: Section, pathname: string) {
   if (s.exact) return pathname === s.href;
   return pathname === s.href || pathname.startsWith(s.href + "/");

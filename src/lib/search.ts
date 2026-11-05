@@ -152,6 +152,39 @@ export function search(userId: number, q: string, opts: { kinds?: SearchKind[]; 
   }
 }
 
+/** What the editor's Link can point at: whatever has a page of its own (not a chat message). */
+const LINK_KINDS: SearchKind[] = ["news", "post", "thread", "event", "poll", "list", "group", "room", "user"];
+/** before anything is typed: the latest of these */
+const LATEST_KINDS: SearchKind[] = ["news", "post", "thread", "event", "poll", "list"];
+
+/**
+ * For the editor's Link: what matches what someone typed, then a few forum replies and comments (they
+ * share their thread's or post's title, so they'd crowd the rest out); before anything is typed, the
+ * latest things they may see.
+ */
+export function linkHits(userId: number, q: string): SearchHit[] {
+  if (ftsQuery(q)) return [...search(userId, q, { kinds: LINK_KINDS, limit: 8 }).hits, ...search(userId, q, { kinds: ["reply", "comment"], limit: 3 }).hits];
+  const scopes = scopesFor(userId);
+  const rows = db()
+    .prepare(
+      `select kind, ref, url, author_id, created_at, title from search_index
+       where scope in (${scopes.map(() => "?").join(",")}) and kind in (${LATEST_KINDS.map(() => "?").join(",")})
+       order by created_at desc limit 6`,
+    )
+    .all(...scopes, ...LATEST_KINDS) as { kind: SearchKind; ref: number; url: string; author_id: number | null; created_at: number; title: string }[];
+  const authors = summaries(rows.map((r) => r.author_id!).filter(Boolean));
+  return rows.map((r) => ({ kind: r.kind, ref: r.ref, url: r.url, title: r.title, snippet: "", createdAt: r.created_at, author: r.author_id ? authors.get(r.author_id) ?? null : null }));
+}
+
+/** What a link on the site points at, if it's something someone may see (the editor shows its title). */
+export function linkTarget(userId: number, url: string): { kind: SearchKind; title: string } | null {
+  const scopes = scopesFor(userId);
+  const r = db()
+    .prepare(`select kind, title from search_index where url = ? and scope in (${scopes.map(() => "?").join(",")}) limit 1`)
+    .get(url, ...scopes) as { kind: SearchKind; title: string } | undefined;
+  return r ?? null;
+}
+
 export function plain(html: string): string {
   return html
     .replace(/<(br|\/p|\/h\d|\/li|\/blockquote|\/tr|\/td|\/th|\/pre|hr)[^>]*>/gi, "\n")
