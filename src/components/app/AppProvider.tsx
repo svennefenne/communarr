@@ -46,6 +46,8 @@ export function useApp(): Ctx {
   return c;
 }
 export const useMe = () => useApp().me;
+/** Settings → Display → Compact: cards show less (shorter text, a count instead of words). */
+export const useCompact = () => useApp().me?.theme.density === "compact";
 export const useSite = () => useApp().site;
 export const useToast = () => useApp().toast;
 /** The site's language: t("Save"), t.n(n, "{n} reply", "{n} replies"), t.locale for dates. */

@@ -57,7 +57,7 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
       <div className="setting-row">
         <div className="grow">
           <b>{t("Compact")}</b>
-          <span className="small muted">{t("Smaller text and tighter spacing in posts, lists, chat and comments: more on the screen.")}</span>
+          <span className="small muted">{t("Smaller text, tighter spacing, and cards that show less (shorter text, smaller pictures, no excerpts): more on the screen.")}</span>
         </div>
         <Switch
           on={p.density === "compact"}

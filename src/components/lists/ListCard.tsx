@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { ListChecks, Lock, MessageSquare } from "lucide-react";
+import { ListChecks, Lock } from "lucide-react";
 import type { ListCard, ListView } from "@/lib/contentTypes";
-import { useMe, useT } from "@/components/app/AppProvider";
+import { useCompact, useMe, useT } from "@/components/app/AppProvider";
 import { Reactions } from "@/components/content/Reactions";
 import { UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { CardSection } from "@/components/feed/CardSection";
-import { GroupChip } from "@/components/feed/PostCard";
+import { CommentCount, GroupChip } from "@/components/feed/PostCard";
 import { typeIcon } from "./columnTypes";
 import { ListTable, useListView } from "./ListTable";
 
@@ -38,6 +38,7 @@ function WholeListCard({ view, section }: { view: ListView; section: boolean }) 
 function CardBody({ l, section, children }: { l: ListCard; section: boolean; children?: ReactNode }) {
   const t = useT();
   const me = useMe();
+  const compact = useCompact();
   const share = l.rows ? Math.round((l.filled / l.rows) * 100) : 0;
   return (
     <article className="panel list-card" id={`list-${l.id}`}>
@@ -99,9 +100,7 @@ function CardBody({ l, section, children }: { l: ListCard; section: boolean; chi
       <footer className="post-foot">
         <Reactions type="list" id={l.id} initial={l.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
-        <Link href={`/lists/${l.id}#comments`} className="btn btn-ghost btn-sm">
-          <MessageSquare size={16} /> {l.comments ? t.n(l.comments, "{n} comment", "{n} comments") : t("Comment{verb}", { verb: "" })}
-        </Link>
+        <CommentCount count={l.comments} compact={compact} href={`/lists/${l.id}#comments`} className="btn btn-ghost btn-sm" />
       </footer>
     </article>
   );
