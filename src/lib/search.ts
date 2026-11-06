@@ -176,13 +176,13 @@ export function linkHits(userId: number, q: string): SearchHit[] {
   return rows.map((r) => ({ kind: r.kind, ref: r.ref, url: r.url, title: r.title, snippet: "", createdAt: r.created_at, author: r.author_id ? authors.get(r.author_id) ?? null : null }));
 }
 
-/** What a link on the site points at, if it's something someone may see (the editor shows its title). */
-export function linkTarget(userId: number, url: string): { kind: SearchKind; title: string } | null {
+/** What a link on the site points at, if it's something someone may see (the editor shows its title, a link's card the start of its text too). */
+export function linkTarget(userId: number, url: string): { kind: SearchKind; title: string; text: string } | null {
   const scopes = scopesFor(userId);
   const r = db()
-    .prepare(`select kind, title from search_index where url = ? and scope in (${scopes.map(() => "?").join(",")}) limit 1`)
-    .get(url, ...scopes) as { kind: SearchKind; title: string } | undefined;
-  return r ?? null;
+    .prepare(`select kind, title, substr(body, 1, 200) as text from search_index where url = ? and scope in (${scopes.map(() => "?").join(",")}) limit 1`)
+    .get(url, ...scopes) as { kind: SearchKind; title: string; text: string } | undefined;
+  return r ? { ...r, text: r.text.replace(/\s+/g, " ").trim() } : null;
 }
 
 export function plain(html: string): string {

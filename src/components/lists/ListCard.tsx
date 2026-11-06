@@ -10,6 +10,7 @@ import { UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { CardSection } from "@/components/feed/CardSection";
 import { CommentCount, GroupChip } from "@/components/feed/PostCard";
+import { ShareButton } from "@/components/content/Share";
 import { ListTable, useListView } from "./ListTable";
 
 /**
@@ -96,6 +97,7 @@ function CardBody({ l, section, children }: { l: ListCard; section: boolean; chi
       <footer className="post-foot">
         <Reactions type="list" id={l.id} initial={l.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
+        {l.private ? null : <ShareButton url={`/lists/${l.id}`} title={l.title} kind="list" />}
         <CommentCount count={l.comments} compact={compact} href={`/lists/${l.id}#comments`} className="btn btn-ghost btn-sm" />
       </footer>
     </article>

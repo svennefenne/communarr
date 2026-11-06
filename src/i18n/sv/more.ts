@@ -478,6 +478,17 @@ const sv: Record<string, string> = {
   "Hide the members": "Dölj medlemmarna",
   "Online · {n}": "Online · {n}",
   "Offline · {n}": "Offline · {n}",
+  // sharing: to rooms and people in the chat, a link, the phone's own sharing; and a link's card
+  "Share via…": "Dela via…",
+  "Send in the chat": "Skicka i chatten",
+  "Take away {name}": "Ta bort {name}",
+  "Find a room or a person": "Sök ett rum eller en person",
+  "No room or person by that name.": "Inget rum eller ingen person heter så.",
+  "Say something about it (if you like)": "Skriv något om det (om du vill)",
+  "Sent to {name}.": "Skickat till {name}.",
+  "Sent to {n} chats.": "Skickat till {n} chattar.",
+  "That can't be shared.": "Det går inte att dela.",
+  "Pick where it goes.": "Välj vart det ska.",
 };
 
 export default sv;

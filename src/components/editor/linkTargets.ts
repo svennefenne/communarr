@@ -40,25 +40,29 @@ export function useLinkSearch(q: string | null): { found: LinkFound | null; busy
   return { found, busy };
 }
 
-type Target = { kind: SearchKind; title: string } | null;
-const targets = new Map<string, Promise<Target>>();
+export type LinkTarget = { kind: SearchKind; title: string; text: string } | null;
+const targets = new Map<string, Promise<LinkTarget>>();
 
 /** What a link on the site (/forum/t/12) points at, if it's something you may see (asked once a page load). */
-export function useLinkTarget(href: string): Target {
-  const [target, setTarget] = useState<Target>(null);
+export function loadTarget(href: string): Promise<LinkTarget> {
+  if (!targets.has(href))
+    targets.set(
+      href,
+      fetch(`/api/search/link?url=${encodeURIComponent(href)}`)
+        .then((r) => r.json())
+        .then((d: { target: LinkTarget }) => d.target ?? null)
+        .catch(() => null),
+    );
+  return targets.get(href)!;
+}
+
+export function useLinkTarget(href: string): LinkTarget {
+  const [target, setTarget] = useState<LinkTarget>(null);
   useEffect(() => {
     setTarget(null);
     if (!href.startsWith("/") || href.startsWith("//")) return;
     let on = true;
-    if (!targets.has(href))
-      targets.set(
-        href,
-        fetch(`/api/search/link?url=${encodeURIComponent(href)}`)
-          .then((r) => r.json())
-          .then((d: { target: Target }) => d.target ?? null)
-          .catch(() => null),
-      );
-    void targets.get(href)!.then((x) => on && setTarget(x));
+    void loadTarget(href).then((x) => on && setTarget(x));
     return () => {
       on = false;
     };

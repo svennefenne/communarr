@@ -30,6 +30,7 @@ import {
   sendMessage,
   setMemberRole,
   setNotify,
+  shareLink,
   typing,
   updateRoom,
 } from "@/lib/chat";
@@ -61,6 +62,14 @@ export async function sendAction(roomId: number, html: string, replyTo?: number 
   return act((u) => {
     chatOn();
     return sendMessage(u, roomId, html, replyTo);
+  });
+}
+
+/** "Share": a link to something on the site, sent to rooms and people. */
+export async function shareAction(o: { url: string; note: string; rooms: number[]; people: number[] }) {
+  return act((u) => {
+    chatOn();
+    return shareLink(u, o);
   });
 }
 

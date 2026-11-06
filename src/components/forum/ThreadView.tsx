@@ -14,22 +14,12 @@ import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { RichText } from "@/components/content/RichText";
 import { Reactions } from "@/components/content/Reactions";
 import { ItemMenu } from "@/components/content/ItemMenu";
+import { ShareButton } from "@/components/content/Share";
 import { CategoryChip } from "@/components/feed/ThreadCard";
+import { plainText } from "@/lib/plainText";
 import { MoveDialog } from "./MoveDialog";
 import { deleteReplyAction, deleteThreadAction, editReplyAction, editThreadAction, followAction, moderateThreadAction, quoteAction, replyAction, saveAction } from "@/app/actions/content";
 
-/** A post's words, for showing which one is being moved. */
-const plainText = (html: string) =>
-  html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
 
 interface Props {
   thread: ThreadCard;
@@ -291,6 +281,7 @@ export function ThreadView(p: Props) {
           >
             {saved ? tr("Saved") : tr("Save")}
           </button>
+          <ShareButton url={`/forum/t/${t.id}`} title={t.title} kind="thread" className="btn btn-sm" words />
           {p.canModerate ? (
             <>
               <button type="button" className="btn btn-sm" onClick={() => mod({ pinned: !t.pinned })}>

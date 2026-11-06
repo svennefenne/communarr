@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Eye, Lock, MessagesSquare, Pin } from "lucide-react";
 import type { ThreadCard as Thread } from "@/lib/contentTypes";
 import { Avatar, UserLink } from "@/components/ui/Avatar";
-import { useT } from "@/components/app/AppProvider";
+import { useCompact, useT } from "@/components/app/AppProvider";
 import { Time } from "@/components/ui/Time";
+import { ShareButton } from "@/components/content/Share";
 import { GroupChip } from "./PostCard";
 
 export function CategoryChip({ c, link = true }: { c: Thread["category"]; link?: boolean }) {
@@ -33,6 +34,8 @@ export function CategoryChip({ c, link = true }: { c: Thread["category"]; link?:
 /** A new forum thread, in the feed. */
 export function ThreadFeedCard({ thread: t, section = false }: { thread: Thread; section?: boolean }) {
   const tr = useT();
+  const compact = useCompact();
+  const replies = tr.n(t.replies, "{n} reply", "{n} replies");
   return (
     <article className="panel thread-feed-card">
       {section ? <CardSection kind="thread" /> : null}
@@ -57,8 +60,9 @@ export function ThreadFeedCard({ thread: t, section = false }: { thread: Thread;
         <span className="small dim clamp-3">{t.excerpt}</span>
       </Link>
       <footer className="post-foot small muted">
-        <span className="row" style={{ gap: 5 }}>
-          <MessagesSquare size={14} /> {tr.n(t.replies, "{n} reply", "{n} replies")}
+        {/* (compact: the count alone, like the views beside it) */}
+        <span className="row" style={{ gap: 5 }} {...(compact ? { "aria-label": replies, title: replies } : {})}>
+          <MessagesSquare size={14} /> {compact ? t.replies : replies}
         </span>
         <span className="row" style={{ gap: 5 }}>
           <Eye size={14} /> {t.views}
@@ -68,10 +72,13 @@ export function ThreadFeedCard({ thread: t, section = false }: { thread: Thread;
             <Avatar user={t.lastBy} size={18} /> {tr("last")} <Time t={t.lastPostAt} />
           </span>
         ) : null}
-        <span className="spacer" />
-        <Link href={`/forum/t/${t.id}`} className="btn btn-sm">
-          {tr("Join in")}
-        </Link>
+        {/* (together at the right, on a line of their own where they don't fit) */}
+        <span className="row" style={{ gap: 8, marginLeft: "auto" }}>
+          <ShareButton url={`/forum/t/${t.id}`} title={t.title} kind="thread" />
+          <Link href={`/forum/t/${t.id}`} className="btn btn-sm">
+            {tr("Join in")}
+          </Link>
+        </span>
       </footer>
     </article>
   );
