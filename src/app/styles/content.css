@@ -640,6 +640,15 @@ img.emoji-custom,
   font-size: 0.8125rem;
   color: var(--text-dim);
 }
+/* a link to something on the site (a shared post, a thread): what kind of thing it is, not a picture */
+.link-card.site-card {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+}
+.site-card .hit-icon {
+  margin-top: 1px;
+}
 .link-card.pic-only {
   display: block;
   width: fit-content;
@@ -875,4 +884,16 @@ img.emoji-custom,
   width: 132px;
   height: 92px;
   cursor: zoom-in;
+}
+
+/* sharing: what's being shared, at the top of the dialog */
+.share-what {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--field);
 }

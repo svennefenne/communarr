@@ -10,6 +10,7 @@ import { UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { useConfirm } from "@/components/ui/ui";
 import { RichText } from "@/components/content/RichText";
+import { ShareButton } from "@/components/content/Share";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
 import { GroupChip } from "@/components/feed/PostCard";
@@ -84,29 +85,32 @@ export function ListDetail({ list: initial }: { list: ListView }) {
               <Time t={l.createdAt} />
             </div>
           </div>
-          {l.canEdit ? (
-            <div className="row" style={{ gap: 6 }}>
-              <Link href={`/lists/${l.id}/edit`} className="btn btn-sm">
-                <Pencil size={14} /> {t("Edit")}
-              </Link>
-              <button
-                type="button"
-                className="icon-btn sm"
-                aria-label={t("Delete the list")}
-                title={t("Delete the list")}
-                onClick={() =>
-                  confirm(t("Delete “{title}” and everything written in it?", { title: l.title }), t("Delete"), async () => {
-                    const r = await deleteListAction(l.id);
-                    if (!r.ok) return toast(r.error, { kind: "err" });
-                    router.push("/lists");
-                    router.refresh();
-                  })
-                }
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ) : null}
+          <div className="row" style={{ gap: 6 }}>
+            {l.private ? null : <ShareButton url={`/lists/${l.id}`} title={l.title} kind="list" className="btn btn-sm" words />}
+            {l.canEdit ? (
+              <>
+                <Link href={`/lists/${l.id}/edit`} className="btn btn-sm">
+                  <Pencil size={14} /> {t("Edit")}
+                </Link>
+                <button
+                  type="button"
+                  className="icon-btn sm"
+                  aria-label={t("Delete the list")}
+                  title={t("Delete the list")}
+                  onClick={() =>
+                    confirm(t("Delete “{title}” and everything written in it?", { title: l.title }), t("Delete"), async () => {
+                      const r = await deleteListAction(l.id);
+                      if (!r.ok) return toast(r.error, { kind: "err" });
+                      router.push("/lists");
+                      router.refresh();
+                    })
+                  }
+                >
+                  <Trash2 size={16} />
+                </button>
+              </>
+            ) : null}
+          </div>
         </header>
         <h1 className="display list-title">{l.title}</h1>
         {l.html ? <RichText html={l.html} /> : null}

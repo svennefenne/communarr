@@ -6,7 +6,7 @@ import { kickFromVoice } from "./voice";
 import { notify } from "./notify";
 import { reactionsFor, reactionsRaw, clearReactions, toggleReaction } from "./reactions";
 import { cleanHtml, cleanLine, textToHtml } from "./sanitize";
-import { indexItem, unindex } from "./search";
+import { indexItem, linkTarget, unindex } from "./search";
 import { serverT } from "./t";
 import { getSettings } from "./settings";
 import { GHOST, summaries, userByName, type User } from "./users";
@@ -488,6 +488,28 @@ export function sendMessage(u: User, roomId: number, html: string, replyTo?: num
   const pingable = [...canRead].filter((id) => !isInRoom(id, roomId) && ms.find((m) => m.user_id === id)?.notify !== "none");
   if (pingable.length) notify(pingable, { kind: "mention", actorId: u.id, title: r.kind === "dm" ? "{name} mentioned you in a message" : "{name} mentioned you in {room}", body, vars: { ...vars, room: r.name }, url: `${url}?m=${id}`, tag: `room-${roomId}` });
   return msg;
+}
+
+/**
+ * Something on the site sent to rooms and people (DMs, started if need be): what you say about it,
+ * then a link to it by its name. Every room is checked before anything is sent. How many it went to.
+ */
+export function shareLink(u: User, o: { url: string; note: string; rooms: number[]; people: number[] }): number {
+  if (typeof o.url !== "string" || !/^\/(?!\/)[^\s"<>]{0,300}$/.test(o.url)) throw new ChatError("That can't be shared.");
+  const ids = (l: unknown) => [...new Set((Array.isArray(l) ? l : []).map(Number).filter(Number.isInteger))].slice(0, 30);
+  const rooms = ids(o.rooms);
+  const people = ids(o.people);
+  if (!rooms.length && !people.length) throw new ChatError("Pick where it goes.");
+  for (const id of rooms) {
+    const r = room(id);
+    if (!r || !canSee(u, r) || r.archived) throw new ChatError("You can't write here.");
+  }
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const note = String(o.note ?? "").trim().slice(0, 2000);
+  const html = `${note ? textToHtml(note) : ""}<p><a href="${esc(o.url)}">${esc(linkTarget(u.id, o.url)?.title ?? o.url)}</a></p>`;
+  const to = new Set([...rooms, ...people.map((id) => dmRoom(u, id))]);
+  for (const id of to) sendMessage(u, id, html);
+  return to.size;
 }
 
 function ownMessage(u: User, id: number): { r: RoomRow; m: MessageRow } {

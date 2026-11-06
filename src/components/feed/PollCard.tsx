@@ -14,6 +14,7 @@ import { RichText } from "@/components/content/RichText";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
 import { ItemMenu } from "@/components/content/ItemMenu";
+import { ShareButton } from "@/components/content/Share";
 import { CommentCount, GroupChip } from "./PostCard";
 import { addOptionAction, closePollAction, deletePollAction, pollAction, saveAction, voteAction } from "@/app/actions/content";
 
@@ -219,6 +220,7 @@ export function PollCard({ poll, full = false, section = false }: { poll: PollVi
       <footer className="post-foot">
         <Reactions type="poll" id={p.id} initial={p.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
+        <ShareButton url={`/polls/${p.id}`} title={p.question} kind="poll" />
         <CommentCount count={count} compact={compact} className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => !o)} />
       </footer>
       {open ? <Comments type="poll" id={p.id} onCount={setCount} /> : null}

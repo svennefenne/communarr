@@ -6,6 +6,7 @@ import { ArrowRight, CalendarDays, Hash, Headphones, Lock, MessageCircle, Messag
 import type { EventView, PollView, PostView, ThreadCard } from "@/lib/contentTypes";
 import type { RoomInfo } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
+import { plainText } from "@/lib/plainText";
 import { useApp, useT } from "@/components/app/AppProvider";
 import { useVoice } from "@/components/voice/VoiceProvider";
 import { Avatar } from "@/components/ui/Avatar";
@@ -63,7 +64,7 @@ export function NewsHero({ post }: { post: PostView }) {
           {t(post.pinned ? "Pinned news" : "Latest news")} · <Time t={post.createdAt} />
         </span>
         <span className="display news-hero-title">{post.title}</span>
-        <span className="small dim clamp-2">{post.html.replace(/<\/(p|h\d|li)>/g, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 200)}</span>
+        <span className="small dim clamp-2">{plainText(post.html).slice(0, 200)}</span>
         <span className="row small" style={{ gap: 8, marginTop: 4 }}>
           <Avatar user={post.author} size={22} /> {post.author.name}
         </span>

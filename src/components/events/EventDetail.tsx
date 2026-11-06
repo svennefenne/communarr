@@ -14,6 +14,7 @@ import type { LinkPreview } from "@/lib/links";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
 import { ItemMenu } from "@/components/content/ItemMenu";
+import { ShareButton } from "@/components/content/Share";
 import { DateTile, EventWhen, RsvpButtons } from "@/components/feed/EventCard";
 import { describeRepeat } from "@/lib/repeat";
 import { clock } from "@/lib/clock";
@@ -148,6 +149,8 @@ export function EventDetail({ event, previews }: { event: EventView; previews?: 
             ) : null}
             <div className="post-foot">
               <Reactions type="event" id={e.id} initial={e.reactions} myName={me?.name ?? ""} />
+              <span className="spacer" />
+              {e.private ? null : <ShareButton url={`/events/${e.id}`} title={e.title} kind="event" />}
             </div>
           </div>
         </article>

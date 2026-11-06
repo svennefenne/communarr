@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Lock, MessageSquare, Megaphone, Pin } from "lucide-react";
 import type { PostView } from "@/lib/contentTypes";
+import { plainText } from "@/lib/plainText";
 import { useCompact, useMe, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar, ROLE_LABEL, UserLink } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
@@ -14,6 +15,7 @@ import { RichText } from "@/components/content/RichText";
 import { Reactions } from "@/components/content/Reactions";
 import { Comments } from "@/components/content/Comments";
 import { ItemMenu } from "@/components/content/ItemMenu";
+import { ShareButton } from "@/components/content/Share";
 import { deletePostAction, lockCommentsAction, pinPostAction, saveAction } from "@/app/actions/content";
 
 export function GroupChip({ g }: { g: { slug: string; name: string; color: string } }) {
@@ -61,10 +63,12 @@ export function PostCard({ post, full = false, onGone, section = false }: { post
   const { confirm, node } = useConfirm();
   if (gone) return null;
   const news = p.kind === "news";
+  // compact, in a list: a news item is its headline, how it starts and a small picture beside them
+  const brief = news && compact && !full;
   return (
     <article className={`panel post-card ${news ? "news" : ""} ${p.pinned ? "pinned" : ""}`} id={`post-${p.id}`}>
       {section ? <CardSection kind={news ? "news" : "post"} /> : null}
-      {news && p.cover ? (
+      {news && p.cover && !brief ? (
         <div className="post-cover" style={{ backgroundImage: `url("${p.cover}")` }} />
       ) : null}
       <header className="post-head">
@@ -94,7 +98,7 @@ export function PostCard({ post, full = false, onGone, section = false }: { post
           </div>
         </div>
         {news ? (
-          <span className="badge hot">
+          <span className="badge hot news-badge">
             <Megaphone size={12} /> {t("News")}
           </span>
         ) : null}
@@ -140,7 +144,15 @@ export function PostCard({ post, full = false, onGone, section = false }: { post
           report={p.author.id !== me?.id ? { type: "post", id: p.id } : undefined}
         />
       </header>
-      {p.title ? (
+      {brief ? (
+        <Link href={`/posts/${p.id}`} className="news-brief">
+          <span className="news-brief-text">
+            {p.title ? <span className="display post-headline">{p.title}</span> : null}
+            <span className="small dim clamp-2">{plainText(p.html).slice(0, 300)}</span>
+          </span>
+          {p.cover ? <span className="news-brief-pic" style={{ backgroundImage: `url("${p.cover}")` }} /> : null}
+        </Link>
+      ) : p.title ? (
         full ? (
           <h1 className={news ? "display post-headline" : "h2 post-title"}>{p.title}</h1>
         ) : (
@@ -149,12 +161,15 @@ export function PostCard({ post, full = false, onGone, section = false }: { post
           </Link>
         )
       ) : null}
-      <div className="post-body">
-        <RichText html={p.html} fold={full ? 0 : compact ? 280 : 560} foldBg="var(--surface)" />
-      </div>
+      {brief ? null : (
+        <div className="post-body">
+          <RichText html={p.html} fold={full ? 0 : compact ? 280 : 560} foldBg="var(--surface)" />
+        </div>
+      )}
       <footer className="post-foot">
         <Reactions type="post" id={p.id} initial={p.reactions} myName={me?.name ?? ""} />
         <span className="spacer" />
+        {p.visibility !== "private" ? <ShareButton url={`/posts/${p.id}`} title={p.title || plainText(p.html).slice(0, 120)} kind={news ? "news" : "post"} /> : null}
         <CommentCount count={count} compact={compact} className={`btn btn-ghost btn-sm ${open ? "on" : ""}`} onClick={() => setOpen((o) => !o)} aria-expanded={open} />
       </footer>
       {open ? <Comments type="post" id={p.id} locked={p.commentsLocked} onCount={setCount} /> : null}
