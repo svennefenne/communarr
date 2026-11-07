@@ -26,6 +26,32 @@
   align-self: flex-start;
   max-width: 100%;
 }
+/* the front page's filters on a phone (Feed's stickyFilters): they stay under the top bar as the feed
+   scrolls, in a strip edge to edge once they're there (the padding taken back by the margins, so the
+   feed is laid out as without it) */
+@media (max-width: 699px) {
+  .feed-filters-bar {
+    position: sticky;
+    top: var(--header-h);
+    margin: -8px -16px;
+    padding: 8px 16px 7px;
+    border-bottom: 1px solid transparent;
+    transition:
+      background-color 150ms,
+      border-color 150ms;
+  }
+  .feed-filters-bar.stuck {
+    z-index: 30;
+    background: var(--header-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-bottom-color: var(--line);
+  }
+  /* the "new things" pill: under them */
+  .feed-filters-bar ~ .feed-body .fresh-pill {
+    top: calc(var(--header-h) + 62px);
+  }
+}
 .feed-body {
   display: flex;
   flex-direction: column;
