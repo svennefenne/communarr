@@ -50,6 +50,7 @@ export function Feed({
   composer = true,
   showFilters = true,
   sections = false,
+  stickyFilters = false,
   authorId,
 }: {
   initial: { items: FeedItem[]; next: number | null };
@@ -60,6 +61,8 @@ export function Feed({
   showFilters?: boolean;
   /** each card says which part of the site it's from (the front page) */
   sections?: boolean;
+  /** on a phone the filters stay under the top bar as the feed scrolls (the front page) */
+  stickyFilters?: boolean;
   /** only what this member made (their profile) */
   authorId?: number;
 }) {
@@ -71,6 +74,9 @@ export function Feed({
   const [loading, setLoading] = useState(false);
   const [fresh, setFresh] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
 
   const load = useCallback(
     async (f: FeedFilter, before?: number) => {
@@ -87,6 +93,12 @@ export function Feed({
   const choose = (f: FeedFilter) => {
     setFilter(f);
     setFresh(0);
+    // chosen up under the top bar: the new list from its start (where it is when the filters just get there)
+    const el = bar.current;
+    if (stuck && el && body.current) {
+      const below = parseFloat(getComputedStyle(el).marginBottom) + parseFloat(getComputedStyle(el.parentElement!).rowGap);
+      window.scrollBy({ top: body.current.getBoundingClientRect().top - el.getBoundingClientRect().bottom - below });
+    }
     const url = new URL(window.location.href);
     if (f === "all") url.searchParams.delete("show");
     else url.searchParams.set("show", f);
@@ -104,6 +116,29 @@ export function Feed({
     return () => io.disconnect();
   }, [next, loading, filter, load]);
 
+  // the filters once they've reached the top bar and stay there (sticky only on a phone, in feed.css)
+  useEffect(() => {
+    const el = bar.current;
+    if (!el) return;
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const css = getComputedStyle(el);
+      setStuck(css.position === "sticky" && el.getBoundingClientRect().top <= parseFloat(css.top) + 0.5);
+    };
+    const later = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener("scroll", later, { passive: true });
+    window.addEventListener("resize", later);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", later);
+      window.removeEventListener("resize", later);
+    };
+  }, [showFilters, stickyFilters]);
+
   useLive("feed", (d) => {
     const e = d as { by: number; group: number | null };
     if (e.by === me?.id) return;
@@ -114,6 +149,18 @@ export function Feed({
 
   // (news is for everyone: not a group's)
   const filters = FILTERS.filter((f) => (!f.feature || site.features[f.feature]) && !(groupId && f.id === "news"));
+  const pills = (
+    <div className="pills scroll feed-filters" role="tablist" aria-label={t("Show")}>
+      {filters.map((f) => {
+        const Icon = f.icon;
+        return (
+          <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} className={`pill ${filter === f.id ? "active" : ""}`} onClick={() => choose(f.id)}>
+            <Icon size={14} /> {t(f.label)}
+          </button>
+        );
+      })}
+    </div>
+  );
   return (
     <div className="feed">
       {composer ? (
@@ -126,20 +173,15 @@ export function Feed({
           }}
         />
       ) : null}
-      {showFilters ? (
-        <div className="pills scroll feed-filters" role="tablist" aria-label={t("Show")}>
-          {filters.map((f) => {
-            const Icon = f.icon;
-            return (
-              <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} className={`pill ${filter === f.id ? "active" : ""}`} onClick={() => choose(f.id)}>
-                <Icon size={14} /> {t(f.label)}
-              </button>
-            );
-          })}
+      {showFilters && stickyFilters ? (
+        <div ref={bar} className={`feed-filters-bar ${stuck ? "stuck" : ""}`}>
+          {pills}
         </div>
+      ) : showFilters ? (
+        pills
       ) : null}
       {/* the items (with the "new things" pill over them): a page can line its side column up with this */}
-      <div className="feed-body">
+      <div className="feed-body" ref={body}>
         {fresh ? (
           <button
             type="button"
