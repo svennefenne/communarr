@@ -13,6 +13,15 @@ fs.mkdirSync(dir, { recursive: true });
  */
 const BOX = { x: 0.03875, top: 0.15047, height: 0.73031 };
 
+/**
+ * How much of an Android icon shows on the home screen: of the 108 dp layer, the middle 72; of a
+ * maskable icon, the middle 0.873 (Chrome makes its 80% safe zone the launcher's 66 dp). Drawn to fill
+ * that as they fill the plate on the other icons, the stripes look the same there (where the launcher
+ * crops to a circle, the outer ones are cut).
+ */
+const SHOWN = 72 / 108;
+const SHOWN_MASKABLE = 0.8 * (72 / 66);
+
 /** The six bars in a box: [x, y, width, height, corner] each. */
 function barRects(x0, top, w, h) {
   const bar = w / (6 + 5 * 0.3);
@@ -21,8 +30,8 @@ function barRects(x0, top, w, h) {
 }
 
 /**
- * scale: the stripes' size about the plate's middle (the maskable icon draws them smaller, inside the
- * circle phones crop to); pad: instead of the box, this share of the side left empty round them (the badge)
+ * scale: the stripes' size about the plate's middle (the maskable icon's, to the part that shows); pad:
+ * instead of the box, this share of the side left empty round them (the badge)
  */
 function svg({ size = 512, scale = 1, pad = 0, round = 0.22, bg = "#070b10", colors = STRIPES } = {}) {
   let x0 = size * BOX.x, w = size * (1 - 2 * BOX.x), top = size * BOX.top, h = size * BOX.height;
@@ -37,8 +46,8 @@ const write = (name, data) => fs.writeFileSync(new URL(name, dir), data);
 write("icon.svg", svg({ size: 512 }));
 await sharp(Buffer.from(svg({ size: 512 }))).png().toFile(new URL("icon-512.png", dir).pathname);
 await sharp(Buffer.from(svg({ size: 192 }))).png().toFile(new URL("icon-192.png", dir).pathname);
-// maskable: full bleed square, the stripes inside the circle phones crop to (as Muzix's)
-await sharp(Buffer.from(svg({ size: 512, scale: 0.66, round: 0 }))).png().toFile(new URL("icon-maskable-512.png", dir).pathname);
+// maskable: full bleed square, the stripes as the other icons' in the part that shows
+await sharp(Buffer.from(svg({ size: 512, scale: SHOWN_MASKABLE, round: 0 }))).png().toFile(new URL("icon-maskable-512.png", dir).pathname);
 // iOS rounds the corners itself
 await sharp(Buffer.from(svg({ size: 180, round: 0 }))).png().toFile(new URL("apple-touch-icon.png", dir).pathname);
 // Unraid's Docker icon (unraid/communarr.xml points to it)
@@ -47,13 +56,12 @@ await sharp(Buffer.from(svg({ size: 512 }))).png().toFile(new URL("../../unraid/
 await sharp(Buffer.from(svg({ size: 96, pad: 0.12, bg: "", colors: Array(6).fill("#ffffff") }))).png().toFile(new URL("badge-96.png", dir).pathname);
 
 // Android's launcher icon (on the launcher's background colour), its themed icon and the app's logo, as
-// vectors on the same 512 grid: the launcher's at Muzix's size, its corners inside the 66 dp circle every
-// launcher shape keeps
+// vectors on the same 512 grid: the launcher's as the other icons' in the 72 dp that show
 const f = (n) => Math.round(n * 1000) / 1000;
 const R = (x, y, w, h, r) => `M${f(x + r)},${f(y)}h${f(w - 2 * r)}a${f(r)},${f(r)} 0,0 1,${f(r)},${f(r)}v${f(h - 2 * r)}a${f(r)},${f(r)} 0,0 1,${f(-r)},${f(r)}h${f(-(w - 2 * r))}a${f(r)},${f(r)} 0,0 1,${f(-r)},${f(-r)}v${f(-(h - 2 * r))}a${f(r)},${f(r)} 0,0 1,${f(r)},${f(-r)}z`;
 const box = [512 * BOX.x, 512 * BOX.top, 512 * (1 - 2 * BOX.x), 512 * BOX.height];
 const paths = (fill) => barRects(...box).map(([x, y, w, h, r], i) => `        <path android:fillColor="${fill ?? STRIPES[i]}" android:pathData="${R(x, y, w, h, r)}" />`).join("\n");
-const k = (33 * 512 / 108) / Math.hypot(box[2] / 2, box[3] / 2);
+const k = SHOWN;
 const group = (fill) => `    <group android:scaleX="${f(k)}" android:scaleY="${f(k)}" android:translateX="${f(256 - (box[0] + box[2] / 2) * k)}" android:translateY="${f(256 - (box[1] + box[3] / 2) * k)}">\n${paths(fill)}\n    </group>`;
 const vector = (dp, comment, body) => `<?xml version="1.0" encoding="utf-8"?>\n<!-- ${comment} -->\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="${dp}dp" android:height="${dp}dp" android:viewportWidth="512" android:viewportHeight="512">\n${body}\n</vector>\n`;
 const res = new URL("../../android/app/src/main/res/drawable/", dir);

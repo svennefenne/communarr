@@ -2,7 +2,7 @@
 <!-- the site's stripes (scripts/icons.mjs), on the launcher's background -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp" android:viewportWidth="512" android:viewportHeight="512">
-    <group android:scaleX="0.519" android:scaleY="0.519" android:translateX="123.035" android:translateY="118.88">
+    <group android:scaleX="0.667" android:scaleY="0.667" android:translateX="85.333" android:translateY="80">
         <path android:fillColor="#efe3c8" android:pathData="M27.397,77.041h47.862a7.557,7.557 0,0 1,7.557,7.557v358.804a7.557,7.557 0,0 1,-7.557,7.557h-47.862a7.557,7.557 0,0 1,-7.557,-7.557v-358.804a7.557,7.557 0,0 1,7.557,-7.557z" />
         <path android:fillColor="#e2a634" android:pathData="M109.266,77.041h47.862a7.557,7.557 0,0 1,7.557,7.557v358.804a7.557,7.557 0,0 1,-7.557,7.557h-47.862a7.557,7.557 0,0 1,-7.557,-7.557v-358.804a7.557,7.557 0,0 1,7.557,-7.557z" />
         <path android:fillColor="#cc4a30" android:pathData="M191.135,77.041h47.862a7.557,7.557 0,0 1,7.557,7.557v358.804a7.557,7.557 0,0 1,-7.557,7.557h-47.862a7.557,7.557 0,0 1,-7.557,-7.557v-358.804a7.557,7.557 0,0 1,7.557,-7.557z" />
