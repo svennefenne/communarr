@@ -49,7 +49,7 @@ export const COMMUNARR: Palette = {
     warning: "#e2a634",
     success: "#5cc46a",
     border: "#c9bda3",
-    stripes: ["#efe3c8", "#e2a634", "#cc4a30", "#4f8f50", "#2f74a0", "#2d2833"],
+    stripes: ["#efe3c8", "#e2a634", "#cc4a30", "#4f8f50", "#2f74a0", "#5a5066"],
   },
   light: {
     bg: "#ece2cc",
@@ -62,7 +62,7 @@ export const COMMUNARR: Palette = {
     warning: "#a26d12",
     success: "#2c7436",
     border: "#3b444c",
-    stripes: ["#1c242c", "#e2a634", "#cc4a30", "#4f8f50", "#2f74a0", "#2d2833"],
+    stripes: ["#1c242c", "#e2a634", "#cc4a30", "#4f8f50", "#2f74a0", "#5a5066"],
   },
 };
 
