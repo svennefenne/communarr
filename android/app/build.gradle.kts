@@ -35,7 +35,7 @@ android {
         minSdk = 29
         targetSdk = 35
         versionCode = commits.get()
-        versionName = "0.1.1"
+        versionName = "0.1.2"
     }
 
     buildFeatures {
