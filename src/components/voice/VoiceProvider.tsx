@@ -34,7 +34,8 @@ interface Ctx {
   /** conns (yours: "me") that are talking right now */
   speaking: Set<number | "me">;
   links: Record<number, RTCPeerConnectionState>;
-  join: (room: number, name: string) => Promise<void>;
+  /** into a room's voice (false: it didn't work, and `error` says why) */
+  join: (room: number, name: string) => Promise<boolean>;
   leave: () => void;
   toggleMute: () => void;
   toggleDeafen: () => void;
@@ -292,7 +293,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       setError("");
       if (!connRef.current) {
         setError(t("Not connected to the site yet. Try again in a moment."));
-        return;
+        return false;
       }
       setJoining(true);
       try {
@@ -307,12 +308,14 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         setMuted(!(local.current?.getAudioTracks()[0]?.enabled ?? true));
         setRoomName(name);
         await enter(r);
+        return true;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         setError(/Permission|NotAllowed/i.test(msg) ? t("The browser didn't allow the microphone. Allow it in the address bar's site settings.") : msg);
         stopAll();
         roomRef.current = null;
         setRoom(null);
+        return false;
       } finally {
         setJoining(false);
       }

@@ -101,7 +101,9 @@ export interface Watching {
 }
 
 interface Ctx {
-  /** sharing works here: a computer's browser, in a call, and the site lets you */
+  /** sharing could work here, in a call or before joining one: a computer's browser, and the site lets you */
+  canGoLive: boolean;
+  /** …and you're in a call */
   canShare: boolean;
   live: boolean;
   /** live with sound */
@@ -125,7 +127,7 @@ export const useStream = () => {
 
 export function StreamProvider({ children }: { children: React.ReactNode }) {
   const v = useVoice();
-  const { conn } = useApp();
+  const { conn, me, site } = useApp();
   const t = useT();
   const toast = useToast();
   const [allowed, setAllowed] = useState(false);
@@ -158,9 +160,9 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
     connRef.current = conn;
   }, [v.room, conn]);
 
-  // in a call: may streams be shared, and the servers for them
+  // may streams be shared, and the servers for them (again on joining a call: Admin may have changed them)
   useEffect(() => {
-    if (v.room == null) return;
+    if (!me || !site.features.voice) return;
     fetch("/api/voice")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { streamIce?: RTCIceServer[]; streams?: boolean } | null) => {
@@ -169,7 +171,7 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
         setAllowed(d.streams !== false);
       })
       .catch(() => {});
-  }, [v.room]);
+  }, [v.room, me, site.features.voice]);
 
   const send = useCallback((to: number, data: Msg) => {
     if (roomRef.current == null) return;
@@ -477,6 +479,6 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => () => display.current?.getTracks().forEach((tr) => tr.stop()), []);
 
   return (
-    <StreamCtx.Provider value={{ canShare: device && allowed && v.room != null, live, liveAudio, viewers, prefs, goLive, stopLive, watching, watch, unwatch }}>{children}</StreamCtx.Provider>
+    <StreamCtx.Provider value={{ canGoLive: device && allowed, canShare: device && allowed && v.room != null, live, liveAudio, viewers, prefs, goLive, stopLive, watching, watch, unwatch }}>{children}</StreamCtx.Provider>
   );
 }
