@@ -6,6 +6,9 @@
     <!-- talking in a voice room (asked for the first time one is joined) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- a webcam in a voice room (asked the first time it's turned on); phones without one install too -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- notifications (Android 13 and later ask) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- installing a new version of itself (from the server, "Update" in the menu) -->

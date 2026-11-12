@@ -5,6 +5,7 @@ import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { clientT } from "@/lib/i18n";
 import { DEFAULT_VOICE_PREFS, loadVoicePrefs, openPipeline, saveVoicePrefs, type CameraQuality, type MicLevel, type NoiseMode, type Pipeline, type VoicePrefs } from "./pipeline";
 import { encodeAs, relayed, type Quality } from "./rtc";
+import { inApp } from "@/components/app/androidApp";
 
 /**
  * Voice chat in the browser. Joining a room's voice calls every other tab in it directly (WebRTC);
@@ -385,7 +386,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         return true;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        setError(/Permission|NotAllowed/i.test(msg) ? t("The browser didn't allow the microphone. Allow it in the address bar's site settings.") : msg);
+        // (in the Android app there's no address bar: Android's own settings)
+        setError(/Permission|NotAllowed/i.test(msg) ? (inApp() ? t("The app may not use the microphone. Allow it for the app in Android's settings, under Permissions.") : t("The browser didn't allow the microphone. Allow it in the address bar's site settings.")) : msg);
         stopAll();
         roomRef.current = null;
         setRoom(null);
@@ -496,7 +498,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (camRef.current) cameraOff();
-      toast(/Permission|NotAllowed/i.test(msg) ? t("The browser didn't allow the camera. Allow it in the address bar's site settings.") : /NotFound|not found/i.test(msg) ? t("No camera found.") : msg, { kind: "err" });
+      const denied = inApp() ? t("The app may not use the camera. Allow it for the app in Android's settings, under Permissions.") : t("The browser didn't allow the camera. Allow it in the address bar's site settings.");
+      toast(/Permission|NotAllowed/i.test(msg) ? denied : /NotFound|not found/i.test(msg) ? t("No camera found.") : msg, { kind: "err" });
     } finally {
       setCameraBusy(false);
     }

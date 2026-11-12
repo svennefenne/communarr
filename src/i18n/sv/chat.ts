@@ -246,6 +246,8 @@ const sv: Record<string, string> = {
   "Webcams are switched off.": "Webbkameror är avstängda.",
   "The browser didn't allow the camera. Allow it in the address bar's site settings.": "Webbläsaren tillät inte kameran. Tillåt den i webbplatsinställningarna i adressfältet.",
   "No camera found.": "Ingen kamera hittades.",
+  "The app may not use the camera. Allow it for the app in Android's settings, under Permissions.": "Appen får inte använda kameran. Tillåt den för appen i Androids inställningar, under Behörigheter.",
+  "The app may not use the microphone. Allow it for the app in Android's settings, under Permissions.": "Appen får inte använda mikrofonen. Tillåt den för appen i Androids inställningar, under Behörigheter.",
   "Turn your camera on": "Slå på kameran",
   "Turn your camera off": "Stäng av kameran",
   Camera: "Kamera",
