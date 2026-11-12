@@ -29,6 +29,7 @@ const short = (s: string) => s.replace(/ ago$/, "").replace(/^för (.+) sedan$/,
 
 function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unread: number; talking: number }) {
   const t = useT();
+  const live = useVoice().channels[r.id]?.some((p) => p.live);
   return (
     <Link href={`/chat/${r.id}`} className={`chat-row ${active ? "active" : ""} ${unread ? "unread" : ""}`}>
       <RoomIcon r={r} />
@@ -43,6 +44,11 @@ function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unr
         </span>
         <span className="row" style={{ gap: 6 }}>
           <span className="tiny muted ellipsis grow">{r.lastMessage ? `${r.lastMessage.author ? `${r.lastMessage.author.split(" ")[0]}: ` : ""}${r.lastMessage.text}` : r.topic || " "}</span>
+          {live ? (
+            <span className="live-tag" title={t("Someone is sharing their screen")}>
+              {t("LIVE")}
+            </span>
+          ) : null}
           {talking ? (
             <span className="badge teal" title={t("{n} talking", { n: talking })}>
               <Headphones size={11} /> {talking}
@@ -55,15 +61,16 @@ function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unr
   );
 }
 
-/** A chat as only its icon (the list made narrow): its name when pointed at, a count of what's new, a sign if people are talking. */
+/** A chat as only its icon (the list made narrow): its name when pointed at, a count of what's new, a sign if people are talking (red: someone's sharing their screen). */
 function RailItem({ r, active, unread, talking, join = false }: { r: RoomInfo; active: boolean; unread: number; talking: number; join?: boolean }) {
   const t = useT();
+  const live = useVoice().channels[r.id]?.some((p) => p.live);
   return (
     <Link href={`/chat/${r.id}`} className={`rail-item ${active ? "active" : ""} ${join ? "join" : ""}`} title={r.name} aria-label={r.name} aria-current={active ? "page" : undefined}>
       <RoomIcon r={r} size={40} />
       {unread ? <span className="count-badge">{unread > 99 ? "99+" : unread}</span> : null}
       {talking ? (
-        <span className="rail-talk" title={t("{n} talking", { n: talking })}>
+        <span className={`rail-talk ${live ? "live" : ""}`} title={live ? t("Someone is sharing their screen") : t("{n} talking", { n: talking })}>
           <Headphones size={10} />
         </span>
       ) : null}

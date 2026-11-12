@@ -1327,6 +1327,10 @@ input[type="radio"] {
   width: min(440px, calc(100vw - 24px));
   pointer-events: none;
 }
+/* in a call: above the voice dock (its height and a gap), so they don't cover its buttons */
+html:has(.voice-dock) .toasts {
+  bottom: calc(24px + var(--bottom-h) + env(safe-area-inset-bottom) + 62px);
+}
 .toast {
   pointer-events: auto;
   display: flex;

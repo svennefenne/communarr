@@ -8,6 +8,9 @@ import { db } from "./db";
  * directly (WebRTC, a small mesh: fine for a group of friends); the server only passes the calls'
  * set-up messages between them, over the live streams. A TURN server (Admin → Voice) helps phones on
  * mobile data reach the others.
+ *
+ * Someone in a channel can go live: share their screen or a window. Those who choose to watch get it
+ * straight from them (a connection of its own per viewer); here it's only who's live.
  */
 
 export interface VoicePeer {
@@ -15,6 +18,8 @@ export interface VoicePeer {
   userId: number;
   muted: boolean;
   joinedAt: number;
+  /** sharing their screen or a window (audio: with its sound) */
+  live: { since: number; audio: boolean } | null;
 }
 
 type Channels = Map<number, Map<number, VoicePeer>>;
@@ -27,6 +32,11 @@ export function iceServers(): IceServer[] {
   const turn = process.env.VOICE_TURN_URL;
   if (turn && !list.some((x) => x.urls === turn)) list.push({ urls: turn, username: process.env.VOICE_TURN_USER, credential: process.env.VOICE_TURN_PASS });
   return list;
+}
+
+/** The servers for a stream: a TURN server only if streams may go through one (Admin → Voice). */
+export function streamIceServers(): IceServer[] {
+  return getSettings().voice.streamRelay ? iceServers() : iceServers().filter((x) => !/^turns?:/.test(x.urls));
 }
 
 function audience(roomId: number): number[] | "all" {
@@ -60,7 +70,7 @@ export function joinVoice(userId: number, roomId: number, conn: number): VoicePe
   if (!ch) channels.set(roomId, (ch = new Map()));
   if (ch.size >= getSettings().voice.max) return "full";
   const others = voicePeers(roomId);
-  ch.set(conn, { conn, userId, muted: false, joinedAt: Date.now() });
+  ch.set(conn, { conn, userId, muted: false, joinedAt: Date.now(), live: null });
   announce(roomId);
   return others;
 }
@@ -88,6 +98,15 @@ export function muteVoice(roomId: number, conn: number, muted: boolean) {
   if (!p) return;
   p.muted = muted;
   announce(roomId);
+}
+
+/** Going live in the channel (live: with or without sound), or stopping (null). */
+export function setLive(roomId: number, conn: number, live: { audio: boolean } | null): boolean {
+  const p = channels.get(roomId)?.get(conn);
+  if (!p) return false;
+  p.live = live ? { since: p.live?.since ?? Date.now(), audio: live.audio } : null;
+  announce(roomId);
+  return true;
 }
 
 /** Pass a call's set-up message (offer, answer, ICE candidate) to another tab in the channel. */

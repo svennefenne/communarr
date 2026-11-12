@@ -109,6 +109,10 @@ html.app-page:not([data-frame="on"]) .site-footer {
   color: var(--on-accent-3-deep);
   box-shadow: 0 0 0 2px var(--surface);
 }
+.rail-talk.live {
+  background: var(--err);
+  color: var(--on-err);
+}
 .rail-sep {
   flex: none;
   width: 30px;

@@ -25,6 +25,8 @@ import { Announcement } from "@/components/shell/Announcement";
 import { TransitionsProvider } from "@/components/shell/Transitions";
 import { VoiceProvider } from "@/components/voice/VoiceProvider";
 import { VoiceDock } from "@/components/voice/VoiceDock";
+import { StreamProvider } from "@/components/voice/StreamProvider";
+import { StreamPlayer } from "@/components/voice/StreamPlayer";
 import { SiteSounds } from "@/components/app/SiteSounds";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { Lightbox } from "@/components/content/Lightbox";
@@ -95,17 +97,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <EmojiProvider initial={b.site.emojis}>
             <TransitionsProvider initial={user ? user.theme.wipes && user.theme.motion : true}>
               <VoiceProvider>
-                <Header />
-                <Announcement />
-                <main id="main">{children}</main>
-                <Footer />
-                <BottomNav />
-                <VoiceDock />
-                {user ? <SiteSounds /> : null}
-                {user ? <LinkPeekHost /> : null}
-                <SearchOverlay />
-                <Lightbox />
-                <ScrollHints />
+                <StreamProvider>
+                  <Header />
+                  <Announcement />
+                  <main id="main">{children}</main>
+                  <Footer />
+                  <BottomNav />
+                  <VoiceDock />
+                  <StreamPlayer />
+                  {user ? <SiteSounds /> : null}
+                  {user ? <LinkPeekHost /> : null}
+                  <SearchOverlay />
+                  <Lightbox />
+                  <ScrollHints />
+                </StreamProvider>
               </VoiceProvider>
             </TransitionsProvider>
           </EmojiProvider>

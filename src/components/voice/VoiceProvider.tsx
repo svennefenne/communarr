@@ -16,6 +16,8 @@ export interface VoicePeer {
   userId: number;
   muted: boolean;
   joinedAt: number;
+  /** sharing their screen or a window (StreamProvider) */
+  live: { since: number; audio: boolean } | null;
 }
 
 interface Ctx {
@@ -57,7 +59,7 @@ export const useVoice = () => {
 
 type Signal = { sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit };
 
-async function post(body: Record<string, unknown>) {
+export async function voicePost(body: Record<string, unknown>) {
   const res = await fetch("/api/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error || clientT()("Voice chat didn't answer."));
@@ -175,7 +177,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   const signal = useCallback((to: number, data: Signal) => {
     if (roomRef.current == null) return;
-    void post({ action: "signal", room: roomRef.current, conn: connRef.current, to, data }).catch(() => {});
+    void voicePost({ action: "signal", room: roomRef.current, conn: connRef.current, to, data }).catch(() => {});
   }, []);
 
   const makePeer = useCallback(
@@ -225,7 +227,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   useLive("voiceSignal", async (d) => {
     const { room: r, from, data } = d as { room: number; from: number; data: Signal };
-    if (r !== roomRef.current) return;
+    // (a stream's are StreamProvider's)
+    if (r !== roomRef.current || "stream" in data) return;
     let pc = pcs.current.get(from);
     if (data.sdp) {
       if (data.sdp.type === "offer") {
@@ -273,13 +276,13 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   const enter = useCallback(
     async (r: number) => {
-      const data = (await post({ action: "join", room: r, conn: connRef.current })) as { others: VoicePeer[]; ice: RTCIceServer[] };
+      const data = (await voicePost({ action: "join", room: r, conn: connRef.current })) as { others: VoicePeer[]; ice: RTCIceServer[] };
       ice.current = data.ice;
       roomRef.current = r;
       setRoom(r);
       // the newcomer calls everyone already there
       for (const p of data.others) makePeer(p.conn, true);
-      if (local.current && !local.current.getAudioTracks()[0]?.enabled) void post({ action: "mute", room: r, conn: connRef.current, muted: true }).catch(() => {});
+      if (local.current && !local.current.getAudioTracks()[0]?.enabled) void voicePost({ action: "mute", room: r, conn: connRef.current, muted: true }).catch(() => {});
     },
     [makePeer],
   );
@@ -294,7 +297,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       setJoining(true);
       try {
         if (roomRef.current != null) {
-          void post({ action: "leave", room: roomRef.current, conn: connRef.current }).catch(() => {});
+          void voicePost({ action: "leave", room: roomRef.current, conn: connRef.current }).catch(() => {});
           for (const c of [...pcs.current.keys()]) closePeer(c);
         }
         if (!local.current) await openMic();
@@ -318,7 +321,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const leave = useCallback(() => {
-    if (roomRef.current != null) void post({ action: "leave", room: roomRef.current, conn: connRef.current }).catch(() => {});
+    if (roomRef.current != null) void voicePost({ action: "leave", room: roomRef.current, conn: connRef.current }).catch(() => {});
     roomRef.current = null;
     setRoom(null);
     setDeafened(false);
@@ -350,7 +353,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     if (!t || t.enabled === on) return;
     t.enabled = on;
     setMuted(!on);
-    if (roomRef.current != null) void post({ action: "mute", room: roomRef.current, conn: connRef.current, muted: !on }).catch(() => {});
+    if (roomRef.current != null) void voicePost({ action: "mute", room: roomRef.current, conn: connRef.current, muted: !on }).catch(() => {});
   }, []);
 
   const setDeaf = useCallback((deaf: boolean) => {

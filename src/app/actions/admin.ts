@@ -180,6 +180,8 @@ export async function saveSettingsAction(patch: Partial<SiteSettings>) {
     if (clean.voice !== undefined) {
       clean.voice = {
         max: Math.max(2, Math.min(25, Math.round(clean.voice.max || 10))),
+        streams: clean.voice.streams !== false,
+        streamRelay: clean.voice.streamRelay !== false,
         ice: (clean.voice.ice || []).filter((x) => x && /^(stun|turn|turns):/.test(x.urls)).map((x) => ({ urls: x.urls.trim(), ...(x.username ? { username: x.username } : {}), ...(x.credential ? { credential: x.credential } : {}) })),
       };
     }
