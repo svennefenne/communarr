@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
-import { Bookmark, Download, Languages, LogOut, MessageSquareText, Moon, Palette, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
-import { useApp, useT } from "@/components/app/AppProvider";
+import { Bookmark, Download, Languages, LogOut, MessageSquareText, Moon, Palette, RefreshCw, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
+import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { LanguageToggle } from "@/components/app/LanguageToggle";
 import { Avatar } from "@/components/ui/Avatar";
 import { Switch, useDropdown } from "@/components/ui/ui";
@@ -13,7 +13,7 @@ import { StatusDialog } from "./StatusDialog";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { logoutAction, setPrefsAction } from "@/app/actions/me";
 import { setSoundsOn } from "@/components/app/sfx";
-import { appUpdate, tellApp } from "@/components/app/androidApp";
+import { appInfo, appUpdate, tellApp, type AppInfo } from "@/components/app/androidApp";
 import type { ThemePrefs } from "@/lib/types";
 
 /** Dark, light or the device's choice. */
@@ -58,9 +58,33 @@ export function UserMenu() {
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
   const router = useRouter();
-  // in the Android app: a newer version of it on the server (a dot on the button, and a row in the menu)
+  // in the Android app: a newer version of it on the server (a dot on the button, and a row in the
+  // menu), or Check for updates; its version in small print at the end
+  const [app, setApp] = useState<AppInfo | null>(null);
   const [update, setUpdate] = useState<{ version: string; url: string } | null>(null);
-  useEffect(() => setUpdate(appUpdate(site.androidApps)), [site.androidApps]);
+  const [checking, setChecking] = useState(false);
+  const toast = useToast();
+  useEffect(() => {
+    setApp(appInfo());
+    setUpdate(appUpdate(site.androidApps));
+  }, [site.androidApps]);
+  const checkForUpdates = async () => {
+    if (!app) return;
+    setChecking(true);
+    try {
+      const r = await fetch(`/api/app/latest?name=${encodeURIComponent(app.name)}`);
+      const d = (await r.json().catch(() => ({}))) as { apps?: { name: string; version: string; url: string }[]; error?: string };
+      if (!r.ok || !d.apps) return toast(d.error || t("Couldn't check for updates."), { kind: "err" });
+      const u = appUpdate(d.apps, app);
+      // a newer one: its row in the menu, there and then
+      if (u) setUpdate(u);
+      else toast(t("You have the newest version of the app ({version}).", { version: app.version }));
+    } catch {
+      toast(t("Couldn't check for updates."), { kind: "err" });
+    } finally {
+      setChecking(false);
+    }
+  };
   // a phone's screen can be shorter than the menu: it ends above the bottom bar and scrolls itself
   // (--menu-top: where it starts), and the page behind it stays still while it's open
   const menuRef = useRef<HTMLDivElement>(null);
@@ -166,6 +190,10 @@ export function UserMenu() {
                 {t("Update")}
               </button>
             </div>
+          ) : app ? (
+            <button type="button" className="menu-item" role="menuitem" onClick={() => void checkForUpdates()} disabled={checking}>
+              <RefreshCw size={17} className={checking ? "spin" : ""} /> {t("Check for updates")}
+            </button>
           ) : null}
           <div className="menu-sep" />
           <div style={{ padding: "6px 8px" }}>
@@ -190,6 +218,14 @@ export function UserMenu() {
               <LogOut size={17} /> {t("Log out")}
             </button>
           </form>
+          {app ? (
+            <>
+              <div className="menu-sep" />
+              <div className="menu-foot">
+                {app.name} v{app.version}
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
       {status ? <StatusDialog me={me} onClose={() => setStatus(false)} /> : null}
