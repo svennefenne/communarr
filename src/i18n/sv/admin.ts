@@ -256,6 +256,9 @@ const sv: Record<string, string> = {
   Remove: "Ta bort",
   "Add a server": "Lägg till en server",
   "Most people in one call": "Max antal personer i ett samtal",
+  Webcams: "Webbkameror",
+  "People in a call turn their camera on, and everyone in the call sees it. It goes straight between them, the call's way (through the TURN server only when it has to, small).":
+    "Den som är med i ett samtal kan slå på sin kamera, och alla i samtalet ser den. Bilden går direkt mellan er, samma väg som samtalet (via TURN-servern bara när den måste, och då liten).",
   "Sharing a screen": "Skärmdelning",
   "Someone in a call shares their screen or a window (a game, a film) with the others in it. It goes straight from them to each one watching, not through the site.":
     "Någon i ett samtal delar sin skärm eller ett fönster (ett spel, en film) med de andra i samtalet. Det går direkt från den som delar till var och en som tittar, inte via sajten.",

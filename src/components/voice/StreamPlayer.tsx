@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Expand, Maximize2, Minimize2, MonitorUp, PictureInPicture2, Volume2, VolumeX, X } from "lucide-react";
-import { useT, useToast } from "@/components/app/AppProvider";
+import { Expand, Maximize2, MicOff, Minimize2, MonitorUp, PictureInPicture2, Video, Volume2, VolumeX, X } from "lucide-react";
+import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { useMembers } from "@/components/app/useMembers";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/ui";
@@ -11,13 +11,27 @@ import { QUALITIES, useStream, type StreamPrefs, type StreamQuality, type Watchi
 
 const VOLUME_KEY = "hd_stream_volume";
 
-/** The stream you watch: small over the page while you move around the site, large, or the whole screen. */
+/** A webcam in the panel: whose, and the picture (yours: mirrored, as in a mirror). */
+type Tile = { conn: number; userId: number; stream: MediaStream; me: boolean };
+
+/**
+ * The call's video, over the page while you move around the site (small, large, or the whole screen):
+ * the stream you watch, and the webcams that are on (a grid, or a row under the stream).
+ */
 export function StreamPlayer() {
   const s = useStream();
-  return s.watching ? <Player w={s.watching} /> : null;
+  const v = useVoice();
+  const { conn, me } = useApp();
+  const peers = v.room != null ? (v.channels[v.room] ?? []) : [];
+  const tiles: Tile[] = [
+    ...(v.camera && me ? [{ conn: conn ?? 0, userId: me.id, stream: v.camera, me: true }] : []),
+    ...peers.filter((p) => p.camera && p.conn !== conn && v.cameras[p.conn]).map((p) => ({ conn: p.conn, userId: p.userId, stream: v.cameras[p.conn], me: false })),
+  ];
+  const cams = s.camsHidden ? [] : tiles;
+  return s.watching || cams.length ? <Panel w={s.watching} tiles={cams} /> : null;
 }
 
-function Player({ w }: { w: Watching }) {
+function Panel({ w, tiles }: { w: Watching | null; tiles: Tile[] }) {
   const s = useStream();
   const v = useVoice();
   const t = useT();
@@ -26,9 +40,74 @@ function Player({ w }: { w: Watching }) {
   const video = useRef<HTMLVideoElement>(null);
   const [big, setBig] = useState(false);
   const [full, setFull] = useState(false);
+  const user = w ? people.get(w.userId) : undefined;
+
+  useEffect(() => {
+    const on = () => setFull(document.fullscreenElement === box.current);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+
+  const fullscreen = () => (document.fullscreenElement ? void document.exitFullscreen() : void box.current?.requestFullscreen().catch(() => {}));
+  const pip = !!w && typeof document !== "undefined" && document.pictureInPictureEnabled;
+  const name = user?.name ?? t("Someone");
+  const label = w ? (w.self ? t("Your stream") : t("{name}'s stream", { name })) : t("Video");
+  // the cross: stop watching the stream (the webcams stay), or put the webcams away
+  const close = w ? s.unwatch : () => s.setCamsHidden(true);
+  const closeLabel = w ? (w.self ? t("Close") : t("Stop watching")) : t("Hide the video");
+  return (
+    <div ref={box} className={`panel stream-player ${big ? "big" : ""} ${full ? "full" : ""}`} role="region" aria-label={label}>
+      <div className="sp-head">
+        {w ? (
+          <>
+            {user ? <Avatar user={user} size={22} /> : null}
+            <b className="ellipsis grow">{w.self ? t("Your stream") : name}</b>
+            <span className="live-tag">{t("LIVE")}</span>
+            {w.relayed ? (
+              <span className="pill soft sp-relay" title={t("They couldn't be reached directly: it comes through the site's server, at a lower quality.")}>
+                {t("Via the server")}
+              </span>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <Video size={16} className="muted" />
+            <b className="ellipsis grow">{v.roomName}</b>
+          </>
+        )}
+        {pip ? (
+          <button type="button" className="icon-btn sm" onClick={() => void video.current?.requestPictureInPicture().catch(() => {})} aria-label={t("Picture in picture")} title={t("Picture in picture")}>
+            <PictureInPicture2 size={16} />
+          </button>
+        ) : null}
+        <button type="button" className="icon-btn sm sp-size" onClick={() => setBig((b) => !b)} aria-pressed={big} aria-label={big ? t("Smaller") : t("Larger")} title={big ? t("Smaller") : t("Larger")}>
+          {big ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
+        <button type="button" className="icon-btn sm" onClick={fullscreen} aria-label={full ? t("Leave full screen") : t("Full screen")} title={full ? t("Leave full screen") : t("Full screen")}>
+          <Expand size={16} />
+        </button>
+        <button type="button" className="icon-btn sm sp-close" onClick={close} aria-label={closeLabel} title={closeLabel}>
+          <X size={16} />
+        </button>
+      </div>
+      {w ? <Screen w={w} video={video} onFull={fullscreen} /> : null}
+      {tiles.length ? (
+        <div className={`sp-cams ${w ? "strip" : ""}`} style={{ "--cols": tiles.length < 2 ? 1 : tiles.length <= 4 ? 2 : tiles.length <= 9 ? 3 : 4 } as React.CSSProperties}>
+          {tiles.map((tile) => (
+            <CamTile key={tile.conn} tile={tile} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** The stream itself, with its own volume (and its sound only while you hear the call). */
+function Screen({ w, video, onFull }: { w: Watching; video: React.RefObject<HTMLVideoElement | null>; onFull: () => void }) {
+  const v = useVoice();
+  const t = useT();
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
-  const user = people.get(w.userId);
   const sound = !w.self && !!(v.room != null && v.channels[v.room]?.find((p) => p.conn === w.conn)?.live?.audio);
 
   useEffect(() => {
@@ -51,7 +130,7 @@ function Player({ w }: { w: Watching }) {
         setMuted(true);
         void el.play().catch(() => {});
       });
-  }, [w.stream]);
+  }, [w.stream, video]);
 
   useEffect(() => {
     const el = video.current;
@@ -59,13 +138,7 @@ function Player({ w }: { w: Watching }) {
     el.volume = volume;
     // (your own: never its sound, or you'd hear it twice)
     el.muted = w.self || muted || v.deafened;
-  }, [volume, muted, w.self, v.deafened]);
-
-  useEffect(() => {
-    const on = () => setFull(document.fullscreenElement === box.current);
-    document.addEventListener("fullscreenchange", on);
-    return () => document.removeEventListener("fullscreenchange", on);
-  }, []);
+  }, [volume, muted, w.self, v.deafened, video]);
 
   const setVol = (n: number) => {
     setVolume(n);
@@ -76,49 +149,49 @@ function Player({ w }: { w: Watching }) {
       /* not kept */
     }
   };
-  const fullscreen = () => (document.fullscreenElement ? void document.exitFullscreen() : void box.current?.requestFullscreen().catch(() => {}));
-  const pip = typeof document !== "undefined" && document.pictureInPictureEnabled;
 
-  const name = user?.name ?? t("Someone");
   return (
-    <div ref={box} className={`panel stream-player ${big ? "big" : ""} ${full ? "full" : ""}`} role="region" aria-label={w.self ? t("Your stream") : t("{name}'s stream", { name })}>
-      <div className="sp-head">
-        {user ? <Avatar user={user} size={22} /> : null}
-        <b className="ellipsis grow">{w.self ? t("Your stream") : name}</b>
-        <span className="live-tag">{t("LIVE")}</span>
-        {w.relayed ? (
-          <span className="pill soft sp-relay" title={t("They couldn't be reached directly: it comes through the site's server, at a lower quality.")}>
-            {t("Via the server")}
-          </span>
-        ) : null}
-        {pip ? (
-          <button type="button" className="icon-btn sm" onClick={() => void video.current?.requestPictureInPicture().catch(() => {})} aria-label={t("Picture in picture")} title={t("Picture in picture")}>
-            <PictureInPicture2 size={16} />
+    <div className="sp-screen" onDoubleClick={onFull}>
+      <video ref={video} autoPlay playsInline muted />
+      {w.state === "connecting" ? <div className="sp-note">{t("Connecting…")}</div> : null}
+      {w.state === "failed" ? <div className="sp-note err-text">{w.error || t("Couldn't reach them.")}</div> : null}
+      {sound ? (
+        <div className="sp-sound">
+          <button type="button" className="icon-btn sm" onClick={() => setVol(muted || volume === 0 ? volume || 1 : 0)} aria-label={muted ? t("Sound on") : t("Sound off")} title={muted ? t("Sound on") : t("Sound off")}>
+            {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
-        ) : null}
-        <button type="button" className="icon-btn sm sp-size" onClick={() => setBig((b) => !b)} aria-pressed={big} aria-label={big ? t("Smaller") : t("Larger")} title={big ? t("Smaller") : t("Larger")}>
-          {big ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        </button>
-        <button type="button" className="icon-btn sm" onClick={fullscreen} aria-label={full ? t("Leave full screen") : t("Full screen")} title={full ? t("Leave full screen") : t("Full screen")}>
-          <Expand size={16} />
-        </button>
-        <button type="button" className="icon-btn sm" onClick={s.unwatch} aria-label={w.self ? t("Close") : t("Stop watching")} title={w.self ? t("Close") : t("Stop watching")}>
-          <X size={16} />
-        </button>
-      </div>
-      <div className="sp-screen" onDoubleClick={fullscreen}>
-        <video ref={video} autoPlay playsInline muted />
-        {w.state === "connecting" ? <div className="sp-note">{t("Connecting…")}</div> : null}
-        {w.state === "failed" ? <div className="sp-note err-text">{w.error || t("Couldn't reach them.")}</div> : null}
-        {sound ? (
-          <div className="sp-sound">
-            <button type="button" className="icon-btn sm" onClick={() => setVol(muted || volume === 0 ? volume || 1 : 0)} aria-label={muted ? t("Sound on") : t("Sound off")} title={muted ? t("Sound on") : t("Sound off")}>
-              {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-            <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={(e) => setVol(Number(e.target.value))} aria-label={t("The stream's volume")} />
-          </div>
-        ) : null}
-      </div>
+          <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={(e) => setVol(Number(e.target.value))} aria-label={t("The stream's volume")} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** One webcam: the picture, whose it is (muted or not), and a ring while they talk. */
+function CamTile({ tile }: { tile: Tile }) {
+  const v = useVoice();
+  const t = useT();
+  const people = useMembers();
+  const ref = useRef<HTMLVideoElement>(null);
+  const user = people.get(tile.userId);
+  const peer = v.room != null ? v.channels[v.room]?.find((p) => p.conn === tile.conn) : undefined;
+  const talking = v.speaking.has(tile.me ? "me" : tile.conn);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.srcObject = tile.stream;
+    void el.play().catch(() => {});
+  }, [tile.stream]);
+  return (
+    <div className={`cam-tile ${talking ? "talking" : ""}`}>
+      <video ref={ref} autoPlay playsInline muted className={tile.me ? "mirror" : ""} />
+      <span className="cam-name">
+        {(tile.me ? v.muted : peer?.muted) ? <MicOff size={11} /> : null}
+        <span className="ellipsis">
+          {user?.name ?? t("Someone")}
+          {tile.me ? ` ${t("(you)")}` : ""}
+        </span>
+      </span>
     </div>
   );
 }
