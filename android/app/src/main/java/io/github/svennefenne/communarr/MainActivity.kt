@@ -82,11 +82,18 @@ class MainActivity : ComponentActivity() {
         picked = null
     }
 
-    // the microphone, for a voice room: Android asks the first time
+    // the microphone (a voice room) and the camera (a webcam in one): Android asks the first time
     private var asking: PermissionRequest? = null
-    private val askMic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        asking?.let { if (ok) it.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) else it.deny() }
+    private val askMedia = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        asking?.let { grantAllowed(it) }
         asking = null
+    }
+    private val media = mapOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE to Manifest.permission.RECORD_AUDIO, PermissionRequest.RESOURCE_VIDEO_CAPTURE to Manifest.permission.CAMERA)
+
+    /** The page gets what it asked for as far as Android allows it (the microphone, the camera), or nothing. */
+    private fun grantAllowed(request: PermissionRequest) {
+        val ok = request.resources.filter { r -> media[r]?.let { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED } == true }
+        if (ok.isEmpty()) request.deny() else request.grant(ok.toTypedArray())
     }
 
     // notifications (Android 13 and later ask); the page's "Turn on" waits for the answer
@@ -416,18 +423,20 @@ class MainActivity : ComponentActivity() {
                 return true
             }
 
-            /** The microphone for a voice room, for the server's own pages only (the camera isn't used). */
+            /** The microphone (a voice room) and the camera (a webcam in one), for the server's own pages only. */
             override fun onPermissionRequest(request: PermissionRequest) {
                 runOnUiThread {
                     val mine = Server.origin(request.origin) == server
-                    if (!mine || PermissionRequest.RESOURCE_AUDIO_CAPTURE !in request.resources) {
+                    val wanted = request.resources.mapNotNull { media[it] }
+                    val missing = wanted.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+                    if (!mine || wanted.isEmpty()) {
                         request.deny()
-                    } else if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                        request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                    } else if (missing.isEmpty()) {
+                        grantAllowed(request)
                     } else {
                         asking?.deny()
                         asking = request
-                        askMic.launch(Manifest.permission.RECORD_AUDIO)
+                        askMedia.launch(missing.toTypedArray())
                     }
                 }
             }
