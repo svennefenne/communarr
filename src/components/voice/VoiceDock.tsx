@@ -120,16 +120,27 @@ function Dock() {
   );
 }
 
-/** A room's voice button: who's talking there, and join or leave. */
+/**
+ * A room's voice button: who's talking there, and join or leave. Beside it, sharing your screen (a
+ * computer, and the site lets you): it joins the voice first if you're not in it, then asks what to share.
+ */
 export function VoiceButton({ room, name, compact = false }: { room: number; name: string; compact?: boolean }) {
   const v = useVoice();
+  const s = useStream();
   const t = useT();
   const { site } = useApp();
   const people = useMembers();
+  const [going, setGoing] = useState(false);
   if (!site.features.voice) return null;
   const peers = v.channels[room] ?? [];
   const here = v.room === room;
   const live = peers.some((p) => p.live);
+  const sharing = here && s.live;
+  const share = async () => {
+    if (sharing) return s.stopLive();
+    if (!here && !(await v.join(room, name))) return;
+    setGoing(true);
+  };
   if (!v.supported)
     return (
       <span className="pill soft" title={t("Voice chat needs a microphone and the site opened over https://")}>
@@ -151,10 +162,17 @@ export function VoiceButton({ room, name, compact = false }: { room: number; nam
           {t("LIVE")}
         </span>
       ) : null}
+      {s.canGoLive ? (
+        <button type="button" className={`btn btn-sm ${sharing ? "btn-danger" : ""}`} onClick={() => void share()} disabled={v.joining} title={sharing ? t("Stop sharing") : t("Share your screen")} aria-label={sharing ? t("Stop sharing") : t("Share your screen")}>
+          {sharing ? <MonitorOff size={15} /> : <MonitorUp size={15} />}
+          {compact ? null : sharing ? t("Stop sharing") : t("Share your screen")}
+        </button>
+      ) : null}
+      {going ? <GoLiveDialog onClose={() => setGoing(false)} /> : null}
       <button
         type="button"
         className={`btn btn-sm ${here ? "btn-danger" : peers.length ? "btn-secondary" : ""} ${v.joining ? "loading" : ""}`}
-        onClick={() => (here ? v.leave() : v.join(room, name))}
+        onClick={() => (here ? v.leave() : void v.join(room, name))}
         title={here ? t("Leave the voice chat") : t("Join the voice chat")}
       >
         {here ? <PhoneOff size={15} /> : <Headphones size={15} />}
