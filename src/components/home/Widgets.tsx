@@ -12,6 +12,7 @@ import { useVoice } from "@/components/voice/VoiceProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { DateTile, EventWhen } from "@/components/feed/EventCard";
+import { TypingDots, TypingLine, useTyping } from "@/components/chat/useTyping";
 
 function Widget({ title, icon, href, more, children }: { title: string; icon: React.ReactNode; href?: string; more?: string; children: React.ReactNode }) {
   const t = useT();
@@ -110,6 +111,7 @@ export function UpcomingWidget({ events, href = "/calendar", planHref = "/events
 export function ChatWidget({ rooms }: { rooms: RoomInfo[] }) {
   const { counts } = useApp();
   const voice = useVoice();
+  const typing = useTyping();
   const t = useT();
   return (
     <Widget title={t("Chat")} icon={<MessageCircle size={14} />} href="/chat" more={t("Open chat")}>
@@ -125,9 +127,22 @@ export function ChatWidget({ rooms }: { rooms: RoomInfo[] }) {
                   <b className="ellipsis" style={{ display: "block" }}>
                     {r.name}
                   </b>
-                  <span className="tiny muted ellipsis" style={{ display: "block" }}>
-                    {r.lastMessage ? `${r.lastMessage.author ? r.lastMessage.author + ": " : ""}${r.lastMessage.text}` : r.topic}
-                  </span>
+                  {/* someone typing there: that, in place of the last message */}
+                  {typing.get(r.id)?.length ? (
+                    <span className="tiny ellipsis chat-row-typing" style={{ display: "block" }}>
+                      {r.kind === "dm" ? (
+                        <>
+                          <TypingDots /> {t("typing…")}
+                        </>
+                      ) : (
+                        <TypingLine typers={typing.get(r.id)!} />
+                      )}
+                    </span>
+                  ) : (
+                    <span className="tiny muted ellipsis" style={{ display: "block" }}>
+                      {r.lastMessage ? `${r.lastMessage.author ? r.lastMessage.author + ": " : ""}${r.lastMessage.text}` : r.topic}
+                    </span>
+                  )}
                 </span>
                 {talking ? (
                   <span className="badge teal" title={t("{n} in voice", { n: talking })}>
