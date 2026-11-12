@@ -1,15 +1,28 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { useApp, useLive, useT } from "@/components/app/AppProvider";
+import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { clientT } from "@/lib/i18n";
-import { DEFAULT_VOICE_PREFS, loadVoicePrefs, openPipeline, saveVoicePrefs, type MicLevel, type NoiseMode, type Pipeline, type VoicePrefs } from "./pipeline";
+import { DEFAULT_VOICE_PREFS, loadVoicePrefs, openPipeline, saveVoicePrefs, type CameraQuality, type MicLevel, type NoiseMode, type Pipeline, type VoicePrefs } from "./pipeline";
+import { encodeAs, relayed, type Quality } from "./rtc";
 
 /**
  * Voice chat in the browser. Joining a room's voice calls every other tab in it directly (WebRTC);
  * the set-up messages go through the server's live stream. The call stays up while you move around
  * the site, and comes back by itself if the connection to the site drops for a moment.
+ *
+ * A webcam goes over the same connections: each has a video way from the start that sends nothing
+ * while yours is off, so turning it on or off needs no new offer.
  */
+
+/** A webcam to each one in the call, straight to them; through a TURN server always small. */
+export const CAMERA: Record<CameraQuality, Quality> = {
+  "360p": { height: 360, fps: 24, bitrate: 600_000 },
+  "720p": { height: 720, fps: 30, bitrate: 1_500_000 },
+  "1080p": { height: 1080, fps: 30, bitrate: 3_000_000 },
+};
+const CAMERA_RELAYED: Quality = { height: 180, fps: 15, bitrate: 150_000 };
+const videoOf = (pc: RTCPeerConnection) => pc.getTransceivers().find((tr) => tr.receiver.track.kind === "video");
 
 export interface VoicePeer {
   conn: number;
@@ -18,6 +31,8 @@ export interface VoicePeer {
   joinedAt: number;
   /** sharing their screen or a window (StreamProvider) */
   live: { since: number; audio: boolean } | null;
+  /** their webcam is on */
+  camera: boolean;
 }
 
 interface Ctx {
@@ -49,6 +64,15 @@ interface Ctx {
   noiseInUse: NoiseMode;
   /** in a call: how loud the microphone is (for the meter) */
   onMicLevel: (fn: (l: MicLevel) => void) => () => void;
+  /** webcams may be on (Admin → Voice) */
+  camerasAllowed: boolean;
+  /** your webcam, while it's on */
+  camera: MediaStream | null;
+  /** the others' webcams by conn (to show while their peer says camera) */
+  cameras: Record<number, MediaStream>;
+  /** your webcam on or off, in a call */
+  toggleCamera: () => Promise<void>;
+  cameraBusy: boolean;
 }
 
 const VoiceCtx = createContext<Ctx | null>(null);
@@ -70,6 +94,7 @@ export async function voicePost(body: Record<string, unknown>) {
 export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const { conn, me, site } = useApp();
   const t = useT();
+  const toast = useToast();
   const [supported, setSupported] = useState(false);
   const [room, setRoom] = useState<number | null>(null);
   const [roomName, setRoomName] = useState("");
@@ -99,6 +124,12 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const talkRef = useRef(false);
   const [processed, setProcessed] = useState(true);
   const [noiseInUse, setNoiseInUse] = useState<NoiseMode>("browser");
+  // your webcam, and the others'
+  const [camerasAllowed, setCamerasAllowed] = useState(false);
+  const [camera, setCamera] = useState<MediaStream | null>(null);
+  const camRef = useRef<MediaStream | null>(null);
+  const [cameras, setCameras] = useState<Record<number, MediaStream>>({});
+  const [cameraBusy, setCameraBusy] = useState(false);
   useEffect(() => {
     const p = loadVoicePrefs();
     prefsRef.current = p;
@@ -115,7 +146,11 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     if (!me || !site.features.voice) return;
     fetch("/api/voice")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setChannels(d.channels || {}))
+      .then((d) => {
+        if (!d) return;
+        setChannels(d.channels || {});
+        setCamerasAllowed(d.cameras !== false);
+      })
       .catch(() => {});
   }, [me, site.features.voice]);
   useLive("voiceState", (d) => {
@@ -169,6 +204,12 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     }
     audios.current.delete(c);
     meters.current.delete(c);
+    setCameras((m) => {
+      if (!(c in m)) return m;
+      const n = { ...m };
+      delete n[c];
+      return n;
+    });
     setLinks((l) => {
       const n = { ...l };
       delete n[c];
@@ -181,14 +222,31 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     void voicePost({ action: "signal", room: roomRef.current, conn: connRef.current, to, data }).catch(() => {});
   }, []);
 
+  /** Your webcam into a call's connection (or out of it: null), at the size its way allows. */
+  const sendCamera = useCallback(async (pc: RTCPeerConnection) => {
+    const tr = videoOf(pc);
+    if (!tr || tr.currentDirection === "stopped") return;
+    const track = camRef.current?.getVideoTracks()[0] ?? null;
+    await tr.sender.replaceTrack(track).catch(() => {});
+    if (track) await encodeAs(tr.sender, (await relayed(pc)) ? CAMERA_RELAYED : CAMERA[prefsRef.current.cameraQuality]);
+  }, []);
+
   const makePeer = useCallback(
     (c: number, initiator: boolean) => {
       closePeer(c);
       const pc = new RTCPeerConnection({ iceServers: ice.current });
       pcs.current.set(c, pc);
       local.current?.getTracks().forEach((t) => pc.addTrack(t, local.current!));
+      // the webcam's way, there from the start (the one called says yes to it in the answer)
+      if (initiator) pc.addTransceiver(camRef.current?.getVideoTracks()[0] ?? "video", { direction: "sendrecv" });
       pc.onicecandidate = (e) => e.candidate && signal(c, { candidate: e.candidate.toJSON() });
       pc.ontrack = (e) => {
+        // a webcam: kept for the video panel, never into the voice's audio
+        if (e.track.kind === "video") {
+          const cam = new MediaStream([e.track]);
+          setCameras((m) => ({ ...m, [c]: cam }));
+          return;
+        }
         const stream = e.streams[0] ?? new MediaStream([e.track]);
         let a = audios.current.get(c);
         if (!a) {
@@ -206,6 +264,9 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       };
       pc.onconnectionstatechange = () => {
         setLinks((l) => ({ ...l, [c]: pc.connectionState }));
+        // the webcam at the size the way allows: straight, or the TURN server's smaller (checked again
+        // in a moment: the way is often only known then, and can change)
+        if (pc.connectionState === "connected") for (const wait of [0, 3000]) setTimeout(() => pcs.current.get(c) === pc && void sendCamera(pc), wait);
         // the caller tries again if the line breaks
         if (pc.connectionState === "failed" && initiator) {
           pc.restartIce();
@@ -223,7 +284,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       }
       return pc;
     },
-    [closePeer, signal, meter],
+    [closePeer, signal, meter, sendCamera],
   );
 
   useLive("voiceSignal", async (d) => {
@@ -235,6 +296,12 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       if (data.sdp.type === "offer") {
         if (!pc || pc.signalingState !== "stable") pc = makePeer(from, false);
         await pc.setRemoteDescription(data.sdp);
+        // the webcam's way: both ways, with yours on it if it's on
+        const tv = videoOf(pc);
+        if (tv) {
+          tv.direction = "sendrecv";
+          await tv.sender.replaceTrack(camRef.current?.getVideoTracks()[0] ?? null).catch(() => {});
+        }
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         signal(from, { sdp: pc.localDescription!.toJSON() });
@@ -258,6 +325,10 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     pipe.current = null;
     local.current?.getTracks().forEach((t) => t.stop());
     local.current = null;
+    camRef.current?.getTracks().forEach((t) => t.stop());
+    camRef.current = null;
+    setCamera(null);
+    setCameras({});
     meters.current.clear();
     setSpeaking(new Set());
     talkRef.current = false;
@@ -277,13 +348,16 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   const enter = useCallback(
     async (r: number) => {
-      const data = (await voicePost({ action: "join", room: r, conn: connRef.current })) as { others: VoicePeer[]; ice: RTCIceServer[] };
+      const data = (await voicePost({ action: "join", room: r, conn: connRef.current })) as { others: VoicePeer[]; ice: RTCIceServer[]; cameras?: boolean };
       ice.current = data.ice;
+      setCamerasAllowed(data.cameras !== false);
       roomRef.current = r;
       setRoom(r);
       // the newcomer calls everyone already there
       for (const p of data.others) makePeer(p.conn, true);
       if (local.current && !local.current.getAudioTracks()[0]?.enabled) void voicePost({ action: "mute", room: r, conn: connRef.current, muted: true }).catch(() => {});
+      // (moving to another room, or back after a reconnect: the webcam stays on)
+      if (camRef.current) void voicePost({ action: "camera", room: r, conn: connRef.current, on: true }).catch(() => {});
     },
     [makePeer],
   );
@@ -387,9 +461,53 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [setMic, setDeaf]);
 
+  /** The webcam from your settings, as large as its quality asks (the browser picks the nearest it has). */
+  const openCamera = useCallback(async () => {
+    const p = prefsRef.current;
+    const h = CAMERA[p.cameraQuality].height;
+    const s = await navigator.mediaDevices.getUserMedia({
+      video: { ...(p.camera ? { deviceId: { ideal: p.camera } } : {}), height: { ideal: h }, width: { ideal: Math.round((h * 16) / 9) }, frameRate: { ideal: CAMERA[p.cameraQuality].fps, max: 30 } },
+    });
+    const track = s.getVideoTracks()[0];
+    if (track) track.contentHint = "motion";
+    return s;
+  }, []);
+
+  const cameraOff = useCallback(() => {
+    camRef.current?.getTracks().forEach((tr) => tr.stop());
+    camRef.current = null;
+    setCamera(null);
+    for (const pc of pcs.current.values()) void sendCamera(pc);
+    if (roomRef.current != null) void voicePost({ action: "camera", room: roomRef.current, conn: connRef.current, on: false }).catch(() => {});
+  }, [sendCamera]);
+
+  /** Your webcam into every connection of the call at once (no new offers), and the others told. */
+  const cameraOn = useCallback(async () => {
+    if (roomRef.current == null || camRef.current) return;
+    setCameraBusy(true);
+    try {
+      const s = await openCamera();
+      // unplugged, or taken by another app
+      s.getVideoTracks()[0]?.addEventListener("ended", () => camRef.current === s && cameraOff());
+      camRef.current = s;
+      setCamera(s);
+      for (const pc of pcs.current.values()) void sendCamera(pc);
+      await voicePost({ action: "camera", room: roomRef.current, conn: connRef.current, on: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (camRef.current) cameraOff();
+      toast(/Permission|NotAllowed/i.test(msg) ? t("The browser didn't allow the camera. Allow it in the address bar's site settings.") : /NotFound|not found/i.test(msg) ? t("No camera found.") : msg, { kind: "err" });
+    } finally {
+      setCameraBusy(false);
+    }
+  }, [openCamera, cameraOff, sendCamera, toast, t]);
+
+  const toggleCamera = useCallback(() => (camRef.current ? Promise.resolve(cameraOff()) : cameraOn()), [cameraOn, cameraOff]);
+
   /**
    * New voice settings: kept on this device, and in a call they apply at once (a new kind of noise
-   * suppression means a new microphone path, swapped into every connection without dropping the call).
+   * suppression means a new microphone path, swapped into every connection without dropping the call;
+   * another webcam or quality, the webcam swapped the same way).
    */
   const setPrefs = useCallback(
     async (next: VoicePrefs) => {
@@ -397,6 +515,17 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       prefsRef.current = next;
       setPrefsState(next);
       saveVoicePrefs(next);
+      if (camRef.current && (next.camera !== before.camera || next.cameraQuality !== before.cameraQuality)) {
+        const old = camRef.current;
+        const fresh = await openCamera().catch(() => null);
+        if (fresh && camRef.current === old) {
+          fresh.getVideoTracks()[0]?.addEventListener("ended", () => camRef.current === fresh && cameraOff());
+          camRef.current = fresh;
+          setCamera(fresh);
+          for (const pc of pcs.current.values()) await sendCamera(pc);
+          old.getTracks().forEach((tr) => tr.stop());
+        } else fresh?.getTracks().forEach((tr) => tr.stop());
+      }
       const p = pipe.current;
       if (!p) return;
       if (next.noise !== before.noise) {
@@ -417,7 +546,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       cur.setThreshold(next.threshold);
       cur.setForce(next.mode === "ptt" ? (talkRef.current ? 1 : -1) : 0);
     },
-    [meter],
+    [meter, openCamera, cameraOff, sendCamera],
   );
 
   // push to talk: while in a call, the key held down opens the microphone (not while typing in a field)
@@ -453,7 +582,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <VoiceCtx.Provider
-      value={{ supported, room, roomName, joining, muted, deafened, error, channels, speaking, links, join, leave, toggleMute, toggleDeafen, prefs, setPrefs, talkKey, processed, noiseInUse, onMicLevel }}
+      value={{ supported, room, roomName, joining, muted, deafened, error, channels, speaking, links, join, leave, toggleMute, toggleDeafen, prefs, setPrefs, talkKey, processed, noiseInUse, onMicLevel, camerasAllowed, camera, cameras, toggleCamera, cameraBusy }}
     >
       {children}
     </VoiceCtx.Provider>

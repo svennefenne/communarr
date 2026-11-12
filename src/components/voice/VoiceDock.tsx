@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Eye, Headphones, HeadphoneOff, Mic, MicOff, MonitorOff, MonitorUp, PhoneOff, Radio, Settings2 } from "lucide-react";
+import { Eye, Headphones, HeadphoneOff, Mic, MicOff, MonitorOff, MonitorUp, PhoneOff, Radio, Settings2, Video, VideoOff } from "lucide-react";
 import { useVoice, type VoicePeer } from "./VoiceProvider";
 import { useApp, useT } from "@/components/app/AppProvider";
 import { useMembers } from "@/components/app/useMembers";
@@ -14,7 +14,10 @@ import { VoiceSettings } from "./VoiceSettings";
 import { useStream } from "./StreamProvider";
 import { GoLiveDialog } from "./StreamPlayer";
 
-/** Someone in the call (glowing while they talk); sharing their screen: LIVE, and a press watches it. */
+/**
+ * Someone in the call (glowing while they talk); sharing their screen: LIVE, and a press watches it;
+ * their webcam on: a camera, and a press shows the video.
+ */
 function Face({ p, user, talking, me }: { p: VoicePeer; user?: UserSummary; talking: boolean; me: boolean }) {
   const t = useT();
   const s = useStream();
@@ -27,9 +30,20 @@ function Face({ p, user, talking, me }: { p: VoicePeer; user?: UserSummary; talk
           <MicOff size={10} />
         </span>
       ) : null}
+      {p.camera ? (
+        <span className="vc-cam">
+          <Video size={9} />
+        </span>
+      ) : null}
       {p.live ? <span className="live-tag vc-live-tag">{t("LIVE")}</span> : null}
     </>
   );
+  if (!p.live && p.camera)
+    return (
+      <button type="button" className={`vc-face live ${talking ? "talking" : ""}`} onClick={() => s.setCamsHidden(false)} aria-label={t("Show the video")} title={`${name} · ${t("Show the video")}`}>
+        {face}
+      </button>
+    );
   if (!p.live)
     return (
       <span className={`vc-face ${talking ? "talking" : ""}`} title={`${name}${p.muted ? ` · ${t("muted")}` : ""}`}>
@@ -100,6 +114,11 @@ function Dock() {
         <button type="button" className={`icon-btn sm ${v.muted ? "on" : ""}`} onClick={v.toggleMute} aria-pressed={v.muted} aria-label={v.muted ? t("Unmute") : t("Mute")} title={v.muted ? t("Unmute") : t("Mute")}>
           {v.muted ? <MicOff size={17} /> : <Mic size={17} />}
         </button>
+        {v.camerasAllowed ? (
+          <button type="button" className={`icon-btn sm ${v.cameraBusy ? "loading" : ""}`} onClick={() => void v.toggleCamera()} disabled={v.cameraBusy} aria-pressed={!!v.camera} aria-label={v.camera ? t("Turn your camera off") : t("Turn your camera on")} title={v.camera ? t("Turn your camera off") : t("Turn your camera on")}>
+            {v.camera ? <Video size={17} /> : <VideoOff size={17} />}
+          </button>
+        ) : null}
         <button type="button" className={`icon-btn sm ${v.deafened ? "on" : ""}`} onClick={v.toggleDeafen} aria-pressed={v.deafened} aria-label={v.deafened ? t("Hear again") : t("Deafen")} title={v.deafened ? t("Hear again") : t("Deafen (hear nothing)")}>
           {v.deafened ? <HeadphoneOff size={17} /> : <Headphones size={17} />}
         </button>
@@ -122,7 +141,7 @@ function Dock() {
 
 /**
  * A room's voice button: who's talking there, and join or leave. Beside it, sharing your screen (a
- * computer, and the site lets you): it joins the voice first if you're not in it, then asks what to share.
+ * computer, and the site lets you) and your webcam: they join the voice first if you're not in it.
  */
 export function VoiceButton({ room, name, compact = false }: { room: number; name: string; compact?: boolean }) {
   const v = useVoice();
@@ -140,6 +159,11 @@ export function VoiceButton({ room, name, compact = false }: { room: number; nam
     if (sharing) return s.stopLive();
     if (!here && !(await v.join(room, name))) return;
     setGoing(true);
+  };
+  const filming = here && !!v.camera;
+  const film = async () => {
+    if (!here && !(await v.join(room, name))) return;
+    await v.toggleCamera();
   };
   if (!v.supported)
     return (
@@ -169,6 +193,12 @@ export function VoiceButton({ room, name, compact = false }: { room: number; nam
         </button>
       ) : null}
       {going ? <GoLiveDialog onClose={() => setGoing(false)} /> : null}
+      {v.camerasAllowed ? (
+        <button type="button" className={`btn btn-sm ${filming ? "btn-danger" : ""}`} onClick={() => void film()} disabled={v.joining || v.cameraBusy} title={filming ? t("Turn your camera off") : t("Turn your camera on")} aria-label={filming ? t("Turn your camera off") : t("Turn your camera on")}>
+          {filming ? <VideoOff size={15} /> : <Video size={15} />}
+          {compact ? null : filming ? t("Camera off") : t("Camera")}
+        </button>
+      ) : null}
       <button
         type="button"
         className={`btn btn-sm ${here ? "btn-danger" : peers.length ? "btn-secondary" : ""} ${v.joining ? "loading" : ""}`}

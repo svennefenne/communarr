@@ -10,7 +10,8 @@ import { db } from "./db";
  * mobile data reach the others.
  *
  * Someone in a channel can go live: share their screen or a window. Those who choose to watch get it
- * straight from them (a connection of its own per viewer); here it's only who's live.
+ * straight from them (a connection of its own per viewer); here it's only who's live. A webcam goes to
+ * everyone in the call, over the call's own connections; here it's only whose is on.
  */
 
 export interface VoicePeer {
@@ -20,6 +21,8 @@ export interface VoicePeer {
   joinedAt: number;
   /** sharing their screen or a window (audio: with its sound) */
   live: { since: number; audio: boolean } | null;
+  /** their webcam is on */
+  camera: boolean;
 }
 
 type Channels = Map<number, Map<number, VoicePeer>>;
@@ -70,7 +73,7 @@ export function joinVoice(userId: number, roomId: number, conn: number): VoicePe
   if (!ch) channels.set(roomId, (ch = new Map()));
   if (ch.size >= getSettings().voice.max) return "full";
   const others = voicePeers(roomId);
-  ch.set(conn, { conn, userId, muted: false, joinedAt: Date.now(), live: null });
+  ch.set(conn, { conn, userId, muted: false, joinedAt: Date.now(), live: null, camera: false });
   announce(roomId);
   return others;
 }
@@ -98,6 +101,15 @@ export function muteVoice(roomId: number, conn: number, muted: boolean) {
   if (!p) return;
   p.muted = muted;
   announce(roomId);
+}
+
+/** A webcam on or off in the channel. */
+export function setCamera(roomId: number, conn: number, on: boolean): boolean {
+  const p = channels.get(roomId)?.get(conn);
+  if (!p) return false;
+  p.camera = on;
+  announce(roomId);
+  return true;
 }
 
 /** Going live in the channel (live: with or without sound), or stopping (null). */

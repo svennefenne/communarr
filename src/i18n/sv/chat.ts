@@ -242,6 +242,23 @@ const sv: Record<string, string> = {
   "That sound device couldn't be opened: sharing without sound.": "Ljudenheten gick inte att öppna: delar utan ljud.",
   "Sharing didn't start.": "Delningen startade inte.",
 
+  // webcams in a call (VoiceProvider, VoiceDock, StreamPlayer, VoiceSettings, api/voice)
+  "Webcams are switched off.": "Webbkameror är avstängda.",
+  "The browser didn't allow the camera. Allow it in the address bar's site settings.": "Webbläsaren tillät inte kameran. Tillåt den i webbplatsinställningarna i adressfältet.",
+  "No camera found.": "Ingen kamera hittades.",
+  "Turn your camera on": "Slå på kameran",
+  "Turn your camera off": "Stäng av kameran",
+  Camera: "Kamera",
+  "Camera off": "Kamera av",
+  Video: "Video",
+  "Show the video": "Visa videon",
+  "Hide the video": "Dölj videon",
+  "The browser's choice": "Webbläsarens val",
+  "Camera {n}": "Kamera {n}",
+  "Camera quality": "Kamerakvalitet",
+  "It goes straight to each one in the call: about {n} Mbit/s of your upload for each (through the site's server, always small).":
+    "Bilden går direkt till var och en i samtalet: runt {n} Mbit/s av din uppladdning per person (via sajtens server alltid liten).",
+
   // notifications (the bell, the page)
   Notifications: "Notiser",
   "What you missed": "Det här har du missat",

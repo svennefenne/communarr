@@ -1078,6 +1078,84 @@ a.list-card-title:hover {
 .sp-sound input {
   width: 90px;
 }
+/* webcams: a camera on the face in the dock, and the pictures in the video panel (a grid, or a row
+   under the stream you watch); yours mirrored, as in a mirror */
+.vc-cam {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.sp-cams {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  background: #000;
+}
+:is(.stream-player.big, .stream-player.full) .sp-cams:not(.strip) {
+  flex: 1;
+  min-height: 0;
+  grid-auto-rows: minmax(0, 1fr);
+}
+:is(.stream-player.big, .stream-player.full) .sp-cams:not(.strip) .cam-tile {
+  aspect-ratio: auto;
+}
+.sp-cams.strip {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sp-cams.strip .cam-tile {
+  flex: none;
+  width: 128px;
+}
+.cam-tile {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.cam-tile video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cam-tile video.mirror {
+  transform: scaleX(-1);
+}
+.cam-tile.talking::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--ok);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.cam-name {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 12px);
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
 @media (max-width: 699px) {
   .stream-player {
     left: 10px;

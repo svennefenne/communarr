@@ -22,9 +22,15 @@ export interface VoicePrefs {
   noise: NoiseMode;
   /** input sensitivity in dB: quieter than this isn't sent (-100: everything is) */
   threshold: number;
+  /** the webcam to use (a device id; "": the browser's choice) */
+  camera: string;
+  /** how good the webcam is sent to each one in the call (straight to them: through a TURN server it's always small) */
+  cameraQuality: CameraQuality;
 }
 
-export const DEFAULT_VOICE_PREFS: VoicePrefs = { mode: "open", key: "KeyV", noise: "browser", threshold: -100 };
+export type CameraQuality = "360p" | "720p" | "1080p";
+
+export const DEFAULT_VOICE_PREFS: VoicePrefs = { mode: "open", key: "KeyV", noise: "browser", threshold: -100, camera: "", cameraQuality: "720p" };
 
 const KEY = "hd.voicePrefs";
 
@@ -36,6 +42,8 @@ export function loadVoicePrefs(): VoicePrefs {
       key: typeof p.key === "string" && p.key ? p.key.slice(0, 40) : DEFAULT_VOICE_PREFS.key,
       noise: p.noise === "off" || p.noise === "strong" ? p.noise : "browser",
       threshold: Number.isFinite(p.threshold) ? Math.min(0, Math.max(-100, Number(p.threshold))) : DEFAULT_VOICE_PREFS.threshold,
+      camera: typeof p.camera === "string" ? p.camera.slice(0, 200) : "",
+      cameraQuality: p.cameraQuality === "360p" || p.cameraQuality === "1080p" ? p.cameraQuality : "720p",
     };
   } catch {
     return DEFAULT_VOICE_PREFS;

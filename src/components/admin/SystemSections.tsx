@@ -150,6 +150,7 @@ export function NotifyVoice({ s, vapid, devices, timezones, fcm }: { s: SiteSett
   const [max, setMax] = useState(s.voice.max);
   const [streams, setStreams] = useState(s.voice.streams);
   const [streamRelay, setStreamRelay] = useState(s.voice.streamRelay);
+  const [cameras, setCameras] = useState(s.voice.cameras);
   const [tz, setTz] = useState(s.timezone);
   const [pending, start] = useTransition();
   const { confirm, node } = useConfirm();
@@ -224,6 +225,13 @@ export function NotifyVoice({ s, vapid, devices, timezones, fcm }: { s: SiteSett
         </label>
         <div className="setting-row">
           <span className="grow">
+            <b>{t("Webcams")}</b>
+            <span className="small muted">{t("People in a call turn their camera on, and everyone in the call sees it. It goes straight between them, the call's way (through the TURN server only when it has to, small).")}</span>
+          </span>
+          <Switch on={cameras} onChange={setCameras} label={t("Webcams")} />
+        </div>
+        <div className="setting-row">
+          <span className="grow">
             <b>{t("Sharing a screen")}</b>
             <span className="small muted">{t("Someone in a call shares their screen or a window (a game, a film) with the others in it. It goes straight from them to each one watching, not through the site.")}</span>
           </span>
@@ -236,7 +244,7 @@ export function NotifyVoice({ s, vapid, devices, timezones, fcm }: { s: SiteSett
           </span>
           <Switch on={streamRelay} onChange={setStreamRelay} label={t("Streams through the TURN server")} disabled={!streams} />
         </div>
-        <SaveBar pending={pending} onSave={() => save({ voice: { ice, max, streams, streamRelay } })} />
+        <SaveBar pending={pending} onSave={() => save({ voice: { ice, max, streams, streamRelay, cameras } })} />
       </div>
       <div className="stack tight">
         <b>{t("Time zone")}</b>

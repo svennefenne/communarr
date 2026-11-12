@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { loadMembers } from "@/components/editor/mention";
 import { useVoice, voicePost } from "./VoiceProvider";
+import { encodeAs, relayed, type Quality } from "./rtc";
 
 /**
  * Sharing a screen or a window in a call (as Discord's Go Live). Whoever goes live sends it straight to
@@ -13,7 +14,6 @@ import { useVoice, voicePost } from "./VoiceProvider";
  */
 
 export type StreamQuality = "720p30" | "1080p30" | "1080p60";
-type Quality = { height: number; fps: number; bitrate: number };
 export const QUALITIES: Record<StreamQuality, Quality> = {
   "720p30": { height: 720, fps: 30, bitrate: 2_500_000 },
   "1080p30": { height: 1080, fps: 30, bitrate: 4_500_000 },
@@ -60,34 +60,6 @@ function stereo(sdp: string): string {
   );
 }
 
-/** Does the connection go through a TURN server (either end's way in is a relay)? */
-async function relayed(pc: RTCPeerConnection): Promise<boolean> {
-  const stats = await pc.getStats().catch(() => null);
-  if (!stats) return false;
-  type Pair = { localCandidateId?: string; remoteCandidateId?: string };
-  let pair: Pair | undefined;
-  stats.forEach((s: { type: string; selectedCandidatePairId?: string }) => {
-    if (s.type === "transport" && s.selectedCandidatePairId) pair = stats.get(s.selectedCandidatePairId);
-  });
-  if (!pair)
-    stats.forEach((s: Pair & { type: string; nominated?: boolean; state?: string }) => {
-      if (!pair && s.type === "candidate-pair" && s.nominated && s.state === "succeeded") pair = s;
-    });
-  if (!pair) return false;
-  return [pair.localCandidateId, pair.remoteCandidateId].some((id) => (id ? stats.get(id)?.candidateType === "relay" : false));
-}
-
-/** The video's encoding: its bitrate, frames a second and size (scaled down from what's captured). */
-async function encodeAs(pc: RTCPeerConnection, q: Quality) {
-  const sender = pc.getSenders().find((s) => s.track?.kind === "video");
-  if (!sender?.track) return;
-  const p = sender.getParameters();
-  if (!p.encodings?.length) return;
-  const h = sender.track.getSettings().height ?? q.height;
-  p.encodings[0] = { ...p.encodings[0], maxBitrate: q.bitrate, maxFramerate: q.fps, scaleResolutionDownBy: Math.max(1, h / q.height) };
-  await sender.setParameters(p).catch(() => {});
-}
-
 export interface Watching {
   conn: number;
   userId: number;
@@ -116,6 +88,9 @@ interface Ctx {
   watching: Watching | null;
   watch: (conn: number, userId: number) => void;
   unwatch: () => void;
+  /** the video panel's webcams put away (until another one comes on, or a face with one is pressed) */
+  camsHidden: boolean;
+  setCamsHidden: (h: boolean) => void;
 }
 
 const StreamCtx = createContext<Ctx | null>(null);
@@ -137,6 +112,7 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
   const [viewers, setViewers] = useState<number[]>([]);
   const [prefs, setPrefs] = useState<StreamPrefs>(DEFAULT_PREFS);
   const [watching, setWatching] = useState<Watching | null>(null);
+  const [camsHidden, setCamsHidden] = useState(false);
 
   const roomRef = useRef<number | null>(null);
   const connRef = useRef<number | null>(null);
@@ -223,7 +199,7 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
           for (const wait of [0, 3000])
             setTimeout(() => {
               if (out.current.get(c) !== pc) return;
-              void relayed(pc).then((r) => encodeAs(pc, r ? { height: Math.min(RELAYED.height, q.height), fps: Math.min(RELAYED.fps, q.fps), bitrate: Math.min(RELAYED.bitrate, q.bitrate) } : q));
+              void relayed(pc).then((r) => encodeAs(pc.getSenders().find((x) => x.track?.kind === "video"), r ? { height: Math.min(RELAYED.height, q.height), fps: Math.min(RELAYED.fps, q.fps), bitrate: Math.min(RELAYED.bitrate, q.bitrate) } : q));
             }, wait);
         if (pc.connectionState === "failed" || pc.connectionState === "closed") dropViewer(c);
       };
@@ -458,6 +434,20 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveKey]);
 
+  // a webcam comes on in the call (yours too): the panel shows them again
+  const camKey = peers
+    .filter((p) => p.camera)
+    .map((p) => p.conn)
+    .join(",");
+  const seenCams = useRef(new Set<number>());
+  useEffect(() => {
+    const now = new Set(peers.filter((p) => p.camera).map((p) => p.conn));
+    if ([...now].some((c) => !seenCams.current.has(c))) setCamsHidden(false);
+    seenCams.current = now;
+    // (the cameras on are what's in camKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camKey]);
+
   // the stream you watch broke: once more, if they're still live
   useEffect(() => {
     if (watching?.state !== "failed" || retried.current || watching.self) return;
@@ -479,6 +469,6 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => () => display.current?.getTracks().forEach((tr) => tr.stop()), []);
 
   return (
-    <StreamCtx.Provider value={{ canGoLive: device && allowed, canShare: device && allowed && v.room != null, live, liveAudio, viewers, prefs, goLive, stopLive, watching, watch, unwatch }}>{children}</StreamCtx.Provider>
+    <StreamCtx.Provider value={{ canGoLive: device && allowed, canShare: device && allowed && v.room != null, live, liveAudio, viewers, prefs, goLive, stopLive, watching, watch, unwatch, camsHidden, setCamsHidden }}>{children}</StreamCtx.Provider>
   );
 }

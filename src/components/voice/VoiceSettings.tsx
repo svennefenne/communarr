@@ -3,16 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Mic, Square } from "lucide-react";
 import { useT } from "@/components/app/AppProvider";
-import { useVoice } from "./VoiceProvider";
-import { keyName, openPipeline, type MicLevel, type NoiseMode, type Pipeline } from "./pipeline";
+import { CAMERA, useVoice } from "./VoiceProvider";
+import { keyName, openPipeline, type CameraQuality, type MicLevel, type NoiseMode, type Pipeline } from "./pipeline";
 
 /** dB to a share of the meter (-100 … 0 dB, the useful part stretched) */
 const pct = (db: number) => Math.round(Math.min(1, Math.max(0, (db + 90) / 80)) * 100);
 
 /**
  * Your voice chat settings on this device: push to talk (and its key) or by input sensitivity, the
- * sensitivity with a live meter, and noise suppression. In a call they apply straight away; outside
- * one, "Test the microphone" shows the meter.
+ * sensitivity with a live meter, noise suppression, and the webcam (which, and how good). In a call
+ * they apply straight away; outside one, "Test the microphone" shows the meter.
  */
 export function VoiceSettings() {
   const t = useT();
@@ -24,6 +24,15 @@ export function VoiceSettings() {
   const [testInfo, setTestInfo] = useState<{ processed: boolean; noise: NoiseMode } | null>(null);
   const test = useRef<Pipeline | null>(null);
   const inCall = v.room != null;
+  // the webcams there are (their names once the browser has been allowed a camera)
+  const [cams, setCams] = useState<MediaDeviceInfo[]>([]);
+  useEffect(() => {
+    if (!v.camerasAllowed) return;
+    navigator.mediaDevices
+      ?.enumerateDevices()
+      .then((l) => setCams(l.filter((d) => d.kind === "videoinput" && d.deviceId)))
+      .catch(() => {});
+  }, [v.camerasAllowed, v.camera]);
 
   // the meter: from the call, or from a test of the microphone
   useEffect(() => {
@@ -138,6 +147,36 @@ export function VoiceSettings() {
         </select>
         {noise && noise !== p.noise ? <span className="small muted">{t("This browser can't run the strong kind here: the browser's own is used.")}</span> : null}
       </div>
+
+      {v.camerasAllowed ? (
+        <div className="field">
+          <label className="label" htmlFor="voice-camera">
+            {t("Camera")}
+          </label>
+          {cams.length > 1 ? (
+            <select id="voice-camera" className="select" value={cams.some((d) => d.deviceId === p.camera) ? p.camera : ""} onChange={(e) => void v.setPrefs({ ...p, camera: e.target.value })} style={{ maxWidth: 360 }}>
+              <option value="">{t("The browser's choice")}</option>
+              {cams.map((d, i) => (
+                <option key={d.deviceId} value={d.deviceId}>
+                  {d.label || t("Camera {n}", { n: i + 1 })}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          <div className="pills" role="group" aria-label={t("Camera quality")}>
+            {(["360p", "720p", "1080p"] as CameraQuality[]).map((q) => (
+              <button key={q} type="button" className={`pill ${p.cameraQuality === q ? "active" : ""}`} aria-pressed={p.cameraQuality === q} onClick={() => void v.setPrefs({ ...p, cameraQuality: q })}>
+                {q}
+              </button>
+            ))}
+          </div>
+          <span className="small muted">
+            {t("It goes straight to each one in the call: about {n} Mbit/s of your upload for each (through the site's server, always small).", {
+              n: (CAMERA[p.cameraQuality].bitrate / 1e6).toLocaleString(undefined, { maximumFractionDigits: 1 }),
+            })}
+          </span>
+        </div>
+      ) : null}
 
       {!processed ? <p className="small muted">{t("This browser can't adjust the microphone: push to talk and input sensitivity need a newer one.")}</p> : null}
 

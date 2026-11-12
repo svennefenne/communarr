@@ -50,9 +50,10 @@ export interface SiteSettings {
   maxUploadMb: number;
   /**
    * ice: the servers for calls; max: most people in one call; streams: sharing a screen or a window in
-   * a call; streamRelay: a stream may go through a TURN server (at a lower quality) when it can't go direct
+   * a call; streamRelay: a stream may go through a TURN server (at a lower quality) when it can't go
+   * direct; cameras: webcams in calls
    */
-  voice: { ice: IceServer[]; max: number; streams: boolean; streamRelay: boolean };
+  voice: { ice: IceServer[]; max: number; streams: boolean; streamRelay: boolean; cameras: boolean };
   /** the time zone for reminders and calendar feeds, e.g. Europe/Stockholm */
   timezone: string;
   /** web push: the contact the push services see (mailto: or https:) */
@@ -94,7 +95,7 @@ export const DEFAULTS: SiteSettings = {
   emojiLibrary: true,
   bggLinks: true,
   maxUploadMb: 20,
-  voice: { ice: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }], max: 10, streams: true, streamRelay: true },
+  voice: { ice: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }], max: 10, streams: true, streamRelay: true, cameras: true },
   timezone: process.env.TZ || "Europe/Stockholm",
   pushContact: "",
   wordFilter: [],
