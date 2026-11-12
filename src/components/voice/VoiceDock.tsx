@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Headphones, HeadphoneOff, Mic, MicOff, PhoneOff, Radio, Settings2 } from "lucide-react";
+import { Eye, Headphones, HeadphoneOff, Mic, MicOff, MonitorOff, MonitorUp, PhoneOff, Radio, Settings2 } from "lucide-react";
 import { useVoice, type VoicePeer } from "./VoiceProvider";
 import { useApp, useT } from "@/components/app/AppProvider";
 import { useMembers } from "@/components/app/useMembers";
@@ -11,18 +11,37 @@ import type { UserSummary } from "@/lib/types";
 import { Modal } from "@/components/ui/ui";
 import { keyName } from "./pipeline";
 import { VoiceSettings } from "./VoiceSettings";
+import { useStream } from "./StreamProvider";
+import { GoLiveDialog } from "./StreamPlayer";
 
+/** Someone in the call (glowing while they talk); sharing their screen: LIVE, and a press watches it. */
 function Face({ p, user, talking, me }: { p: VoicePeer; user?: UserSummary; talking: boolean; me: boolean }) {
   const t = useT();
-  return (
-    <span className={`vc-face ${talking ? "talking" : ""}`} title={`${user?.name ?? t("Someone")}${me ? ` ${t("(you)")}` : ""}${p.muted ? ` · ${t("muted")}` : ""}`}>
+  const s = useStream();
+  const name = `${user?.name ?? t("Someone")}${me ? ` ${t("(you)")}` : ""}`;
+  const face = (
+    <>
       {user ? <Avatar user={user} size={30} /> : <span className="avatar" style={{ width: 30, height: 30 }} />}
       {p.muted ? (
         <span className="vc-muted">
           <MicOff size={10} />
         </span>
       ) : null}
-    </span>
+      {p.live ? <span className="live-tag vc-live-tag">{t("LIVE")}</span> : null}
+    </>
+  );
+  if (!p.live)
+    return (
+      <span className={`vc-face ${talking ? "talking" : ""}`} title={`${name}${p.muted ? ` · ${t("muted")}` : ""}`}>
+        {face}
+      </span>
+    );
+  const on = s.watching?.conn === p.conn;
+  const label = on ? t("Stop watching {name}", { name }) : me ? t("See your stream") : t("Watch {name}'s screen", { name });
+  return (
+    <button type="button" className={`vc-face live ${talking ? "talking" : ""} ${on ? "watching" : ""}`} onClick={() => (on ? s.unwatch() : s.watch(p.conn, p.userId))} aria-pressed={on} aria-label={label} title={label}>
+      {face}
+    </button>
   );
 }
 
@@ -35,10 +54,12 @@ export function VoiceDock() {
 
 function Dock() {
   const v = useVoice();
+  const s = useStream();
   const t = useT();
   const { conn } = useApp();
   const people = useMembers();
   const [settings, setSettings] = useState(false);
+  const [going, setGoing] = useState(false);
   if (v.room == null) return null;
   const peers = v.channels[v.room] ?? [];
   return (
@@ -53,11 +74,25 @@ function Dock() {
         ))}
       </div>
       <div className="vc-btns">
+        {s.live ? (
+          <span className="vc-viewers" title={s.viewers.length ? s.viewers.map((c) => people.get(peers.find((p) => p.conn === c)?.userId ?? 0)?.name ?? t("Someone")).join(", ") : t("No one is watching yet")}>
+            <Eye size={14} /> {s.viewers.length}
+          </span>
+        ) : null}
         {/* push to talk: which key, lit while it's held */}
         {v.prefs.mode === "ptt" && !v.muted ? (
           <span className={`vc-ptt ${v.talkKey ? "on" : ""}`} title={t("Push to talk")}>
             {v.talkKey ? t("Talking") : t("Hold {key}", { key: keyName(v.prefs.key) })}
           </span>
+        ) : null}
+        {s.live ? (
+          <button type="button" className="icon-btn sm on" onClick={s.stopLive} aria-label={t("Stop sharing")} title={t("Stop sharing")}>
+            <MonitorOff size={17} />
+          </button>
+        ) : s.canShare ? (
+          <button type="button" className="icon-btn sm" onClick={() => setGoing(true)} aria-label={t("Share your screen")} title={t("Share your screen")}>
+            <MonitorUp size={17} />
+          </button>
         ) : null}
         <button type="button" className="icon-btn sm" onClick={() => setSettings(true)} aria-label={t("Voice settings")} title={t("Voice settings")}>
           <Settings2 size={17} />
@@ -72,6 +107,7 @@ function Dock() {
           <PhoneOff size={17} />
         </button>
       </div>
+      {going ? <GoLiveDialog onClose={() => setGoing(false)} /> : null}
       {settings ? (
         <Modal onClose={() => setSettings(false)} label={t("Voice settings")}>
           <h2 className="h2" style={{ marginTop: 0, marginBottom: 14 }}>
@@ -93,6 +129,7 @@ export function VoiceButton({ room, name, compact = false }: { room: number; nam
   if (!site.features.voice) return null;
   const peers = v.channels[room] ?? [];
   const here = v.room === room;
+  const live = peers.some((p) => p.live);
   if (!v.supported)
     return (
       <span className="pill soft" title={t("Voice chat needs a microphone and the site opened over https://")}>
@@ -107,6 +144,11 @@ export function VoiceButton({ room, name, compact = false }: { room: number; nam
             const u = people.get(p.userId);
             return u ? <Avatar key={p.conn} user={u} size={24} /> : null;
           })}
+        </span>
+      ) : null}
+      {live ? (
+        <span className="live-tag" title={t("Someone is sharing their screen")}>
+          {t("LIVE")}
         </span>
       ) : null}
       <button

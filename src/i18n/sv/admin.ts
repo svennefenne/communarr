@@ -256,6 +256,12 @@ const sv: Record<string, string> = {
   Remove: "Ta bort",
   "Add a server": "Lägg till en server",
   "Most people in one call": "Max antal personer i ett samtal",
+  "Sharing a screen": "Skärmdelning",
+  "Someone in a call shares their screen or a window (a game, a film) with the others in it. It goes straight from them to each one watching, not through the site.":
+    "Någon i ett samtal delar sin skärm eller ett fönster (ett spel, en film) med de andra i samtalet. Det går direkt från den som delar till var och en som tittar, inte via sajten.",
+  "Streams through the TURN server": "Strömmar via TURN-servern",
+  "When someone can't reach the one sharing directly, the stream may go through the TURN server instead, at a lower quality (720p, about 1.5 Mbit/s each). Off: only those who reach them directly can watch.":
+    "När någon inte når den som delar direkt får strömmen gå via TURN-servern i stället, i lägre kvalitet (720p, runt 1,5 Mbit/s per tittare). Av: bara de som når den som delar direkt kan titta.",
   "Time zone": "Tidszon",
   "For reminders, birthdays and the calendar files. (Everyone sees times in their own device's time zone.)":
     "För påminnelser, födelsedagar och kalenderfilerna. (Alla ser tider i sin egen enhets tidszon.)",

@@ -8,7 +8,7 @@ import type { SiteSettings, IceServer } from "@/lib/settings";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { PRIVACY } from "@/components/groups/privacy";
 import { Time } from "@/components/ui/Time";
-import { useConfirm } from "@/components/ui/ui";
+import { Switch, useConfirm } from "@/components/ui/ui";
 import { bytes } from "./Overview";
 import { SaveBar } from "./Section";
 import { archiveRoomAdminAction, cleanupAction, clearFcmAction, deleteGroupAdminAction, deleteRoomAdminAction, reindexAction, rotateVapidAction, saveFcmAction, saveSettingsAction, testPushAction, vacuumAction } from "@/app/actions/admin";
@@ -148,6 +148,8 @@ export function NotifyVoice({ s, vapid, devices, timezones, fcm }: { s: SiteSett
   const [contact, setContact] = useState(s.pushContact);
   const [ice, setIce] = useState<IceServer[]>(s.voice.ice);
   const [max, setMax] = useState(s.voice.max);
+  const [streams, setStreams] = useState(s.voice.streams);
+  const [streamRelay, setStreamRelay] = useState(s.voice.streamRelay);
   const [tz, setTz] = useState(s.timezone);
   const [pending, start] = useTransition();
   const { confirm, node } = useConfirm();
@@ -220,7 +222,21 @@ export function NotifyVoice({ s, vapid, devices, timezones, fcm }: { s: SiteSett
           <span className="grow">{t("Most people in one call")}</span>
           <input type="number" className="input sm" style={{ width: 80 }} min={2} max={25} value={max} onChange={(e) => setMax(Number(e.target.value))} />
         </label>
-        <SaveBar pending={pending} onSave={() => save({ voice: { ice, max } })} />
+        <div className="setting-row">
+          <span className="grow">
+            <b>{t("Sharing a screen")}</b>
+            <span className="small muted">{t("Someone in a call shares their screen or a window (a game, a film) with the others in it. It goes straight from them to each one watching, not through the site.")}</span>
+          </span>
+          <Switch on={streams} onChange={setStreams} label={t("Sharing a screen")} />
+        </div>
+        <div className="setting-row">
+          <span className="grow">
+            <b>{t("Streams through the TURN server")}</b>
+            <span className="small muted">{t("When someone can't reach the one sharing directly, the stream may go through the TURN server instead, at a lower quality (720p, about 1.5 Mbit/s each). Off: only those who reach them directly can watch.")}</span>
+          </span>
+          <Switch on={streamRelay} onChange={setStreamRelay} label={t("Streams through the TURN server")} disabled={!streams} />
+        </div>
+        <SaveBar pending={pending} onSave={() => save({ voice: { ice, max, streams, streamRelay } })} />
       </div>
       <div className="stack tight">
         <b>{t("Time zone")}</b>

@@ -4,14 +4,14 @@ import { canSee, room } from "@/lib/chat";
 import { getSettings } from "@/lib/settings";
 import { requestT } from "@/lib/t";
 import type { Vars } from "@/lib/i18n";
-import { iceServers, joinVoice, leaveVoice, muteVoice, relayVoice, voiceSnapshot } from "@/lib/voice";
+import { iceServers, joinVoice, leaveVoice, muteVoice, relayVoice, setLive, streamIceServers, voiceSnapshot } from "@/lib/voice";
 
 export const dynamic = "force-dynamic";
 
 /** an error for the person (English text, sent in their language) */
 const fail = async (error: string, status = 400, vars?: Vars) => Response.json({ error: (await requestT())(error, vars) }, { status });
 
-/** GET /api/voice → { channels, ice }: who's talking where, and the servers for the calls. */
+/** GET /api/voice → { channels, ice, streams, streamIce }: who's talking where, the servers for the calls, and may screens be shared (and the servers for that). */
 export async function GET() {
   const user = await getUser();
   if (!user) return fail("Log in first.", 401);
@@ -23,21 +23,22 @@ export async function GET() {
       return !!r && canSee(user, r);
     }),
   );
-  return Response.json({ channels, ice: iceServers() });
+  return Response.json({ channels, ice: iceServers(), streams: getSettings().voice.streams, streamIce: streamIceServers() });
 }
 
 /**
  * POST /api/voice { action, room, conn, … }
- *   join                  → { others, ice }: the tabs to call
+ *   join                  → { others, ice, streamIce }: the tabs to call
  *   leave
  *   mute { muted }
- *   signal { to, data }   a call's set-up message for another tab in the channel
+ *   live { live, audio }  sharing your screen or a window (with its sound), or not any more
+ *   signal { to, data }   a call's (or a stream's) set-up message for another tab in the channel
  */
 export async function POST(req: Request) {
   const user = await getUser();
   if (!user) return fail("Log in first.", 401);
   if (!getSettings().features.voice) return fail("Voice chat is switched off.", 403);
-  const b = (await req.json().catch(() => ({}))) as { action?: string; room?: number; conn?: number; muted?: boolean; to?: number; data?: unknown };
+  const b = (await req.json().catch(() => ({}))) as { action?: string; room?: number; conn?: number; muted?: boolean; live?: boolean; audio?: boolean; to?: number; data?: unknown };
   const conn = connById(Number(b.conn), user.id);
   if (!conn) return fail("Not connected: reload the page.", 409);
   const roomId = Number(b.room);
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       if (!r || !canSee(user, r)) return fail("You can't join this room's voice.", 403);
       const others = joinVoice(user.id, roomId, conn.id);
       if (others === "full") return fail("The voice channel is full ({n} at most).", 409, { n: getSettings().voice.max });
-      return Response.json({ others, ice: iceServers() });
+      return Response.json({ others, ice: iceServers(), streamIce: streamIceServers() });
     }
     case "leave":
       leaveVoice(roomId, conn.id);
@@ -55,6 +56,9 @@ export async function POST(req: Request) {
     case "mute":
       muteVoice(roomId, conn.id, !!b.muted);
       return Response.json({ ok: true });
+    case "live":
+      if (b.live && !getSettings().voice.streams) return fail("Sharing your screen is switched off.", 403);
+      return setLive(roomId, conn.id, b.live ? { audio: !!b.audio } : null) ? Response.json({ ok: true }) : fail("Not in the voice channel.", 404);
     case "signal": {
       // still allowed in the room (not removed since joining)
       const r = room(roomId);
