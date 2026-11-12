@@ -12,13 +12,14 @@ import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { VoiceButton } from "@/components/voice/VoiceDock";
 import { Dropdown, Modal, useConfirm } from "@/components/ui/ui";
 import { PeoplePicker } from "@/components/ui/PeoplePicker";
-import { UserChip } from "@/components/ui/Avatar";
+import { Avatar, UserChip } from "@/components/ui/Avatar";
 import { ReportDialog } from "@/components/content/ReportDialog";
 import { applyReaction } from "@/components/content/Reactions";
 import { RoomIcon } from "./ChatSidebar";
 import { Message, type MessageHandlers } from "./Message";
 import { RoomSettings } from "./RoomSettings";
 import { useChatUi } from "./ChatShell";
+import { TypingDots, TypingLine, useTyping } from "./useTyping";
 import { ChatPeople, ManageMember } from "./ChatPeople";
 import {
   declineInviteAction,
@@ -77,7 +78,6 @@ export function ChatRoom(p: Props) {
   const [members, setMembers] = useState(p.members);
   const [reads, setReads] = useState(p.reads);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
-  const [typing, setTyping] = useState<Map<number, { name: string; until: number }>>(new Map());
   const [highlight, setHighlight] = useState<number | null>(Number(search.get("m")) || null);
   const [newBelow, setNewBelow] = useState(0);
   const [panel, setPanel] = useState<null | "members" | "pinned" | "settings" | "invite">(null);
@@ -209,12 +209,6 @@ export function ChatRoom(p: Props) {
     const { room, message } = d as { room: number; message: ChatMessage };
     if (room !== id) return;
     setMsgs((x) => (x.some((m) => m.id === message.id) ? x : [...x, message]));
-    setTyping((t) => {
-      if (!message.author || !t.has(message.author.id)) return t;
-      const n = new Map(t);
-      n.delete(message.author.id);
-      return n;
-    });
     if (message.author?.id === me?.id || atBottom.current) requestAnimationFrame(() => scrollToBottom(true));
     else setNewBelow((n) => n + 1);
   });
@@ -236,11 +230,6 @@ export function ChatRoom(p: Props) {
     const e = d as { room: number; id: number; pinned: boolean };
     if (e.room === id) setMsgs((x) => x.map((m) => (m.id === e.id ? { ...m, pinned: e.pinned } : m)));
   });
-  useLive("typing", (d) => {
-    const e = d as { room: number; user: { id: number; name: string } };
-    if (e.room !== id || e.user.id === me?.id) return;
-    setTyping((t) => new Map(t).set(e.user.id, { name: e.user.name, until: Date.now() + 4500 }));
-  });
   useLive("read", (d) => {
     const e = d as { room: number; user: number; lastId: number };
     if (e.room !== id) return;
@@ -259,17 +248,12 @@ export function ChatRoom(p: Props) {
     const m = await membersAction(id);
     if (m.ok) setMembers(m.data);
   });
-  // typing goes stale
+  // someone typing: the dots at the end of the messages, in view if you're at the bottom
+  const typers = useTyping().get(id) ?? [];
+  const typingKey = typers.map((x) => x.id).join(",");
   useEffect(() => {
-    if (!typing.size) return;
-    const t = setInterval(() => {
-      setTyping((m) => {
-        const n = new Map([...m].filter(([, v]) => v.until > Date.now()));
-        return n.size === m.size ? m : n;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, [typing.size]);
+    if (typingKey && atBottom.current) requestAnimationFrame(() => scrollToBottom(true));
+  }, [typingKey]);
 
   // ── sending ──
   const send = async () => {
@@ -351,7 +335,6 @@ export function ChatRoom(p: Props) {
   const otherRead = info.kind === "dm" && info.other ? reads.find((r) => r.userId === info.other!.id)?.lastId ?? 0 : 0;
   const myLast = [...msgs].reverse().find((m) => m.author?.id === me?.id && !m.deleted);
 
-  const typingNames = [...typing.values()].map((t) => t.name.split(" ")[0]);
   const isMember = !!info.myRole;
   const canModerate = p.canManage || !!me?.isMod;
 
@@ -517,6 +500,18 @@ export function ChatRoom(p: Props) {
               </div>
             );
           })}
+          {/* someone typing: their face and the dots, where their message will come */}
+          {typers.length ? (
+            <div className="typing-row" aria-hidden>
+              <div className="typing-faces">
+                {typers.slice(0, 2).map((x) => {
+                  const u = people.get(x.id);
+                  return u ? <Avatar key={x.id} user={u} size={typers.length > 1 ? 26 : 34} /> : null;
+                })}
+              </div>
+              <TypingDots className="typing-bubble" />
+            </div>
+          ) : null}
         </div>
 
         {newBelow ? (
@@ -526,7 +521,9 @@ export function ChatRoom(p: Props) {
         ) : null}
 
         <footer className="chat-foot">
-          <div className="chat-typing tiny muted">{typingNames.length ? t.n(typingNames.length, "{names} is typing…", "{names} are typing…", { names: typingNames.slice(0, 3).join(", ") }) : " "}</div>
+          <div className="chat-typing small" aria-live="polite">
+            {typers.length ? <TypingLine typers={typers} /> : " "}
+          </div>
           {info.invited && !isMember ? (
             <div className="chat-banner">
               <span className="grow">{t("You're invited to this room.")}</span>

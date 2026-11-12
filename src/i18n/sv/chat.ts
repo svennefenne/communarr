@@ -111,6 +111,7 @@ const sv: Record<string, string> = {
   "{n} new messages": "{n} nya meddelanden",
   "{names} is typing…": "{names} skriver…",
   "{names} are typing…": "{names} skriver…",
+  "typing…": "skriver…",
   "You're invited to this room.": "Du är inbjuden till det här rummet.",
   "You're looking in. Join to get its messages in your list (writing something joins you too).":
     "Du tittar in. Gå med så hamnar rummet i din lista (skriver du något går du också med).",

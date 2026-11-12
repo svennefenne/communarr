@@ -534,9 +534,100 @@ html.app-page:not([data-frame="on"]) .site-footer {
 .chat-foot {
   padding: 0 12px 12px;
 }
+/* someone typing, as Discord says it: the dots, then "Anna is typing…" with the name in bold */
 .chat-typing {
-  height: 20px;
-  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 22px;
+  padding: 2px 8px;
+  color: var(--muted);
+}
+.chat-typing b,
+.chat-row-typing b {
+  color: var(--text);
+  font-weight: 800;
+}
+/* …and in the chat list, in place of the last message */
+.chat-row-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+}
+.chat-row-typing .typing-dots i {
+  width: 4px;
+  height: 4px;
+}
+/* three dots that bounce in turn */
+.typing-dots,
+.typing-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+}
+.typing-dots i,
+.typing-bubble i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+.typing-dots i:nth-child(2),
+.typing-bubble i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dots i:nth-child(3),
+.typing-bubble i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
+  animation: none;
+  opacity: 0.7;
+}
+/* as Messenger shows it: their face and a bubble of dots at the end of the messages, where theirs will come */
+.typing-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: end;
+  padding: 5px 18px 8px 8px;
+  margin-top: 6px;
+  animation: pop 200ms ease-out;
+}
+.typing-faces {
+  display: flex;
+  justify-content: center;
+}
+.typing-faces .avatar + .avatar {
+  margin-left: -9px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.typing-bubble {
+  justify-self: start;
+  gap: 4px;
+  padding: 11px 13px;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.typing-bubble i {
+  width: 7px;
+  height: 7px;
 }
 .chat-banner {
   display: flex;

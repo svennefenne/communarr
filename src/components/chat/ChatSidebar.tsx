@@ -13,6 +13,7 @@ import { relative } from "@/components/ui/Time";
 import { NewChat } from "./NewChat";
 import { ArrangeRooms } from "./ArrangeRooms";
 import { useChatUi } from "./ChatShell";
+import { TypingDots, TypingLine, useTyping, type Typer } from "./useTyping";
 import { declineInviteAction, joinRoomAction, roomsAction } from "@/app/actions/chat";
 
 export function RoomIcon({ r, size = 38 }: { r: Pick<RoomInfo, "kind" | "emoji" | "visibility" | "other">; size?: number }) {
@@ -27,7 +28,7 @@ export function RoomIcon({ r, size = 38 }: { r: Pick<RoomInfo, "kind" | "emoji" 
 /** "5 min ago" without the "ago" (and "för 5 min sedan" without "för … sedan"): the list is tight. */
 const short = (s: string) => s.replace(/ ago$/, "").replace(/^för (.+) sedan$/, "$1");
 
-function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unread: number; talking: number }) {
+function Row({ r, active, unread, talking, typers = [] }: { r: RoomInfo; active: boolean; unread: number; talking: number; typers?: Typer[] }) {
   const t = useT();
   const live = useVoice().channels[r.id]?.some((p) => p.live);
   return (
@@ -43,7 +44,20 @@ function Row({ r, active, unread, talking }: { r: RoomInfo; active: boolean; unr
           ) : null}
         </span>
         <span className="row" style={{ gap: 6 }}>
-          <span className="tiny muted ellipsis grow">{r.lastMessage ? `${r.lastMessage.author ? `${r.lastMessage.author.split(" ")[0]}: ` : ""}${r.lastMessage.text}` : r.topic || " "}</span>
+          {/* someone typing there: that, in place of the last message (in a DM, just that they are) */}
+          {typers.length ? (
+            <span className="tiny ellipsis grow chat-row-typing">
+              {r.kind === "dm" ? (
+                <>
+                  <TypingDots /> {t("typing…")}
+                </>
+              ) : (
+                <TypingLine typers={typers} />
+              )}
+            </span>
+          ) : (
+            <span className="tiny muted ellipsis grow">{r.lastMessage ? `${r.lastMessage.author ? `${r.lastMessage.author.split(" ")[0]}: ` : ""}${r.lastMessage.text}` : r.topic || " "}</span>
+          )}
           {live ? (
             <span className="live-tag" title={t("Someone is sharing their screen")}>
               {t("LIVE")}
@@ -86,6 +100,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   const { counts, site, me } = useApp();
   const t = useT();
   const voice = useVoice();
+  const typing = useTyping();
   const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -261,12 +276,12 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
         ) : null}
         <div className="menu-label">{t("Rooms")}</div>
         {rooms.map((r) => (
-          <Row key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
+          <Row key={r.id} r={r} typers={typing.get(r.id)} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
         ))}
         {!rooms.length ? <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>{q ? t("No rooms found.") : t("No rooms yet.")}</div> : null}
         <div className="menu-label">{t("Direct messages")}</div>
         {dms.map((r) => (
-          <Row key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
+          <Row key={r.id} r={r} typers={typing.get(r.id)} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
         ))}
         {!dms.length ? (
           <button type="button" className="btn btn-ghost btn-xs" style={{ margin: "2px 10px 10px" }} onClick={() => setCreating("dm")}>
@@ -277,7 +292,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
           <>
             <div className="menu-label">{t("Open rooms to join")}</div>
             {open.map((r) => (
-              <Row key={r.id} r={r} active={r.id === activeId} unread={0} talking={voice.channels[r.id]?.length ?? 0} />
+              <Row key={r.id} r={r} typers={typing.get(r.id)} active={r.id === activeId} unread={0} talking={voice.channels[r.id]?.length ?? 0} />
             ))}
           </>
         ) : null}
