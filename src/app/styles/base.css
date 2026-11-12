@@ -1248,6 +1248,12 @@ input[type="radio"] {
   margin: 5px 6px;
   background: var(--line);
 }
+/* small print at a menu's end (the app's version) */
+.menu-foot {
+  padding: 2px 10px 3px;
+  font-size: 0.6875rem;
+  color: var(--faint);
+}
 .menu-label {
   padding: 8px 12px 4px;
   font-family: var(--font-mono);

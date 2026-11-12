@@ -308,6 +308,12 @@ const sv: Record<string, string> = {
   Animations: "Animationer",
   "Log out": "Logga ut",
 
+  // the Android app's updates (UserMenu, api/app/latest)
+  "Check for updates": "Sök efter uppdateringar",
+  "You have the newest version of the app ({version}).": "Du har den senaste versionen av appen ({version}).",
+  "Couldn't check for updates.": "Det gick inte att söka efter uppdateringar.",
+  "GitHub couldn't be reached to check for updates. Try again in a while.": "GitHub gick inte att nå för att söka efter uppdateringar. Försök igen om en stund.",
+
   // your status (StatusDialog)
   "Your status": "Din status",
   "Clear status": "Rensa status",
