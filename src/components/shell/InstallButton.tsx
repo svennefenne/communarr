@@ -99,50 +99,73 @@ export function InstallHelp() {
   );
 }
 
-/** "Get the app": the steps for each kind of device (and the Android app), with the browser's own install first where it has one. */
+/**
+ * The browser's own install (Chrome, Edge), offered once the page has loaded: kept here for whichever
+ * Get the app opens, the footer's or the user menu's.
+ */
+let deferred: PromptEvent | null = null;
+const waiting = new Set<() => void>();
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferred = e as PromptEvent;
+    for (const f of waiting) f();
+  });
+}
+
+function useInstallPrompt(): [PromptEvent | null, () => void] {
+  const [prompt, setPrompt] = useState<PromptEvent | null>(deferred);
+  useEffect(() => {
+    const f = () => setPrompt(deferred);
+    waiting.add(f);
+    f();
+    return () => void waiting.delete(f);
+  }, []);
+  const used = () => {
+    deferred = null;
+    for (const f of waiting) f();
+  };
+  return [prompt, used];
+}
+
+/** "Get the app": the steps for each kind of device (and the apps), with the browser's own install first where it has one. */
+export function GetAppDialog({ onClose }: { onClose: () => void }) {
+  const t = useT();
+  const [prompt, used] = useInstallPrompt();
+  return (
+    <Modal title={t("Get the app")} onClose={onClose}>
+      {prompt && !isStandalone() ? (
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ marginBottom: 14 }}
+          onClick={async () => {
+            await prompt.prompt();
+            used();
+            onClose();
+          }}
+        >
+          <Smartphone size={16} /> {t("Install it here")}
+        </button>
+      ) : null}
+      <InstallHelp />
+    </Modal>
+  );
+}
+
+/** Get the app in the footer, where the site isn't installed already (the user menu has it too). */
 export function InstallButton() {
   const t = useT();
-  const [prompt, setPrompt] = useState<PromptEvent | null>(null);
   const [help, setHelp] = useState(false);
   const [installed, setInstalled] = useState(true);
-  useEffect(() => {
-    setInstalled(isStandalone());
-    const on = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e as PromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", on);
-    return () => window.removeEventListener("beforeinstallprompt", on);
-  }, []);
+  useEffect(() => setInstalled(isStandalone()), []);
   if (installed) return null;
   return (
     <>
-      <button
-        type="button"
-        className="btn btn-ghost btn-xs"
-        onClick={() => setHelp(true)}
-      >
+      <button type="button" className="btn btn-ghost btn-xs" onClick={() => setHelp(true)}>
         <Smartphone size={13} /> {t("Get the app")}
       </button>
-      {help ? (
-        <Modal title={t("Get the app")} onClose={() => setHelp(false)}>
-          {prompt ? (
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ marginBottom: 14 }}
-              onClick={async () => {
-                await prompt.prompt();
-                setPrompt(null);
-                setHelp(false);
-              }}
-            >
-              <Smartphone size={16} /> {t("Install it here")}
-            </button>
-          ) : null}
-          <InstallHelp />
-        </Modal>
-      ) : null}
+      {help ? <GetAppDialog onClose={() => setHelp(false)} /> : null}
     </>
   );
 }

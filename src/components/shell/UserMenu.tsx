@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
-import { Bookmark, Download, Languages, LogOut, MessageSquareText, Moon, Palette, RefreshCw, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
+import { Bookmark, Download, Languages, LogOut, MessageSquareText, MonitorSmartphone, Moon, Palette, RefreshCw, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { LanguageToggle } from "@/components/app/LanguageToggle";
 import { Avatar } from "@/components/ui/Avatar";
@@ -11,6 +11,7 @@ import { Switch, useDropdown } from "@/components/ui/ui";
 import { useTransitions } from "./Transitions";
 import { StatusDialog } from "./StatusDialog";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { GetAppDialog } from "./InstallButton";
 import { logoutAction, setPrefsAction } from "@/app/actions/me";
 import { setSoundsOn } from "@/components/app/sfx";
 import { appInfo, appUpdate, tellApp, type AppInfo } from "@/components/app/androidApp";
@@ -54,6 +55,7 @@ export function UserMenu() {
   const { open, setOpen, toggle, ref } = useDropdown();
   const [status, setStatus] = useState(false);
   const [feedback, setFeedback] = useState(false);
+  const [getApp, setGetApp] = useState(false);
   const { wipe, setWipe } = useTransitions();
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
@@ -174,6 +176,20 @@ export function UserMenu() {
           >
             <MessageSquareText size={17} /> {t("Send feedback")}
           </button>
+          {/* (in a browser, installed or not: the apps for the phone and the computer) */}
+          {!app ? (
+            <button
+              type="button"
+              className="menu-item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setGetApp(true);
+              }}
+            >
+              <MonitorSmartphone size={17} /> {t("Get the app")}
+            </button>
+          ) : null}
           {update ? (
             <div className="menu-item app-update" style={{ cursor: "default" }}>
               <Download size={17} />
@@ -239,6 +255,7 @@ export function UserMenu() {
       ) : null}
       {status ? <StatusDialog me={me} onClose={() => setStatus(false)} /> : null}
       {feedback ? <FeedbackDialog onClose={() => setFeedback(false)} /> : null}
+      {getApp ? <GetAppDialog onClose={() => setGetApp(false)} /> : null}
     </div>
   );
 }
