@@ -15,6 +15,7 @@ import { canSeeTarget } from "@/lib/visibility";
 import { getSettings, type SiteSettings } from "@/lib/settings";
 import type { User } from "@/lib/users";
 import type { FeedFilter, RsvpStatus } from "@/lib/contentTypes";
+import { FEED_KINDS, type FeedKind } from "@/lib/homePanels";
 
 // ── posts ──
 
@@ -77,8 +78,9 @@ function allowed(u: User, feature: keyof SiteSettings["features"], who?: keyof S
   if (who && s.canCreate[who] === "mods" && !u.isMod) throw new UserError("Only moderators can start that.");
 }
 
-export async function feedAction(filter: FeedFilter, before?: number, groupId?: number, authorId?: number) {
-  return act((u) => feed(u, { filter, before, groupId, authorId }));
+/** kinds: only these (the front page's: they only ever narrow it) */
+export async function feedAction(filter: FeedFilter, before?: number, groupId?: number, authorId?: number, kinds?: FeedKind[]) {
+  return act((u) => feed(u, { filter, before, groupId, authorId, kinds: Array.isArray(kinds) ? FEED_KINDS.filter((k) => kinds.includes(k)) : undefined }));
 }
 
 // ── comments ──

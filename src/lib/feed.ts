@@ -10,13 +10,15 @@ import { readableGroupIds } from "./groups";
 import { getSettings } from "./settings";
 import type { User } from "./users";
 import type { FeedFilter, FeedItem } from "./contentTypes";
+import type { FeedKind } from "./homePanels";
 
 /**
  * The front page's feed: posts, news, new forum threads, polls, events and lists, newest first, in pages
- * (`before` is the time of the last item shown).
+ * (`before` is the time of the last item shown). kinds: only these (the front page's, Admin → Front page).
  */
-export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?: number; groupId?: number; authorId?: number } = {}): { items: FeedItem[]; next: number | null } {
+export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?: number; groupId?: number; authorId?: number; kinds?: FeedKind[] } = {}): { items: FeedItem[]; next: number | null } {
   const f = o.filter ?? "all";
+  const want = (k: FeedKind) => (f === "all" || f === k) && (!o.kinds || o.kinds.includes(k));
   const limit = o.limit ?? 15;
   const feats = getSettings().features;
   const before = o.before ?? Number.MAX_SAFE_INTEGER;
@@ -33,10 +35,10 @@ export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?:
   const by = (col: string) => (o.authorId ? { sql: ` and ${col} = ?`, params: [o.authorId] } : { sql: "", params: [] as unknown[] });
   const items: FeedItem[] = [];
 
-  if (f === "all" || f === "posts" || f === "news") {
+  {
     const s = scope();
     const a = by("author_id");
-    const kinds = f === "posts" ? ["post"] : f === "news" ? (feats.news ? ["news"] : []) : feats.news ? ["post", "news"] : ["post"];
+    const kinds = [...(want("posts") ? ["post"] : []), ...(want("news") && feats.news ? ["news"] : [])];
     if (kinds.length) {
       const rows = db()
         .prepare(`select * from posts where ${s.sql}${a.sql} and visibility = 'members' and kind in (${kinds.map(() => "?").join(",")}) and created_at < ? order by created_at desc limit ?`)
@@ -44,7 +46,7 @@ export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?:
       for (const p of toPostViews(u, rows)) items.push({ type: "post", at: p.createdAt, post: p });
     }
   }
-  if ((f === "all" || f === "forum") && feats.forum) {
+  if (want("forum") && feats.forum) {
     const groups = readableGroupIds(u);
     const cats = (db().prepare("select id, group_id from forum_categories").all() as { id: number; group_id: number | null }[])
       .filter((c) => (!c.group_id || groups.includes(c.group_id)) && (!o.groupId || c.group_id === o.groupId))
@@ -57,21 +59,21 @@ export function feed(u: User, o: { filter?: FeedFilter; before?: number; limit?:
       for (const t of toThreadCards(u, rows)) items.push({ type: "thread", at: t.createdAt, thread: t });
     }
   }
-  if ((f === "all" || f === "polls") && feats.polls) {
+  if (want("polls") && feats.polls) {
     closeDuePolls();
     const s = scope();
     const a = by("author_id");
     const rows = db().prepare(`select * from polls where ${s.sql}${a.sql} and created_at < ? order by created_at desc limit ?`).all(...s.params, ...a.params, before, limit + 1) as PollRow[];
     for (const p of toPollViews(u, rows)) items.push({ type: "poll", at: p.createdAt, poll: p });
   }
-  if ((f === "all" || f === "events") && feats.calendar) {
+  if (want("events") && feats.calendar) {
     const s = scope();
     const a = by("author_id");
     // "Only me" events stay in their author's calendar (like "only me" posts, out of the feed)
     const rows = db().prepare(`select * from events where ${s.sql}${a.sql} and private = 0 and created_at < ? order by created_at desc limit ?`).all(...s.params, ...a.params, before, limit + 1) as EventRow[];
     for (const e of toEventViews(u, rows)) items.push({ type: "event", at: e.createdAt, event: e });
   }
-  if ((f === "all" || f === "lists") && feats.lists) {
+  if (want("lists") && feats.lists) {
     const s = scope();
     const a = by("author_id");
     // ("only me" lists stay out of the feed, like "only me" events)

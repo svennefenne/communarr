@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, CalendarDays, Hash, Headphones, ListChecks, Lock, MessageCircle, MessagesSquare, UsersRound, Vote } from "lucide-react";
+import { ArrowRight, CalendarDays, Hash, Headphones, ListChecks, Lock, MessageCircle, MessagesSquare, Newspaper, Pin, UsersRound, Vote } from "lucide-react";
 import type { EventView, ListCard, PollView, PostView, ThreadCard } from "@/lib/contentTypes";
 import type { RoomInfo } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
@@ -253,6 +253,30 @@ export function ForumWidget({ threads }: { threads: ThreadCard[] }) {
             {tr("Start a thread")}
           </Link>
         </div>
+      )}
+    </Widget>
+  );
+}
+
+/** The latest news: just the headlines and when they came (a pin on one that's pinned) */
+export function NewsWidget({ posts }: { posts: PostView[] }) {
+  const t = useT();
+  return (
+    <Widget title={t("News")} icon={<Newspaper size={14} />} href="/news">
+      {posts.length ? (
+        <div className="list">
+          {posts.map((p) => (
+            <Link key={p.id} href={`/posts/${p.id}`} className="list-row news-row" title={p.title}>
+              {p.pinned ? <Pin size={12} className="news-row-pin" aria-label={t("Pinned")} /> : null}
+              <b className="grow ellipsis">{p.title}</b>
+              <span className="tiny muted news-row-time">
+                <Time t={p.createdAt} />
+              </span>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="panel-body small muted">{t("No news yet.")}</div>
       )}
     </Widget>
   );

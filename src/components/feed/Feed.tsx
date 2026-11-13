@@ -12,6 +12,10 @@ import { ThreadFeedCard } from "./ThreadCard";
 import { ListCardView } from "@/components/lists/ListCard";
 import { Composer, type ComposerGroup } from "./Composer";
 import { feedAction } from "@/app/actions/content";
+import type { FeedKind } from "@/lib/homePanels";
+
+/** what a "feed" message from the server says came, as the feed's kind */
+const LIVE_KIND: Record<string, FeedKind> = { post: "posts", news: "news", thread: "forum", poll: "polls", event: "events", list: "lists" };
 
 const FILTERS: { id: FeedFilter; label: string; icon: React.ComponentType<{ size?: number }>; feature?: "forum" | "polls" | "calendar" | "news" | "lists" }[] = [
   { id: "all", label: "Everything", icon: Layers },
@@ -52,6 +56,7 @@ export function Feed({
   sections = false,
   stickyFilters = false,
   authorId,
+  kinds,
 }: {
   initial: { items: FeedItem[]; next: number | null };
   initialFilter?: FeedFilter;
@@ -65,6 +70,8 @@ export function Feed({
   stickyFilters?: boolean;
   /** only what this member made (their profile) */
   authorId?: number;
+  /** only these kinds (the front page's, Admin → Front page) */
+  kinds?: FeedKind[];
 }) {
   const { site, me } = useApp();
   const t = useT();
@@ -81,13 +88,13 @@ export function Feed({
   const load = useCallback(
     async (f: FeedFilter, before?: number) => {
       setLoading(true);
-      const r = await feedAction(f, before, groupId, authorId);
+      const r = await feedAction(f, before, groupId, authorId, kinds);
       setLoading(false);
       if (!r.ok) return;
       setItems((list) => (before ? [...list, ...r.data.items.filter((i) => !list.some((x) => keyOf(x) === keyOf(i)))] : r.data.items));
       setNext(r.data.next);
     },
-    [groupId, authorId],
+    [groupId, authorId, kinds],
   );
 
   const choose = (f: FeedFilter) => {
@@ -140,15 +147,16 @@ export function Feed({
   }, [showFilters, stickyFilters]);
 
   useLive("feed", (d) => {
-    const e = d as { by: number; group: number | null };
+    const e = d as { type: string; by: number; group: number | null };
     if (e.by === me?.id) return;
+    if (kinds && !kinds.includes(LIVE_KIND[e.type])) return;
     if (groupId && e.group !== groupId) return;
     if (authorId && e.by !== authorId) return;
     setFresh((n) => n + 1);
   });
 
   // (news is for everyone: not a group's)
-  const filters = FILTERS.filter((f) => (!f.feature || site.features[f.feature]) && !(groupId && f.id === "news"));
+  const filters = FILTERS.filter((f) => (!f.feature || site.features[f.feature]) && !(groupId && f.id === "news") && (f.id === "all" || !kinds || kinds.includes(f.id)));
   const pills = (
     <div className="pills scroll feed-filters" role="tablist" aria-label={t("Show")}>
       {filters.map((f) => {
@@ -173,7 +181,8 @@ export function Feed({
           }}
         />
       ) : null}
-      {showFilters && stickyFilters ? (
+      {/* (one kind only: nothing to choose between) */}
+      {showFilters && filters.length < 3 ? null : showFilters && stickyFilters ? (
         <div ref={bar} className={`feed-filters-bar ${stuck ? "stuck" : ""}`}>
           {pills}
         </div>

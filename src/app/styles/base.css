@@ -259,6 +259,15 @@ html[data-width="wide"] .announce {
     display: none;
   }
 }
+/* the front page's middle's width (the menu, on the front page): where the side columns are */
+.menu-feed-width input[type="range"] {
+  width: 110px;
+}
+@media (max-width: 1060px) {
+  .menu-item.menu-feed-width {
+    display: none;
+  }
+}
 .page-head {
   display: flex;
   align-items: flex-end;
