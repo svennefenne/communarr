@@ -23,6 +23,9 @@ export interface Conn {
   idle: boolean;
   /** the chat room this tab has open (no unread count, no notification for it) */
   room: number | null;
+  /** the desktop app's page: it gets its notifications down this stream (it has no Web Push), and is
+   * idle when the computer is, not when it's in the tray */
+  desktop: boolean;
 }
 
 interface Hub {
@@ -66,8 +69,8 @@ export function presenceList(): { id: number; state: LiveState }[] {
   return [...hub.states.entries()].map(([id, state]) => ({ id, state }));
 }
 
-export function addConn(userId: number, send: Send, close: () => void): Conn {
-  const conn: Conn = { id: ++hub.seq, userId, send, close, visible: true, idle: false, room: null };
+export function addConn(userId: number, send: Send, close: () => void, desktop = false): Conn {
+  const conn: Conn = { id: ++hub.seq, userId, send, close, visible: true, idle: false, room: null, desktop };
   hub.conns.set(conn.id, conn);
   if (!hub.byUser.has(userId)) hub.byUser.set(userId, new Set());
   hub.byUser.get(userId)!.add(conn.id);
@@ -131,6 +134,23 @@ export function isInRoom(userId: number, roomId: number): boolean {
     if (c?.visible && c.room === roomId) return true;
   }
   return false;
+}
+
+/**
+ * A push notification to someone's desktop apps: how many got it, and whether one is on a computer in
+ * use (then their phone needn't buzz too).
+ */
+export function pushToDesktops(userId: number, data: unknown): { sent: number; active: boolean } {
+  let sent = 0;
+  let active = false;
+  for (const id of hub.byUser.get(userId) ?? []) {
+    const c = hub.conns.get(id);
+    if (!c?.desktop) continue;
+    c.send("push", data);
+    sent++;
+    if (!c.idle) active = true;
+  }
+  return { sent, active };
 }
 
 export function sendTo(userId: number, type: string, data: unknown) {

@@ -1,23 +1,36 @@
 "use client";
 
 /**
- * The Android app (android/) as the page sees it: its name and version, which it says in its user
- * agent ("CommunarrApp/0.1.0 (Friends)"), and messages to it through its bridge (window.CommunarrApp,
- * there only on the server's own pages in the app).
+ * The apps as the page sees them: the Android app (android/) and the desktop app (desktop/). Each says
+ * its name and version in its user agent ("CommunarrApp/0.1.0 (Friends)", "CommunarrDesktop/0.1.0
+ * (Friends; linux-x86_64)"), and takes messages through the same bridge (window.CommunarrApp, there only
+ * on the server's own pages in the app).
  */
 export interface AppInfo {
   name: string;
   version: string;
+  kind: "android" | "desktop";
+  /** the desktop app's kind of computer ("linux-x86_64", "windows-x64", "macos-arm64") */
+  platform: string | null;
 }
 
 export function appInfo(): AppInfo | null {
   if (typeof navigator === "undefined") return null;
+  const d = navigator.userAgent.match(/CommunarrDesktop\/([\d.]+) \(([^;)]+); ([\w-]+)\)/);
+  if (d) return { version: d[1], name: d[2], kind: "desktop", platform: d[3] };
   const m = navigator.userAgent.match(/CommunarrApp\/([\d.]+)(?: \(([^)]+)\))?/);
-  return m ? { version: m[1], name: m[2] ?? "Communarr" } : null;
+  return m ? { version: m[1], name: m[2] ?? "Communarr", kind: "android", platform: null } : null;
 }
 
-/** In the Android app. */
+/** In one of the apps. */
 export const inApp = () => appInfo() !== null;
+/** In the Android app. */
+export const inAndroidApp = () => appInfo()?.kind === "android";
+/** In the desktop app. */
+export const inDesktopApp = () => appInfo()?.kind === "desktop";
+
+/** An app's name as its files have it ("friends"; desktop/src/site.ts's slug). */
+const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "app";
 
 function newer(a: string, b: string): boolean {
   const x = a.split(".").map(Number);
@@ -26,10 +39,12 @@ function newer(a: string, b: string): boolean {
   return false;
 }
 
-/** A newer version of this app on the server (the data folder's apps/, by the app's name), or null. */
-export function appUpdate(apps: { name: string; version: string; url: string }[], info = appInfo()) {
+type Release = { name: string; kind: "android" | "desktop"; platform: string | null; version: string; url: string; sha256?: string };
+
+/** A newer version of this app on the server (by the app's name and kind, and the desktop app's computer), or null. */
+export function appUpdate(apps: Release[], info = appInfo()): Release | null {
   if (!info) return null;
-  const a = apps.find((x) => x.name === info.name.toLowerCase());
+  const a = apps.find((x) => x.name === slug(info.name) && x.kind === info.kind && (info.kind === "android" || x.platform === info.platform));
   return a && newer(a.version, info.version) ? a : null;
 }
 
@@ -72,4 +87,21 @@ export function askApp<T>(msg: { t: string } & Record<string, unknown>, ms = 500
     b.addEventListener("message", on);
     b.postMessage(JSON.stringify(msg));
   });
+}
+
+/** The app's own messages to the page ({t: "open", url}, {t: "idle", idle}): a function that stops listening. */
+export function onAppMessage(fn: (m: { t?: string } & Record<string, unknown>) => void): () => void {
+  const b = bridge();
+  if (!b) return () => {};
+  const on = (e: { data: string }) => {
+    let m: unknown;
+    try {
+      m = JSON.parse(e.data);
+    } catch {
+      return;
+    }
+    if (m && typeof m === "object") fn(m as { t?: string } & Record<string, unknown>);
+  };
+  b.addEventListener("message", on);
+  return () => b.removeEventListener("message", on);
 }

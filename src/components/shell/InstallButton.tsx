@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Smartphone } from "lucide-react";
+import { Monitor, Smartphone } from "lucide-react";
 import { useSite, useT } from "@/components/app/AppProvider";
 import { inApp } from "@/components/app/androidApp";
 import { Modal } from "@/components/ui/ui";
@@ -17,6 +17,43 @@ export function isStandalone() {
 
 export function isIos() {
   return typeof navigator !== "undefined" && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+}
+
+type Platform = "windows-x64" | "macos-arm64" | "linux-x86_64";
+const PLATFORM_NAMES: Record<Platform, string> = { "windows-x64": "Windows", "macos-arm64": "Mac (Apple silicon)", "linux-x86_64": "Linux (AppImage)" };
+
+/** This computer's kind first. */
+function platforms(): Platform[] {
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const mine: Platform | null = /Windows/.test(ua) ? "windows-x64" : /Macintosh|Mac OS X/.test(ua) ? "macos-arm64" : /Linux/.test(ua) && !/Android/.test(ua) ? "linux-x86_64" : null;
+  const all: Platform[] = ["windows-x64", "macos-arm64", "linux-x86_64"];
+  return mine ? [mine, ...all.filter((p) => p !== mine)] : all;
+}
+
+/** The desktop app (desktop/) for each kind of computer: the server's own copy, else Communarr's. */
+function DesktopApp() {
+  const t = useT();
+  const site = useSite();
+  const links = site.desktopApps;
+  // (Communarr's own asks for the server's address the first time; a server's copy knows it)
+  const generic = Object.values(links).some((u) => /\/communarr-desktop-|github\.com/.test(u));
+  return (
+    <div>
+      <b>{t("Computer: the desktop app")}</b>
+      <p style={{ margin: "6px 0 0" }}>{t("The site in a window of its own that stays in the tray when it's closed, with notifications and screen sharing.")}</p>
+      <div className="row wrap" style={{ gap: 8, marginTop: 8 }}>
+        {platforms().map((p) => (
+          <a key={p} className="btn btn-ghost btn-xs" href={links[p]}>
+            <Monitor size={13} /> {PLATFORM_NAMES[p]}
+          </a>
+        ))}
+      </div>
+      <p className="muted" style={{ margin: "8px 0 0" }}>
+        {generic ? `${t("The first time, it asks for this site's address: {address}", { address: typeof location === "undefined" ? "" : location.host })} ` : ""}
+        {t("The apps aren't signed, so Windows may warn first (More info → Run anyway), and on a Mac you right-click the app and choose Open the first time. On Linux, make the file executable and start it.")}
+      </p>
+    </div>
+  );
 }
 
 /** How to put the site on the home screen, for each kind of device. */
@@ -52,9 +89,10 @@ export function InstallHelp() {
           {t("and log in with this site's address, your username and password.")}
         </p>
       </div>
+      <DesktopApp />
       <div>
         <b>{t("Computer (Chrome, Edge)")}</b>
-        <p style={{ margin: "6px 0 0" }}>{t("Click the install icon at the right end of the address bar.")}</p>
+        <p style={{ margin: "6px 0 0" }}>{t("Or install the site from the browser: click the install icon at the right end of the address bar.")}</p>
       </div>
       <p className="muted" style={{ margin: 0 }}>{t("Notifications need the site to be opened over https://.")}</p>
     </div>

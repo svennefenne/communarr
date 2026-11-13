@@ -58,22 +58,22 @@ export function UserMenu() {
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
   const router = useRouter();
-  // in the Android app: a newer version of it on the server (a dot on the button, and a row in the
-  // menu), or Check for updates; its version in small print at the end
+  // in an app (Android's, the desktop's): a newer version of it on the server (a dot on the button, and
+  // a row in the menu), or Check for updates; its version in small print at the end
   const [app, setApp] = useState<AppInfo | null>(null);
-  const [update, setUpdate] = useState<{ version: string; url: string } | null>(null);
+  const [update, setUpdate] = useState<{ version: string; url: string; sha256?: string } | null>(null);
   const [checking, setChecking] = useState(false);
   const toast = useToast();
   useEffect(() => {
     setApp(appInfo());
-    setUpdate(appUpdate(site.androidApps));
-  }, [site.androidApps]);
+    setUpdate(appUpdate(site.apps));
+  }, [site.apps]);
   const checkForUpdates = async () => {
     if (!app) return;
     setChecking(true);
     try {
       const r = await fetch(`/api/app/latest?name=${encodeURIComponent(app.name)}`);
-      const d = (await r.json().catch(() => ({}))) as { apps?: { name: string; version: string; url: string }[]; error?: string };
+      const d = (await r.json().catch(() => ({}))) as { apps?: Parameters<typeof appUpdate>[0]; error?: string };
       if (!r.ok || !d.apps) return toast(d.error || t("Couldn't check for updates."), { kind: "err" });
       const u = appUpdate(d.apps, app);
       // a newer one: its row in the menu, there and then
@@ -181,10 +181,19 @@ export function UserMenu() {
               <button
                 type="button"
                 className="btn btn-primary btn-xs"
-                onClick={() => {
+                onClick={async () => {
                   setOpen(false);
-                  // the app downloads it and opens Android's installer (an older app without that: the browser)
-                  if (!tellApp({ t: "update", url: update.url })) window.location.href = update.url;
+                  // the desktop app checks its file against the server's SHA-256, worked out on the way
+                  let u = update;
+                  if (app?.kind === "desktop" && !u.sha256) {
+                    const r = await fetch(`/api/app/latest?name=${encodeURIComponent(app.name)}`).catch(() => null);
+                    const d = r?.ok ? ((await r.json()) as { apps: Parameters<typeof appUpdate>[0] }) : null;
+                    const fresh = d ? appUpdate(d.apps, app) : null;
+                    if (!fresh?.sha256) return toast(t("Couldn't check for updates."), { kind: "err" });
+                    u = fresh;
+                  }
+                  // the app downloads it and puts it in (an older Android app without that: the browser)
+                  if (!tellApp({ t: "update", url: u.url, version: u.version, sha256: u.sha256 })) window.location.href = u.url;
                 }}
               >
                 {t("Update")}

@@ -1,4 +1,5 @@
 import type { Clock } from "./clock";
+import type { AppRelease, Platform } from "./apps";
 import type { SoundSettings } from "./sounds";
 import type { Lang, Own } from "./i18n";
 import type { BggMode, CustomEmoji, Presence, ThemePrefs, UserSummary } from "./types";
@@ -51,8 +52,10 @@ export interface SiteInfo {
   clock: Clock;
   /** the server's own Android app to download (/friends-0.1.0.apk), or null: the one on GitHub */
   androidApp: string | null;
-  /** each of the server's own apps' newest version (by the app's name, lower case), for the app to offer an update */
-  androidApps: { name: string; version: string; url: string }[];
+  /** the desktop app to download for each kind of computer: the server's own copy, else Communarr's */
+  desktopApps: Record<Platform, string>;
+  /** each of the apps' newest version (by the app's name, lower case, and kind), for an app to offer an update */
+  apps: AppRelease[];
   /** the site's sounds (Admin → Sounds; logged in only) */
   sounds: SoundSettings | null;
 }

@@ -30,6 +30,7 @@ export async function GET(req: Request) {
         user.id,
         (t, d) => write(`data: ${JSON.stringify({ t, d })}\n\n`),
         () => cleanup(),
+        /CommunarrDesktop\//.test(req.headers.get("user-agent") ?? ""),
       );
       const ping = setInterval(() => write(`: ping\n\n`), 20_000);
       cleanup = () => {

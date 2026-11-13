@@ -55,6 +55,32 @@ await sharp(Buffer.from(svg({ size: 512 }))).png().toFile(new URL("../../unraid/
 // Android's status bar badge: white on transparent
 await sharp(Buffer.from(svg({ size: 96, pad: 0.12, bg: "", colors: Array(6).fill("#ffffff") }))).png().toFile(new URL("badge-96.png", dir).pathname);
 
+// the desktop app (desktop/): its icon (electron-builder makes Windows' .ico from it), a Mac's (the plate
+// inside Apple's grid, 824 of 1024, as the Dock's other icons), and the tray's: the plate on Windows and
+// Linux, black stripes for a Mac's menu bar (a template image, which macOS colours itself), each also with
+// a dot for something unread; and Windows' taskbar overlay, the dot alone
+const assets = new URL("../../desktop/assets/", dir);
+fs.mkdirSync(assets, { recursive: true });
+const png = (s, name) => sharp(Buffer.from(s)).png().toFile(new URL(name, assets).pathname);
+const dot = (size, s, color = "#e2533a", ring = "#070b10") =>
+  s.replace("</svg>", `<circle cx="${size * 0.78}" cy="${size * 0.22}" r="${size * 0.21}" fill="${ring}"/><circle cx="${size * 0.78}" cy="${size * 0.22}" r="${size * 0.16}" fill="${color}"/></svg>`);
+await png(svg({ size: 1024 }), "icon.png");
+await png(svg({ size: 1024 }).replace(/<svg ([^>]*)>/, `<svg $1><g transform="translate(100 100) scale(${824 / 1024})">`).replace("</svg>", "</g></svg>"), "icon-mac.png");
+for (const [size, suffix] of [[32, ""], [64, "@2x"]]) {
+  await png(svg({ size }), `tray${suffix}.png`);
+  await png(dot(size, svg({ size })), `tray-unread${suffix}.png`);
+}
+for (const [size, suffix] of [[16, ""], [32, "@2x"]]) {
+  const black = svg({ size, pad: 0.1, bg: "", colors: Array(6).fill("#000000") });
+  await png(black, `trayTemplate${suffix}.png`);
+  // (a template is one colour: a gap cut round the dot, so it shows against the stripes)
+  const [cx, cy] = [size * 0.78, size * 0.22];
+  const cut = `<mask id="m"><rect width="${size}" height="${size}" fill="#fff"/><circle cx="${cx}" cy="${cy}" r="${size * 0.25}" fill="#000"/></mask>`;
+  const holed = black.replace("<defs>", `<defs>${cut}`).replace(/<rect x=/g, '<rect mask="url(#m)" x=');
+  await png(holed.replace("</svg>", `<circle cx="${cx}" cy="${cy}" r="${size * 0.17}" fill="#000000"/></svg>`), `trayUnreadTemplate${suffix}.png`);
+}
+await png(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#070b10"/><circle cx="8" cy="8" r="5.5" fill="#e2533a"/></svg>`, "overlay-unread.png");
+
 // Android's launcher icon (on the launcher's background colour), its themed icon and the app's logo, as
 // vectors on the same 512 grid: the launcher's as the other icons' in the 72 dp that show
 const f = (n) => Math.round(n * 1000) / 1000;

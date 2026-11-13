@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Expand, Maximize2, MicOff, Minimize2, MonitorUp, PictureInPicture2, Video, Volume2, VolumeX, X } from "lucide-react";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
+import { appInfo } from "@/components/app/androidApp";
 import { useMembers } from "@/components/app/useMembers";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/ui";
@@ -211,10 +212,12 @@ export function GoLiveDialog({ onClose }: { onClose: () => void }) {
   const [p, setP] = useState<StreamPrefs>(s.prefs);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [busy, setBusy] = useState(false);
-  const [os, setOs] = useState<"linux" | "firefox" | "other">("other");
+  const [os, setOs] = useState<"linux" | "firefox" | "other" | "app-windows" | "app-linux" | "app-mac">("other");
   useEffect(() => {
     const ua = navigator.userAgent;
-    setOs(/Firefox\//.test(ua) ? "firefox" : /Linux/.test(ua) && !/Android/.test(ua) ? "linux" : "other");
+    const app = appInfo();
+    if (app?.kind === "desktop") setOs(app.platform?.startsWith("windows") ? "app-windows" : app.platform?.startsWith("macos") ? "app-mac" : "app-linux");
+    else setOs(/Firefox\//.test(ua) ? "firefox" : /Linux/.test(ua) && !/Android/.test(ua) ? "linux" : "other");
     navigator.mediaDevices
       ?.enumerateDevices()
       .then((l) => setDevices(l.filter((d) => d.kind === "audioinput" && d.deviceId && d.deviceId !== "default" && d.deviceId !== "communications")))
@@ -297,7 +300,13 @@ export function GoLiveDialog({ onClose }: { onClose: () => void }) {
               ? t("On Linux the browser can't take the sound of an app or the whole screen (only of a tab). Pick a sound device instead, e.g. a “Monitor of …” for what the computer plays.")
               : os === "firefox"
                 ? t("Firefox can't take the sound of what you share: pick a sound device, or share from Chrome or Edge.")
-                : t("Choose a window to share its sound, or the whole screen for everything the computer plays.")}
+                : os === "app-windows"
+                  ? t("The app takes all the computer's sound, not one window's: use headphones, or others in the call hear themselves.")
+                  : os === "app-linux"
+                    ? t("On Linux the app can't take the sound of what you share. Pick a sound device instead, e.g. a “Monitor of …” for what the computer plays.")
+                    : os === "app-mac"
+                      ? t("On a Mac the app can't take the sound of what you share. Pick a sound device instead, if you have one for what the computer plays.")
+                      : t("Choose a window to share its sound, or the whole screen for everything the computer plays.")}
           </span>
         </div>
       </div>

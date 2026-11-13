@@ -1,0 +1,94 @@
+{
+  "name": "communarr-desktop",
+  "productName": "Communarr",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Communarr on the computer: the site in its own window, in the tray when it's closed.",
+  "author": "svennefenne",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "npm run build && electron .",
+    "test": "npm run build && node --test \"test/*.test.mjs\"",
+    "dist": "npm run build && electron-builder --publish never"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "electron": "45.2.0",
+    "electron-builder": "26.18.1",
+    "typescript": "^5.9.3"
+  },
+  "desktopName": "io.github.svennefenne.communarr.desktop",
+  "build": {
+    "appId": "io.github.svennefenne.communarr",
+    "productName": "Communarr",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "pages/**",
+      "assets/**",
+      "package.json"
+    ],
+    "asar": true,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true
+    },
+    "linux": {
+      "target": "AppImage",
+      "executableName": "communarr",
+      "icon": "assets/icon.png",
+      "category": "Network",
+      "artifactName": "communarr-desktop-linux-x86_64.AppImage",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "io.github.svennefenne.communarr"
+        }
+      }
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "artifactName": "communarr-desktop-windows-x64-setup.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icon-mac.png",
+      "category": "public.app-category.social-networking",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "communarr-desktop-macos-arm64.zip",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Voice calls use the microphone.",
+        "NSCameraUsageDescription": "Webcams in calls use the camera."
+      }
+    },
+    "publish": null
+  }
+}
