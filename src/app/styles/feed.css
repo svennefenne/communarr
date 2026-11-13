@@ -2,14 +2,18 @@
 .home-head {
   margin-bottom: 18px;
 }
-/* the feed, and its side columns (each stays in view, scrolling on its own when it's taller than the
-   screen): on a wide screen chat and the forum on the left (.home-left) and the rest on the right; on
-   a narrower one all of them on the right, chat and the forum last; on a phone none (the strip above) */
+/* the feed, and its side columns (Admin → Front page; each stays in view, scrolling on its own when
+   it's taller than the screen): on a wide screen the left one's parts (.home-left) left of the feed and
+   the right one's right of it; on a narrower one all of them right of it, the left one's last; on a
+   phone none (the strip above) */
 .home-cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+.home-cols:is(.has-left, .has-right) {
+  grid-template-columns: minmax(0, 1fr) 340px;
 }
 .home-main {
   min-width: 0;
@@ -44,8 +48,14 @@
   display: none;
 }
 @media (min-width: 1280px) {
-  .home-cols:has(.home-left) {
+  .home-cols.has-left {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+  .home-cols.has-left.has-right {
     grid-template-columns: 300px minmax(0, 1fr) 340px;
+  }
+  .home-cols.has-left .home-main {
+    grid-column: 2;
   }
   .home-sides {
     display: contents;
@@ -60,17 +70,223 @@
     grid-column: 1;
     grid-row: 1;
   }
-  .home-cols:has(.home-left) .home-main {
-    grid-column: 2;
-  }
 }
 @media (max-width: 1060px) {
-  .home-cols {
+  .home-cols:is(.has-left, .has-right) {
     grid-template-columns: minmax(0, 1fr);
   }
   .home-sides {
     display: none;
   }
+}
+
+/* the calendar as a month (MonthWidget): its days, and its events in a short list under them */
+.mcal {
+  padding: 2px 12px 12px;
+}
+.mcal-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.mcal-title {
+  flex: 1;
+  border: 0;
+  background: none;
+  color: var(--text-strong);
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  text-align: center;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-xs);
+}
+.mcal-title::first-letter {
+  text-transform: uppercase;
+}
+.mcal-title:hover {
+  background: var(--hover);
+}
+.mcal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.mcal-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.mcal.with-weeks .mcal-row {
+  grid-template-columns: 1.6em repeat(7, minmax(0, 1fr));
+}
+.mcal-wd,
+.mcal-wk {
+  display: grid;
+  place-items: center;
+  font-size: 0.6875rem;
+  color: var(--faint);
+}
+.mcal-wd {
+  text-transform: capitalize;
+  font-weight: 700;
+  color: var(--muted);
+  padding-bottom: 2px;
+}
+.mcal-wk {
+  font-family: var(--font-mono);
+  justify-content: start;
+}
+.mcal-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0;
+}
+.mcal-day.out {
+  color: var(--faint);
+  font-weight: 400;
+}
+.mcal-day.has {
+  cursor: pointer;
+  color: var(--text-strong);
+  font-weight: 800;
+}
+.mcal-day.has:hover {
+  background: var(--hover);
+}
+.mcal-day.out.has {
+  color: var(--muted);
+  font-weight: 600;
+}
+.mcal-day.today {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.mcal-day.today.has:hover {
+  background: var(--accent-hover);
+}
+.mcal-day.picked {
+  box-shadow: inset 0 0 0 2px var(--accent-2);
+}
+.mcal-dots {
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+.mcal-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+.mcal-day.today .mcal-dots i {
+  box-shadow: 0 0 0 1px var(--on-accent);
+}
+.mcal-picked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+.mcal-picked b::first-letter {
+  text-transform: uppercase;
+}
+.mcal-picked .link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.mcal-list {
+  position: relative;
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+  max-height: 13.2rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.mcal-picked + .mcal-list {
+  margin-top: 6px;
+}
+.mcal-ev {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 3px 6px 3px 0;
+  border-radius: var(--radius-xs);
+  color: var(--text);
+}
+.mcal-ev:hover {
+  background: var(--hover);
+}
+.mcal-ev-date {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 34px;
+  line-height: 1.05;
+  border-right: 3px solid var(--ec);
+  padding-right: 6px;
+}
+.mcal-ev-date b {
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+}
+.mcal-ev-date span {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.mcal-ev-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+.mcal-ev-going {
+  flex: none;
+  color: var(--ok);
+}
+.mcal-ev-time {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+.mcal-ev.past {
+  opacity: 0.5;
+}
+.mcal-ev.cancelled .mcal-ev-title {
+  text-decoration: line-through;
+}
+.mcal-empty {
+  padding: 8px 0 2px;
 }
 .feed {
   display: flex;

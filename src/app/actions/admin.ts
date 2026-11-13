@@ -31,6 +31,7 @@ import { PALETTE_BY_SLUG } from "@/lib/palettes";
 import { isBackdrop, type LibraryBackdrop } from "@/lib/theme";
 import type { User } from "@/lib/users";
 import type { Role } from "@/lib/types";
+import { homeLayout } from "@/lib/homePanels";
 
 function admin(u: User) {
   if (!u.isAdmin) throw new UserError("Only admins can do that.");
@@ -139,6 +140,7 @@ export async function saveSettingsAction(patch: Partial<SiteSettings>) {
     if (clean.weekStart !== undefined && ![0, 1, 6].includes(clean.weekStart)) delete clean.weekStart;
     if (clean.defaultRoom !== undefined && !(Number.isInteger(clean.defaultRoom) && clean.defaultRoom >= -1)) delete clean.defaultRoom;
     if (clean.sounds !== undefined) clean.sounds = cleanSounds(clean.sounds);
+    if (clean.home !== undefined) clean.home = homeLayout(clean.home);
     if (clean.siteName !== undefined) clean.siteName = cleanLine(clean.siteName, 40) || s.siteName;
     if (clean.logo !== undefined && clean.logo !== "" && !/^\/media\/logo\/[\w./-]+$/.test(clean.logo)) delete clean.logo;
     if (clean.tagline !== undefined) clean.tagline = cleanLine(clean.tagline, 200);
