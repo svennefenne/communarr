@@ -76,7 +76,7 @@ npm ci
 npm start                                  # build and run it (from source it can't update itself)
 COMMUNARR_DATA=/tmp/communarr npm start    # with a data folder of its own
 npm test                                   # its rules: addresses, site.json, updates' files, words
-npx electron-builder --linux               # the AppImage, in release/
+node scripts/build.mjs --linux             # the AppImage, in release/ (--win, --mac)
 ```
 
 `npm start` against a server on this computer over plain http works for `localhost` and `127.0.0.1`

@@ -10,7 +10,7 @@
     "build": "tsc -p .",
     "start": "npm run build && electron .",
     "test": "npm run build && node --test \"test/*.test.mjs\"",
-    "dist": "npm run build && electron-builder --publish never"
+    "dist": "npm run build && node scripts/build.mjs"
   },
   "devDependencies": {
     "@types/node": "^22",

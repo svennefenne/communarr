@@ -17,6 +17,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { builder } from "./builder.mjs";
 
 const require = createRequire(import.meta.url);
 const here = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
@@ -50,7 +51,7 @@ const sha256 = (f) => crypto.createHash("sha256").update(fs.readFileSync(f)).dig
 // where it reads it out of the file itself: it does that here too)
 const macosVersion = require(path.join(here, "node_modules", "app-builder-lib", "out", "util", "macosVersion.js"));
 macosVersion.isMacOsCatalina = () => true;
-const { build } = require(path.join(here, "node_modules", "electron-builder"));
+const { build } = builder();
 const config = structuredClone(pkg.build);
 Object.assign(config, {
   appId: site.id,
