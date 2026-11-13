@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+    <title></title>
+  </head>
+  <body class="center">
+    <main class="card">
+      <div class="stripes"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <img class="logo" src="../assets/icon.png" alt="" />
+      <h1 id="title"></h1>
+      <p class="error" id="error"></p>
+      <p class="hint" id="countdown" aria-live="polite"></p>
+      <div class="row">
+        <button class="primary" id="retry" type="button" data-t="Try again"></button>
+        <button class="ghost" id="change" type="button" data-t="Change server"></button>
+      </div>
+    </main>
+    <script src="common.js"></script>
+    <script src="offline.js"></script>
+  </body>
+</html>

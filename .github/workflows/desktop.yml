@@ -1,0 +1,123 @@
+name: Desktop app
+
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  # (a pull request's: built and checked on each system, not published)
+  pull_request:
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write     # publishes the builds as a release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04        # an older glibc, so the AppImage runs on more Linux versions
+            asset: communarr-desktop-linux-x86_64.AppImage
+            target: --linux
+          - os: windows-latest
+            asset: communarr-desktop-windows-x64-setup.exe
+            target: --win
+          - os: macos-latest        # Apple silicon
+            asset: communarr-desktop-macos-arm64.zip
+            target: --mac
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Test
+        run: npm test
+
+      - name: Build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"    # no certificate: a Mac's app is signed ad hoc (package.json),
+          CSC_FOR_PULL_REQUEST: "true"            # a pull request's too
+        run: npx electron-builder ${{ matrix.target }} --publish never
+
+      # the app's own check: its parts are there and its pages talk to it (a display to start on, and
+      # no sandbox helper outside the AppImage); then the AppImage itself
+      - name: Check the build (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 10
+        run: |
+          printf 'http://mirrors.edge.kernel.org/ubuntu/\tpriority:1\nhttp://archive.ubuntu.com/ubuntu/\tpriority:2\n' | sudo tee /etc/apt/apt-mirrors.txt
+          command -v xvfb-run || { sudo apt-get -o Acquire::Retries=3 update && sudo apt-get -o Acquire::Retries=3 install -y xvfb; }
+          xvfb-run -a release/linux-unpacked/communarr --no-sandbox --check
+          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a "release/${{ matrix.asset }}" --check
+
+      - name: Check the build (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 5
+        run: |
+          codesign --verify --deep --verbose=1 release/mac-arm64/Communarr.app
+          release/mac-arm64/Communarr.app/Contents/MacOS/Communarr --check
+
+      # the installer: installed for this user, checked, and uninstalled again as a user would. A windowed
+      # app reports into a file
+      - name: Check the build (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $setup = Start-Process -FilePath "release\${{ matrix.asset }}" -ArgumentList "/S" -Wait -PassThru
+          if ($setup.ExitCode) { Write-Output "Installing failed ($($setup.ExitCode))"; exit 1 }
+          # (electron-builder names the folder after the package: communarr-desktop)
+          $dir = (Get-ChildItem "$env:LOCALAPPDATA\Programs" -Directory | Where-Object { Test-Path "$($_.FullName)\Communarr.exe" } | Select-Object -First 1).FullName
+          if (-not $dir) { Get-ChildItem -Recurse -Depth 1 "$env:LOCALAPPDATA\Programs"; Write-Output "Not installed"; exit 1 }
+          Write-Output "Installed in $dir"
+          $p = Start-Process -FilePath "$dir\Communarr.exe" -ArgumentList "--check", "--report", "$env:RUNNER_TEMP\check.txt" -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Output "The check didn't finish"; exit 1 }
+          Get-Content "$env:RUNNER_TEMP\check.txt"
+          if ($p.ExitCode) { exit $p.ExitCode }
+          if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Communarr.lnk")) { Write-Output "No Start menu entry"; exit 1 }
+          $un = Start-Process -FilePath "$dir\Uninstall Communarr.exe" -ArgumentList "/S" -Wait -PassThru
+          Start-Sleep -Seconds 5      # the uninstaller finishes in a copy of itself
+          if (Test-Path "$dir\Communarr.exe") { Write-Output "Uninstalling left the app behind"; exit 1 }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.asset }}
+          path: desktop/release/${{ matrix.asset }}
+
+  release:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
+        with:
+          path: assets
+          merge-multiple: true
+
+      # one release per version; a newer build of the same version replaces its files. Never marked
+      # latest: that's the Android app's (its download link points there)
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p 'require("./desktop/package.json").version')
+          tag="desktop-v$version"
+          notes="Communarr for the computer $version ($(git rev-parse --short HEAD)): your Communarr server in a window of its own, in the tray when it's closed, with notifications and screen sharing. Windows: the installer. Mac (Apple silicon): unzip it and move Communarr to Applications. Linux: the AppImage. See desktop/README.md."
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release edit "$tag" --notes "$notes"
+          else
+            gh release create "$tag" --target "$GITHUB_SHA" --title "Communarr for the computer $version" --notes "$notes" --latest=false
+          fi
+          gh release upload "$tag" assets/* --clobber

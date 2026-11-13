@@ -246,6 +246,14 @@ const sv: Record<string, string> = {
   // webcams in a call (VoiceProvider, VoiceDock, StreamPlayer, VoiceSettings, api/voice)
   "Webcams are switched off.": "Webbkameror är avstängda.",
   "The browser didn't allow the camera. Allow it in the address bar's site settings.": "Webbläsaren tillät inte kameran. Tillåt den i webbplatsinställningarna i adressfältet.",
+  "The computer didn't let the app use the microphone. Allow it in the system's privacy settings.": "Datorn lät inte appen använda mikrofonen. Tillåt det i systemets integritetsinställningar.",
+  "The computer didn't let the app use the camera. Allow it in the system's privacy settings.": "Datorn lät inte appen använda kameran. Tillåt det i systemets integritetsinställningar.",
+  "The app takes all the computer's sound, not one window's: use headphones, or others in the call hear themselves.":
+    "Appen tar med allt ljud från datorn, inte bara ett fönsters. Använd hörlurar, annars hör de andra i samtalet sig själva.",
+  "On Linux the app can't take the sound of what you share. Pick a sound device instead, e.g. a “Monitor of …” for what the computer plays.":
+    "På Linux kan appen inte ta med ljudet från det du delar. Välj en ljudenhet i stället, t.ex. en ”Monitor of …” för det datorn spelar upp.",
+  "On a Mac the app can't take the sound of what you share. Pick a sound device instead, if you have one for what the computer plays.":
+    "På en Mac kan appen inte ta med ljudet från det du delar. Välj en ljudenhet i stället, om du har en för det datorn spelar upp.",
   "No camera found.": "Ingen kamera hittades.",
   "The app may not use the camera. Allow it for the app in Android's settings, under Permissions.": "Appen får inte använda kameran. Tillåt den för appen i Androids inställningar, under Behörigheter.",
   "The app may not use the microphone. Allow it for the app in Android's settings, under Permissions.": "Appen får inte använda mikrofonen. Tillåt den för appen i Androids inställningar, under Behörigheter.",
@@ -308,7 +316,7 @@ const sv: Record<string, string> = {
   Animations: "Animationer",
   "Log out": "Logga ut",
 
-  // the Android app's updates (UserMenu, api/app/latest)
+  // the apps' updates (UserMenu, api/app/latest)
   "Check for updates": "Sök efter uppdateringar",
   "You have the newest version of the app ({version}).": "Du har den senaste versionen av appen ({version}).",
   "Couldn't check for updates.": "Det gick inte att söka efter uppdateringar.",
@@ -361,7 +369,13 @@ const sv: Record<string, string> = {
   or: "eller",
   "Add to Home screen": "Lägg till på startskärmen",
   "Computer (Chrome, Edge)": "Dator (Chrome, Edge)",
-  "Click the install icon at the right end of the address bar.": "Klicka på installationsikonen längst till höger i adressfältet.",
+  "Or install the site from the browser: click the install icon at the right end of the address bar.": "Eller installera sajten från webbläsaren: klicka på installationsikonen längst till höger i adressfältet.",
+  "Computer: the desktop app": "Dator: desktopappen",
+  "The site in a window of its own that stays in the tray when it's closed, with notifications and screen sharing.":
+    "Sajten i ett eget fönster som ligger kvar i systemfältet när du stänger det, med notiser och skärmdelning.",
+  "The first time, it asks for this site's address: {address}": "Första gången frågar den efter sajtens adress: {address}",
+  "The apps aren't signed, so Windows may warn first (More info → Run anyway), and on a Mac you right-click the app and choose Open the first time. On Linux, make the file executable and start it.":
+    "Apparna är inte signerade, så Windows kan varna först (Mer information → Kör ändå), och på en Mac högerklickar du på appen och väljer Öppna första gången. På Linux gör du filen körbar och startar den.",
   "Notifications need the site to be opened over https://.": "Notiser kräver att sajten är öppnad via https://.",
 };
 

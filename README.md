@@ -146,6 +146,17 @@ the data folder's `apps/` as, say, `friends-0.1.0.apk`: the site serves it at `/
 anyone (it's installed before logging in), and *Get the app* links to the highest version there
 instead of GitHub.
 
+### Desktop app
+
+`desktop/` holds the app for Windows, macOS (Apple silicon) and Linux: the site in a window of its own
+(Electron) that stays in the tray when it's closed. It shows the site's notifications (the server sends
+them down the app's live stream, as it has no web push, and while you're using the computer they come
+there instead of to your phone), shares the screen through its own picker, and updates itself from the
+user menu. *Get the app* links to it for each kind of computer. GitHub Actions builds, checks and
+publishes it as a `desktop-v…` release whenever `desktop/` changes (`.github/workflows/desktop.yml`).
+A server's own copy, with a name of its own: `scripts/site-desktop.sh`. See
+[desktop/README.md](desktop/README.md).
+
 ## Install on the NUC (Docker Compose)
 
 The image is built by GitHub Actions and published as `ghcr.io/svennefenne/communarr:latest` on every

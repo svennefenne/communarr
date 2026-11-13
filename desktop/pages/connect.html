@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+    <title></title>
+  </head>
+  <body class="center">
+    <main class="card">
+      <div class="stripes"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <img class="logo" src="../assets/icon.png" alt="" />
+      <h1 data-t="Connect to a server"></h1>
+      <form id="form" novalidate>
+        <label for="address" data-t="The server's address"></label>
+        <input id="address" type="text" autocomplete="url" spellcheck="false" autocapitalize="off" autofocus />
+        <p class="hint" data-t="It's the address you open the site at in a browser."></p>
+        <p class="error" id="error" role="alert"></p>
+        <div class="row">
+          <button class="primary" id="go" type="submit" data-t="Connect"></button>
+          <button class="ghost" id="back" type="button" data-t="Cancel" hidden></button>
+        </div>
+      </form>
+    </main>
+    <script src="common.js"></script>
+    <script src="connect.js"></script>
+  </body>
+</html>

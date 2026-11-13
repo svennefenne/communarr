@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/ui";
 import { Time } from "@/components/ui/Time";
 import { TimeField } from "@/components/ui/DateTime";
 import { InstallHelp } from "@/components/shell/InstallButton";
-import { askApp, inApp, tellApp } from "@/components/app/androidApp";
+import { askApp, inApp, inDesktopApp, tellApp } from "@/components/app/androidApp";
 import { notifyPrefsAction, resetCalendarFeedAction } from "@/app/actions/settings";
 
 const STATE_TEXT: Record<PushState, string> = {
@@ -55,8 +55,11 @@ export function NotifySettings({
   const [feedUrl, setFeedUrl] = useState(feed);
   // in the Android app: its own notifications (Firebase), not the browser's
   const [app, setApp] = useState<AppPushStatus | "none" | null>(null);
+  // in the desktop app: its own notifications (down the live stream), when the computer can show them
+  const [desktop, setDesktop] = useState<boolean | null>(null);
   useEffect(() => {
-    if (inApp()) void askApp<AppPushStatus>({ t: "push-status" }).then((s) => setApp(s ?? "none"));
+    if (inDesktopApp()) void askApp<{ supported?: boolean }>({ t: "push-status" }).then((s) => setDesktop(s?.supported !== false));
+    else if (inApp()) void askApp<AppPushStatus>({ t: "push-status" }).then((s) => setApp(s ?? "none"));
     else pushState().then(setState);
     // the browser's own time zone, for quiet hours
     void notifyPrefsAction({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone });
@@ -68,7 +71,9 @@ export function NotifySettings({
   };
   return (
     <div className="stack loose">
-      {app ? (
+      {desktop !== null ? (
+        <DesktopPushSection supported={desktop} devices={<Devices devices={devices} phones={phones} />} />
+      ) : app ? (
         <AppPushSection status={app} onChange={setApp} devices={<Devices devices={devices} phones={phones} />} />
       ) : (
         <section className="panel panel-pad stack">
@@ -257,6 +262,34 @@ function Devices({ devices, phones }: { devices: { id: number; ua: string; creat
  * This phone, in the Android app: its notifications come through the app (Firebase), so whether
  * Android lets the app show them, and whether the server has the app's notifications set up.
  */
+/** The desktop app: it shows the site's notifications itself while it runs, in the tray too. */
+function DesktopPushSection({ supported, devices }: { supported: boolean; devices: React.ReactNode }) {
+  const t = useT();
+  return (
+    <section className="panel panel-pad stack">
+      <div className="row">
+        <span className="kind-icon event">
+          <Monitor size={20} />
+        </span>
+        <div className="grow">
+          <h2 className="h2">{t("This computer")}</h2>
+          <div className="small muted">
+            {supported
+              ? t("The app shows notifications while it runs, in the tray too. While you're using this computer they come here, not to your phone.")
+              : t("This computer can't show the app's notifications.")}
+          </div>
+        </div>
+      </div>
+      {supported ? (
+        <div className="row wrap">
+          <TestButton />
+        </div>
+      ) : null}
+      {devices}
+    </section>
+  );
+}
+
 function AppPushSection({ status, onChange, devices }: { status: AppPushStatus | "none"; onChange: (s: AppPushStatus | "none") => void; devices: React.ReactNode }) {
   const t = useT();
   const [busy, setBusy] = useState(false);

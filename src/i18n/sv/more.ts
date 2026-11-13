@@ -373,6 +373,10 @@ const sv: Record<string, string> = {
   "New version {version}": "Ny version {version}",
   Update: "Uppdatera",
   "This phone": "Den här telefonen",
+  "This computer": "Den här datorn",
+  "The app shows notifications while it runs, in the tray too. While you're using this computer they come here, not to your phone.":
+    "Appen visar notiser medan den är igång, även från systemfältet. Medan du använder den här datorn kommer de hit och inte till telefonen.",
+  "This computer can't show the app's notifications.": "Den här datorn kan inte visa appens notiser.",
   "This version of the app can't show notifications: update it.": "Den här versionen av appen kan inte visa notiser: uppdatera den.",
   "Notifications in the app aren't set up on this site yet (an admin does that under Admin → Notifications & voice).": "Notiser i appen är inte inställda på den här sajten än (en admin gör det under Admin → Notiser & röst).",
   "Android has blocked the app's notifications. Allow them in the app's settings.": "Android har blockerat appens notiser. Tillåt dem i appens inställningar.",

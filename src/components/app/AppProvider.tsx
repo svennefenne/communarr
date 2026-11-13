@@ -8,6 +8,16 @@ import type { LiveState, NotificationItem } from "@/lib/types";
 import { makeT, setClientLang, type T } from "@/lib/i18n";
 import { setClock } from "@/lib/clock";
 import { keepLook } from "@/lib/look";
+import { inDesktopApp, onAppMessage, tellApp } from "@/components/app/androidApp";
+
+/** In the desktop app: whether its window is in front, as the app says (null: not heard yet). */
+let appLooking: boolean | null = null;
+
+/**
+ * Looking at the site: its tab in sight. In the desktop app, its window in front: one in the tray or
+ * behind other windows gets the notifications, as Discord's does (its page always seems in sight).
+ */
+const looking = () => (inDesktopApp() ? (appLooking ?? document.hasFocus()) : document.visibilityState === "visible");
 
 /**
  * Everything the pages share in the browser: who you are, the site's switches, unread counts,
@@ -84,6 +94,8 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
   const meId = boot.me?.id ?? null;
   const roomRef = useRef<number | null>(null);
   const connRef = useRef<number | null>(null);
+  /** the computer's idle, as the desktop app says */
+  const idleRef = useRef(false);
 
   // the server's fresh counts after a navigation
   useEffect(() => setCounts(boot.counts), [boot.counts]);
@@ -127,7 +139,7 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
   const setRoom = useCallback(
     (room: number | null) => {
       roomRef.current = room;
-      report(document.visibilityState === "visible", false);
+      report(looking(), idleRef.current);
     },
     [report],
   );
@@ -154,7 +166,8 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
           setConn(h.conn);
           setPresence(new Map(h.presence.map((p) => [p.id, p.state])));
           if (h.counts) setCounts(h.counts);
-          if (roomRef.current) report(document.visibilityState === "visible", false);
+          // (a page that opened out of sight, as the desktop app does at login, says so at once)
+          if (roomRef.current || !looking()) report(looking(), idleRef.current);
         } else if (t === "presence") {
           const p = d as { id: number; state: LiveState };
           setPresence((m) => {
@@ -179,6 +192,10 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
           });
         } else if (t === "refresh") {
           router.refresh();
+        } else if (t === "push" && inDesktopApp()) {
+          // the desktop app has no Web Push: the server sends it its notifications here
+          const p = d as { title?: string; body?: string; url?: string; tag?: string };
+          tellApp({ t: "notify", title: p.title ?? "", body: p.body ?? "", url: p.url ?? "/", tag: p.tag ?? "" });
         }
         emit(t, d);
       };
@@ -197,10 +214,25 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
     };
   }, [meId, emit, router, toast, report]);
 
-  // out of sight: tell the server at once (pushes go to the phone instead), idle after 3 minutes
+  // out of sight: tell the server at once (pushes go to the phone instead), idle after 3 minutes. In the
+  // desktop app: out of sight is its window behind others or in the tray, and idle is the computer's
+  // (the app says when), so that someone at their computer gets their notifications there, not on the phone
   useEffect(() => {
     if (!meId) return;
     let idleTimer: ReturnType<typeof setTimeout> | undefined;
+    if (inDesktopApp()) {
+      const stop = onAppMessage((m) => {
+        if (m.t === "window") {
+          appLooking = m.looking === true;
+          report(looking(), idleRef.current);
+        } else if (m.t === "idle") {
+          idleRef.current = m.idle === true;
+          report(looking(), idleRef.current);
+        } else if (m.t === "open" && typeof m.url === "string" && m.url.startsWith("/") && !m.url.startsWith("//")) router.push(m.url);
+      });
+      tellApp({ t: "window-state" });
+      return stop;
+    }
     const onVis = () => {
       clearTimeout(idleTimer);
       if (document.visibilityState === "visible") report(true, false);
@@ -214,7 +246,7 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
       document.removeEventListener("visibilitychange", onVis);
       clearTimeout(idleTimer);
     };
-  }, [meId, report]);
+  }, [meId, report, router]);
 
   // the service worker (push notifications); a tapped notification can ask an open tab to go somewhere
   useEffect(() => {
@@ -232,7 +264,8 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
   useEffect(() => {
     const n = counts.notifications + counts.chat;
     const nav = navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
-    if (n && nav.setAppBadge) nav.setAppBadge(n).catch(() => {});
+    if (inDesktopApp()) tellApp({ t: "badge", count: n });
+    else if (n && nav.setAppBadge) nav.setAppBadge(n).catch(() => {});
     else nav.clearAppBadge?.().catch(() => {});
   }, [counts.notifications, counts.chat]);
 

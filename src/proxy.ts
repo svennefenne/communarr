@@ -8,9 +8,9 @@ const OPEN = [/^\/login$/, /^\/setup$/, /^\/signup$/, /^\/invite\//, /^\/reset\/
 
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
-  // the server's own Android app (/friends-0.1.0.apk, in the data folder's apps/), for anyone: it's
-  // installed before logging in
-  if (/^\/[A-Za-z0-9][\w.-]*\.apk$/.test(pathname)) {
+  // the server's own apps (/friends-0.1.0.apk, /friends-desktop-0.1.0-linux-x86_64.AppImage, …, in the
+  // data folder's apps/), for anyone: they're installed before logging in
+  if (/^\/[A-Za-z0-9][\w.-]*\.apk$/.test(pathname) || /^\/[a-z0-9][a-z0-9.-]*-desktop-\d+(\.\d+)*-(linux-x86_64\.AppImage|windows-x64-setup\.exe|macos-arm64\.zip)$/.test(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = `/api/app/download${pathname}`;
     return NextResponse.rewrite(url);
