@@ -51,11 +51,13 @@ export function PushPrompt() {
           className={`btn btn-primary btn-sm ${busy ? "loading" : ""}`}
           onClick={async () => {
             setBusy(true);
-            const s = await enablePush().catch(() => "off" as PushState);
+            const r = await enablePush();
             setBusy(false);
-            setState(s);
-            if (s === "on") toast(t("Notifications are on for this device."));
-            else if (s === "denied") toast(t("The browser said no. You can allow notifications in the site settings."), { kind: "err" });
+            setState(r.state);
+            if (r.state === "on") toast(t("Notifications are on for this device."));
+            else if (r.state === "denied") toast(t("The browser said no. You can allow notifications in the site settings."), { kind: "err" });
+            else if (r.why === "dismissed") toast(t("The browser's question closed without an answer. Try again and choose Allow."));
+            else toast(t("Couldn't turn on notifications here: {error}", { error: r.error ?? "?" }), { kind: "err" });
           }}
         >
           {t("Turn on")}

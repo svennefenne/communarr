@@ -2,7 +2,19 @@
 
 /** Push notifications on this device: register the service worker, ask, subscribe, unsubscribe. */
 
+import { inDesktopApp } from "./androidApp";
+
 export type PushState = "unsupported" | "insecure" | "needs-install" | "denied" | "off" | "on";
+
+/**
+ * How turning push on went: its state now, and if it's still off, why: the browser's question was
+ * closed without an answer (dismissed), or something failed on the way (error: what).
+ */
+export interface PushResult {
+  state: PushState;
+  why?: "dismissed" | "failed";
+  error?: string;
+}
 
 function urlB64ToUint8Array(b64: string) {
   const pad = "=".repeat((4 - (b64.length % 4)) % 4);
@@ -20,6 +32,8 @@ export async function registration(): Promise<ServiceWorkerRegistration | null> 
 }
 
 export async function pushState(): Promise<PushState> {
+  // the desktop app has no push service (Electron): its notifications come down the live stream instead
+  if (inDesktopApp()) return "unsupported";
   if (!window.isSecureContext) return "insecure";
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -30,13 +44,25 @@ export async function pushState(): Promise<PushState> {
   return sub ? "on" : "off";
 }
 
-export async function enablePush(): Promise<PushState> {
+export async function enablePush(): Promise<PushResult> {
+  try {
+    return await subscribe();
+  } catch (e) {
+    // (e.g. a browser without a push service: "Registration failed - push service error")
+    return { state: "off", why: "failed", error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+async function subscribe(): Promise<PushResult> {
   const perm = await Notification.requestPermission();
-  if (perm !== "granted") return perm === "denied" ? "denied" : "off";
+  if (perm === "denied") return { state: "denied" };
+  if (perm !== "granted") return { state: "off", why: "dismissed" };
   const reg = await registration();
-  if (!reg) return "unsupported";
+  if (!reg) return { state: "off", why: "failed", error: "the service worker didn't start" };
   await navigator.serviceWorker.ready;
-  const { key } = (await (await fetch("/api/push")).json()) as { key: string };
+  const keyRes = await fetch("/api/push");
+  if (!keyRes.ok) return { state: "off", why: "failed", error: `the server answered ${keyRes.status}` };
+  const { key } = (await keyRes.json()) as { key: string };
   let sub = await reg.pushManager.getSubscription();
   // subscribed with an older key (the admin made new ones): start over
   if (sub && sub.options.applicationServerKey) {
@@ -49,7 +75,11 @@ export async function enablePush(): Promise<PushState> {
   }
   sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(key) });
   const res = await fetch("/api/push", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ subscription: sub.toJSON() }) });
-  return res.ok ? "on" : "off";
+  if (res.ok) return { state: "on" };
+  const d = (await res.json().catch(() => ({}))) as { error?: string };
+  // (not kept here either: a subscription the server doesn't have would look like "on")
+  await sub.unsubscribe().catch(() => {});
+  return { state: "off", why: "failed", error: d.error || `the server answered ${res.status}` };
 }
 
 export async function disablePush(): Promise<PushState> {
