@@ -491,6 +491,8 @@ const sv: Record<string, string> = {
   "Nothing planned in {month}.": "Inget planerat i {month}.",
   "No lists yet.": "Inga listor än.",
   "No news yet.": "Inga nyheter än.",
+  "The browser's question closed without an answer. Try again and choose Allow.": "Webbläsarens fråga stängdes utan svar. Försök igen och välj Tillåt.",
+  "Couldn't turn on notifications here: {error}": "Kunde inte slå på notiser här: {error}",
   "The feed shows": "Flödet visar",
   "What's in the feed in the middle, and in its filters. One at least.": "Vad flödet i mitten visar, och dess filter. Minst en sort.",
   "News banner": "Nyhetsbanner",

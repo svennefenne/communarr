@@ -65,8 +65,12 @@ interface SubRow {
   fails: number;
 }
 
-/** The browsers' push services (Chrome/Android, Firefox, Safari/iOS, Edge); PUSH_HOSTS adds more. */
-const PUSH_HOSTS = ["fcm.googleapis.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com", ...(process.env.PUSH_HOSTS || "").split(",").map((s) => s.trim()).filter(Boolean)];
+/**
+ * The browsers' push services (Chrome/Android, Firefox, Safari/iOS, Edge; jmt17.google.com: the one
+ * Chromium builds that aren't Google's own subscribe at, e.g. Linux distributions' Chromium); PUSH_HOSTS
+ * adds more.
+ */
+const PUSH_HOSTS = ["fcm.googleapis.com", "jmt17.google.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com", ...(process.env.PUSH_HOSTS || "").split(",").map((s) => s.trim()).filter(Boolean)];
 
 export function isPushEndpoint(endpoint: string): boolean {
   try {
