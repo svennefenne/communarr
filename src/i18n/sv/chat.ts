@@ -349,8 +349,11 @@ const sv: Record<string, string> = {
   Invisible: "Osynlig",
   "Shown as offline": "Visas som offline",
 
-  // the app on the home screen (InstallButton)
-  "Get the app": "Skaffa appen",
+  // the apps, and the site on the home screen (InstallButton)
+  "Download the app": "Ladda ned appen",
+  Desktop: "Desktop",
+  "iPhone and iPad": "iPhone och iPad",
+  "(Web app in Safari)": "(Webbapplikation i Safari)",
   "Installed, the site opens like an app, full screen, and can send you notifications even when it's closed.":
     "Installerad öppnas sajten som en app, i helskärm, och kan skicka notiser även när den är stängd.",
   "iPhone and iPad (Safari)": "iPhone och iPad (Safari)",
@@ -362,17 +365,13 @@ const sv: Record<string, string> = {
   "Open it from the home screen and turn notifications on under Settings → Notifications.": "Öppna den från hemskärmen och slå på notiser under Inställningar → Notiser.",
   "Tap the ⋮ menu.": "Tryck på ⋮-menyn.",
   "Install app": "Installera appen",
-  "Install it here": "Installera här",
   "Or the Android app:": "Eller Android-appen:",
   "download it": "ladda ner den",
   "and log in with this site's address, your username and password.": "och logga in med sajtens adress, ditt användarnamn och lösenord.",
   or: "eller",
   "Add to Home screen": "Lägg till på startskärmen",
   "Computer (Chrome, Edge)": "Dator (Chrome, Edge)",
-  "Or install the site from the browser: click the install icon at the right end of the address bar.": "Eller installera sajten från webbläsaren: klicka på installationsikonen längst till höger i adressfältet.",
-  "Computer: the desktop app": "Dator: desktopappen",
-  "The site in a window of its own that stays in the tray when it's closed, with notifications and screen sharing.":
-    "Sajten i ett eget fönster som ligger kvar i systemfältet när du stänger det, med notiser och skärmdelning.",
+  "Click the install icon at the right end of the address bar.": "Klicka på installationsikonen längst till höger i adressfältet.",
   "The first time, it asks for this site's address: {address}": "Första gången frågar den efter sajtens adress: {address}",
   "The apps aren't signed, so Windows may warn first (More info → Run anyway), and on a Mac you right-click the app and choose Open the first time. On Linux, make the file executable and start it.":
     "Apparna är inte signerade, så Windows kan varna först (Mer information → Kör ändå), och på en Mac högerklickar du på appen och väljer Öppna första gången. På Linux gör du filen körbar och startar den.",

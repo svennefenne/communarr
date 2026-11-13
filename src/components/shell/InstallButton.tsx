@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Monitor, Smartphone } from "lucide-react";
+import { Smartphone } from "lucide-react";
 import { useSite, useT } from "@/components/app/AppProvider";
 import { inApp } from "@/components/app/androidApp";
 import { Modal } from "@/components/ui/ui";
-
-type PromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
 /** The Android app's download (GitHub builds it from android/), where the server has no copy of its own. */
 const ANDROID_APK = "https://github.com/svennefenne/communarr/releases/latest/download/communarr-android.apk";
@@ -17,43 +15,6 @@ export function isStandalone() {
 
 export function isIos() {
   return typeof navigator !== "undefined" && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
-}
-
-type Platform = "windows-x64" | "macos-arm64" | "linux-x86_64";
-const PLATFORM_NAMES: Record<Platform, string> = { "windows-x64": "Windows", "macos-arm64": "Mac (Apple silicon)", "linux-x86_64": "Linux (AppImage)" };
-
-/** This computer's kind first. */
-function platforms(): Platform[] {
-  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
-  const mine: Platform | null = /Windows/.test(ua) ? "windows-x64" : /Macintosh|Mac OS X/.test(ua) ? "macos-arm64" : /Linux/.test(ua) && !/Android/.test(ua) ? "linux-x86_64" : null;
-  const all: Platform[] = ["windows-x64", "macos-arm64", "linux-x86_64"];
-  return mine ? [mine, ...all.filter((p) => p !== mine)] : all;
-}
-
-/** The desktop app (desktop/) for each kind of computer: the server's own copy, else Communarr's. */
-function DesktopApp() {
-  const t = useT();
-  const site = useSite();
-  const links = site.desktopApps;
-  // (Communarr's own asks for the server's address the first time; a server's copy knows it)
-  const generic = Object.values(links).some((u) => /\/communarr-desktop-|github\.com/.test(u));
-  return (
-    <div>
-      <b>{t("Computer: the desktop app")}</b>
-      <p style={{ margin: "6px 0 0" }}>{t("The site in a window of its own that stays in the tray when it's closed, with notifications and screen sharing.")}</p>
-      <div className="row wrap" style={{ gap: 8, marginTop: 8 }}>
-        {platforms().map((p) => (
-          <a key={p} className="btn btn-ghost btn-xs" href={links[p]}>
-            <Monitor size={13} /> {PLATFORM_NAMES[p]}
-          </a>
-        ))}
-      </div>
-      <p className="muted" style={{ margin: "8px 0 0" }}>
-        {generic ? `${t("The first time, it asks for this site's address: {address}", { address: typeof location === "undefined" ? "" : location.host })} ` : ""}
-        {t("The apps aren't signed, so Windows may warn first (More info → Run anyway), and on a Mac you right-click the app and choose Open the first time. On Linux, make the file executable and start it.")}
-      </p>
-    </div>
-  );
 }
 
 /** How to put the site on the home screen, for each kind of device. */
@@ -89,71 +50,78 @@ export function InstallHelp() {
           {t("and log in with this site's address, your username and password.")}
         </p>
       </div>
-      <DesktopApp />
       <div>
         <b>{t("Computer (Chrome, Edge)")}</b>
-        <p style={{ margin: "6px 0 0" }}>{t("Or install the site from the browser: click the install icon at the right end of the address bar.")}</p>
+        <p style={{ margin: "6px 0 0" }}>{t("Click the install icon at the right end of the address bar.")}</p>
       </div>
       <p className="muted" style={{ margin: 0 }}>{t("Notifications need the site to be opened over https://.")}</p>
     </div>
   );
 }
 
+/** The desktop app's files, in this order. */
+const DESKTOP: { platform: "linux-x86_64" | "windows-x64" | "macos-arm64"; name: string }[] = [
+  { platform: "linux-x86_64", name: "Linux" },
+  { platform: "windows-x64", name: "Windows" },
+  { platform: "macos-arm64", name: "Mac" },
+];
+
 /**
- * The browser's own install (Chrome, Edge), offered once the page has loaded: kept here for whichever
- * Get the app opens, the footer's or the user menu's.
+ * "Download the app" (the user menu's, and the footer's): the desktop app for each kind of computer
+ * (the server's own copy, else Communarr's), the Android app, and the site on an iPhone's home screen.
  */
-let deferred: PromptEvent | null = null;
-const waiting = new Set<() => void>();
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferred = e as PromptEvent;
-    for (const f of waiting) f();
-  });
-}
-
-function useInstallPrompt(): [PromptEvent | null, () => void] {
-  const [prompt, setPrompt] = useState<PromptEvent | null>(deferred);
-  useEffect(() => {
-    const f = () => setPrompt(deferred);
-    waiting.add(f);
-    f();
-    return () => void waiting.delete(f);
-  }, []);
-  const used = () => {
-    deferred = null;
-    for (const f of waiting) f();
-  };
-  return [prompt, used];
-}
-
-/** "Get the app": the steps for each kind of device (and the apps), with the browser's own install first where it has one. */
 export function GetAppDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
-  const [prompt, used] = useInstallPrompt();
+  const site = useSite();
+  // (Communarr's own desktop app asks for the server's address the first time; a server's copy knows it)
+  const generic = Object.values(site.desktopApps).some((u) => /\/communarr-desktop-|github\.com/.test(u));
+  const list = { margin: "6px 0 0", paddingLeft: 20 };
   return (
-    <Modal title={t("Get the app")} onClose={onClose}>
-      {prompt && !isStandalone() ? (
-        <button
-          type="button"
-          className="btn btn-primary"
-          style={{ marginBottom: 14 }}
-          onClick={async () => {
-            await prompt.prompt();
-            used();
-            onClose();
-          }}
-        >
-          <Smartphone size={16} /> {t("Install it here")}
-        </button>
-      ) : null}
-      <InstallHelp />
+    <Modal title={t("Download the app")} onClose={onClose}>
+      <div className="stack small">
+        <div>
+          <b>{t("Desktop")}</b>
+          <ul style={{ margin: "6px 0 0", padding: 0, listStyle: "none" }}>
+            {DESKTOP.map((d) => (
+              <li key={d.platform}>
+                <a className="link" href={site.desktopApps[d.platform]}>
+                  {d.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p style={{ margin: "6px 0 0" }}>
+            {generic ? `${t("The first time, it asks for this site's address: {address}", { address: typeof location === "undefined" ? "" : location.host })} ` : ""}
+            {t("The apps aren't signed, so Windows may warn first (More info → Run anyway), and on a Mac you right-click the app and choose Open the first time. On Linux, make the file executable and start it.")}
+          </p>
+        </div>
+        <div>
+          <b>Android</b>
+          <p style={{ margin: "6px 0 0" }}>
+            <a className="link" href={site.androidApp ?? ANDROID_APK}>
+              {t("download it")}
+            </a>{" "}
+            {t("and log in with this site's address, your username and password.")}
+          </p>
+        </div>
+        <div>
+          <b>
+            {t("iPhone and iPad")} <i>{t("(Web app in Safari)")}</i>
+          </b>
+          <ol style={list}>
+            <li>{t("Tap the Share button (the square with the arrow).")}</li>
+            <li>
+              {t("Choose")} <b>{t("Add to Home Screen")}</b>, {t("then")} <b>{t("Add")}</b>.
+            </li>
+            <li>{t("Open it from the home screen and turn notifications on under Settings → Notifications.")}</li>
+          </ol>
+        </div>
+      </div>
     </Modal>
   );
 }
 
-/** Get the app in the footer, where the site isn't installed already (the user menu has it too). */
+/** Download the app in the footer, where the site isn't installed already (the user menu has it too). */
 export function InstallButton() {
   const t = useT();
   const [help, setHelp] = useState(false);
@@ -163,7 +131,7 @@ export function InstallButton() {
   return (
     <>
       <button type="button" className="btn btn-ghost btn-xs" onClick={() => setHelp(true)}>
-        <Smartphone size={13} /> {t("Get the app")}
+        <Smartphone size={13} /> {t("Download the app")}
       </button>
       {help ? <GetAppDialog onClose={() => setHelp(false)} /> : null}
     </>

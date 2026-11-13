@@ -65,13 +65,13 @@ function files(): string[] {
   return names.sort((a, b) => compare(version(b), version(a)) || time(b) - time(a));
 }
 
-/** The Android app to link to (Get the app), or null when there's none. */
+/** The Android app to link to (Download the app), or null when there's none. */
 export function latestApp(): string | null {
   return files().find((f) => APK.test(f)) ?? null;
 }
 
 /**
- * The desktop app to link to for each computer (Get the app): the server's own newest copy, else
+ * The desktop app to link to for each computer (Download the app): the server's own newest copy, else
  * Communarr's newest on GitHub (through the site, as for updates), else GitHub's releases.
  */
 export function desktopDownloads(): Record<Platform, string> {
