@@ -80,7 +80,7 @@ export function accentFor(username: string, accent?: string | null) {
 
 export function defaultTheme(): ThemePrefs {
   const s = getSettings();
-  return { scheme: s.defaultScheme, mode: s.defaultMode, custom: null, wipes: true, motion: true, sounds: true, textSize: 100, density: "comfy", wide: false, mirror: false };
+  return { scheme: s.defaultScheme, mode: s.defaultMode, custom: null, wipes: true, motion: true, sounds: true, textSize: 100, density: "comfy", wide: false, feedWidth: 0, mirror: false };
 }
 
 /** what comes by mail unless you say otherwise (only while you're away, and only to a confirmed address) */

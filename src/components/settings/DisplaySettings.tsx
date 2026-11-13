@@ -6,7 +6,8 @@ import { useState } from "react";
 import type { ThemePrefs } from "@/lib/types";
 import { Switch } from "@/components/ui/ui";
 import { useT } from "@/components/app/AppProvider";
-import { ModeSwitch } from "@/components/shell/UserMenu";
+import { ModeSwitch, showFeedWidth } from "@/components/shell/UserMenu";
+import { FEED_WIDTH } from "@/lib/look";
 import { LanguageSetting } from "@/components/app/LanguageToggle";
 import type { Lang } from "@/lib/i18n";
 import { useTransitions } from "@/components/shell/Transitions";
@@ -96,6 +97,45 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
               void save({ wide: v });
             }}
           />
+        </div>
+        <div className="setting-row">
+          <div className="grow">
+            <b>{t("Middle's width")}</b>
+            <span className="small muted">
+              {p.wide ? t("The front page's middle, the feed, when wide mode is off (now it fills the screen).") : t("The front page's middle, the feed, on a screen with room for the side columns.")}{" "}
+              {p.feedWidth ? `${p.feedWidth} px` : t("Standard")}
+            </span>
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            <input
+              type="range"
+              min={FEED_WIDTH.min}
+              max={FEED_WIDTH.max}
+              step={FEED_WIDTH.step}
+              value={p.feedWidth || 640}
+              style={{ maxWidth: 220 }}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setP((x) => ({ ...x, feedWidth: v }));
+                showFeedWidth(v);
+              }}
+              onPointerUp={() => save({ feedWidth: p.feedWidth })}
+              onKeyUp={() => save({ feedWidth: p.feedWidth })}
+              aria-label={t("Middle's width")}
+            />
+            {p.feedWidth ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={() => {
+                  showFeedWidth(0);
+                  void save({ feedWidth: 0 });
+                }}
+              >
+                {t("Standard")}
+              </button>
+            ) : null}
+          </div>
         </div>
       </section>
       <section className="panel panel-pad">

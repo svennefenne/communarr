@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { requireUser } from "@/lib/auth";
 import { feed } from "@/lib/feed";
-import { latestNews } from "@/lib/posts";
+import { latestNews, listPosts } from "@/lib/posts";
 import { eventsBetween, upcoming } from "@/lib/events";
 import { roomsFor } from "@/lib/chat";
 import { latestThreads } from "@/lib/forum";
@@ -10,32 +10,31 @@ import { listLists } from "@/lib/lists";
 import { listGroups, postableGroups } from "@/lib/groups";
 import { allMembers } from "@/lib/users";
 import { getSettings } from "@/lib/settings";
-import { homeLayout, shownPanels, type HomePanel } from "@/lib/homePanels";
+import { homeLayout, shownPanels, type FeedKind, type HomePanel } from "@/lib/homePanels";
 import { monthGrid, monthKey } from "@/lib/monthGrid";
 import type { FeedFilter } from "@/lib/contentTypes";
 import { Feed } from "@/components/feed/Feed";
 import { PushPrompt } from "@/components/home/PushPrompt";
-import { ChatWidget, ForumWidget, Greeting, GroupsWidget, ListsWidget, MobileStrip, NewsHero, OnlineWidget, PollsWidget, UpcomingWidget } from "@/components/home/Widgets";
+import { ChatWidget, ForumWidget, Greeting, GroupsWidget, ListsWidget, MobileStrip, NewsHero, NewsWidget, OnlineWidget, PollsWidget, UpcomingWidget } from "@/components/home/Widgets";
 import { MonthWidget } from "@/components/home/MonthWidget";
 
 export const dynamic = "force-dynamic";
 
-const FILTERS: FeedFilter[] = ["all", "posts", "news", "forum", "polls", "events"];
-
 export default async function Home({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
   const u = await requireUser();
   const { show } = await searchParams;
-  const filter = FILTERS.includes(show as FeedFilter) ? (show as FeedFilter) : "all";
   const s = getSettings();
   const f = s.features;
-  const items = feed(u, { filter });
-  const news = latestNews(u, 1)[0];
+  // the side columns and what the feed shows (Admin → Front page): only what's shown is looked up
+  const layout = homeLayout(s.home);
+  const kinds = layout.feed;
+  const filter = show === "all" || kinds.includes(show as FeedKind) ? (show as FeedFilter) : "all";
+  const items = feed(u, { filter, kinds });
+  const news = layout.hero ? latestNews(u, 1)[0] : undefined;
   // the hero shows pinned news, or news from the last week
   const hero = news && (news.pinned || Date.now() - news.createdAt < 7 * 86_400_000) ? news : null;
   const members = allMembers();
   const others = members.filter((m) => m.id !== u.id);
-  // the side columns (Admin → Front page): only what's in them is looked up
-  const layout = homeLayout(s.home);
   const sides = shownPanels(layout, f);
   const shown = new Set([...sides.left, ...sides.right]);
   // (what's coming up is the phone's strip too)
@@ -62,6 +61,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         return <ListsWidget lists={listLists(u, { limit: 5 })} />;
       case "groups":
         return <GroupsWidget groups={listGroups(u).mine.slice(0, 6)} />;
+      case "news":
+        return <NewsWidget posts={listPosts(u, { kind: "news", limit: 10 })} />;
     }
   };
   const column = (ids: HomePanel[], cls: string) =>
@@ -73,7 +74,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
       </aside>
     ) : null;
   return (
-    <div className="page home">
+    <div className={`page home sides-${sides.left.length && sides.right.length ? "both" : sides.left.length ? "left" : sides.right.length ? "right" : "none"}`}>
       <div className="page-head home-head">
         <Greeting name={u.name} />
       </div>
@@ -84,7 +85,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         <div className="stack loose home-main">
           <PushPrompt />
           {hero && filter === "all" ? <NewsHero post={hero} /> : null}
-          <Feed initial={items} initialFilter={filter} groups={postableGroups(u)} sections stickyFilters />
+          <Feed initial={items} initialFilter={filter} groups={postableGroups(u)} sections stickyFilters kinds={kinds} />
         </div>
         {shown.size ? (
           <div className="home-sides">

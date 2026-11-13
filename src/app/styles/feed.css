@@ -80,6 +80,31 @@
   }
 }
 
+/* the front page's middle at a width of someone's own (user menu, Settings → Display; --feed-w on
+   <html>): the page as wide as that and its side columns, as far as the screen goes. Wide mode fills
+   the screen instead, and a screen without the side columns has the feed across it as before.
+   --home-sides: the side columns and their gaps, as they are at that size */
+@media (min-width: 1061px) {
+  html[data-feed]:not([data-width="wide"]) .page.home {
+    width: min(100% - 32px, var(--feed-w) + var(--home-sides));
+  }
+}
+.page.home.sides-none {
+  --home-sides: 0px;
+}
+.page.home.sides-right,
+.page.home.sides-left,
+.page.home.sides-both {
+  --home-sides: 364px;
+}
+@media (min-width: 1280px) {
+  .page.home.sides-left {
+    --home-sides: 324px;
+  }
+  .page.home.sides-both {
+    --home-sides: 688px;
+  }
+}
 /* the calendar as a month (MonthWidget): its days, and its events in a short list under them */
 .mcal {
   padding: 2px 12px 12px;

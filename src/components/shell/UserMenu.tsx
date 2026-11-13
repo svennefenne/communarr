@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
-import { Bookmark, Download, Languages, LogOut, MessageSquareText, MonitorSmartphone, Moon, Palette, RefreshCw, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
+import { Bookmark, Download, Languages, LogOut, MessageSquareText, MonitorSmartphone, Moon, Palette, RefreshCw, RotateCcw, Settings, ShieldCheck, Smile, Sun, SunMoon, UserRound } from "lucide-react";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { LanguageToggle } from "@/components/app/LanguageToggle";
 import { Avatar } from "@/components/ui/Avatar";
@@ -16,6 +16,28 @@ import { logoutAction, setPrefsAction } from "@/app/actions/me";
 import { setSoundsOn } from "@/components/app/sfx";
 import { appInfo, appUpdate, tellApp, type AppInfo } from "@/components/app/androidApp";
 import type { ThemePrefs } from "@/lib/types";
+import { cleanFeedWidth, FEED_WIDTH } from "@/lib/look";
+
+/** The front page's middle at a width (live, before it's kept): 0 as it comes. */
+export function showFeedWidth(px: number) {
+  const r = document.documentElement;
+  if (px) {
+    r.dataset.feed = "set";
+    r.style.setProperty("--feed-w", `${px}px`);
+  } else {
+    delete r.dataset.feed;
+    r.style.removeProperty("--feed-w");
+  }
+}
+/** What the front page's middle is now (to start the slider at, when it's as it comes). */
+export const feedWidthNow = () => cleanFeedWidth(document.querySelector(".home-main")?.getBoundingClientRect().width ?? 632);
+/** The widest the front page's middle can be on this screen, beside its side columns (the slider's end). */
+function feedWidthMax() {
+  const page = document.querySelector(".page.home");
+  const sides = page ? parseFloat(getComputedStyle(page).getPropertyValue("--home-sides")) || 0 : 0;
+  const room = document.documentElement.clientWidth - 32 - sides;
+  return Math.max(FEED_WIDTH.min, Math.min(FEED_WIDTH.max, Math.floor(room / FEED_WIDTH.step) * FEED_WIDTH.step));
+}
 
 /** Dark, light or the device's choice. */
 export function ModeSwitch({ mode }: { mode: ThemePrefs["mode"] }) {
@@ -60,6 +82,11 @@ export function UserMenu() {
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
   const [wide, setWide] = useState(me?.theme.wide ?? false);
+  // the front page's middle: kept (0: as it comes), and where the slider is
+  const [feedW, setFeedW] = useState(me?.theme.feedWidth ?? 0);
+  const [slider, setSlider] = useState(0);
+  const [sliderMax, setSliderMax] = useState<number>(FEED_WIDTH.max);
+  const onHome = usePathname() === "/";
   const router = useRouter();
   // in an app (Android's, the desktop's): a newer version of it on the server (a dot on the button, and
   // a row in the menu), or Check for updates; its version in small print at the end
@@ -91,6 +118,13 @@ export function UserMenu() {
   // a phone's screen can be shorter than the menu: it ends above the bottom bar and scrolls itself
   // (--menu-top: where it starts), and the page behind it stays still while it's open
   const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open || !onHome || wide) return;
+    // (as the page is now: wide mode's switch changes it before this)
+    const max = feedWidthMax();
+    setSliderMax(max);
+    setSlider(Math.min(max, feedW || feedWidthNow()));
+  }, [open, onHome, feedW, wide]);
   useLayoutEffect(() => {
     const el = menuRef.current;
     if (!open || !el) return;
@@ -117,6 +151,13 @@ export function UserMenu() {
     if (on) document.documentElement.dataset.width = "wide";
     else delete document.documentElement.dataset.width;
     await setPrefsAction({ wide: on });
+  };
+  // the front page's middle (this device's): shown as the slider moves, kept when it's let go
+  const keepFeedWidth = async (px: number) => {
+    setFeedW(px);
+    showFeedWidth(px);
+    if (!px) setSlider(feedWidthNow());
+    await setPrefsAction({ feedWidth: px });
   };
   // the site's sounds (Admin → Sounds), not voice chat
   const toggleSounds = async (on: boolean) => {
@@ -241,6 +282,32 @@ export function UserMenu() {
             <span className="grow">{t("Wide mode")}</span>
             <Switch on={wide} onChange={toggleWide} label={t("Wide mode")} />
           </div>
+          {onHome && !wide ? (
+            <div className="menu-item menu-feed-width" style={{ cursor: "default" }}>
+              <span className="grow">{t("Middle's width")}</span>
+              <input
+                type="range"
+                min={FEED_WIDTH.min}
+                max={sliderMax}
+                step={FEED_WIDTH.step}
+                value={slider || FEED_WIDTH.min}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setSlider(v);
+                  showFeedWidth(v);
+                }}
+                onPointerUp={() => void keepFeedWidth(slider)}
+                onKeyUp={() => void keepFeedWidth(slider)}
+                aria-label={t("Middle's width")}
+                aria-valuetext={`${slider} px`}
+              />
+              {feedW ? (
+                <button type="button" className="icon-btn xs" onClick={() => void keepFeedWidth(0)} aria-label={t("Back to the standard width")} title={t("Back to the standard width")}>
+                  <RotateCcw size={13} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           <div className="menu-item" style={{ cursor: "default" }}>
             <span className="grow">{t("Animations")}</span>
             <Switch on={motion && wipe} onChange={toggleMotion} label={t("Animations")} />

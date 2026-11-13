@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays, ChevronDown, ChevronUp, GripVertical, ListChecks, MessageCircle, MessagesSquare, Newspaper, Users, UsersRound, Vote, type LucideIcon } from "lucide-react";
 import type { SiteSettings } from "@/lib/settings";
-import { homeLayout, PANEL_FEATURE, type HomeLayout as Layout, type HomePanel, type HomePanelSlot, type HomeSide } from "@/lib/homePanels";
+import { FEED_FEATURE, FEED_KINDS, homeLayout, PANEL_FEATURE, type FeedKind, type HomeLayout as Layout, type HomePanel, type HomePanelSlot, type HomeSide } from "@/lib/homePanels";
 import { useT, useToast } from "@/components/app/AppProvider";
 import { Switch } from "@/components/ui/ui";
 import { saveSettingsAction } from "@/app/actions/admin";
@@ -18,7 +18,10 @@ const PANELS: Record<HomePanel, { label: string; icon: LucideIcon }> = {
   polls: { label: "Polls", icon: Vote },
   lists: { label: "Lists", icon: ListChecks },
   groups: { label: "Groups", icon: UsersRound },
+  news: { label: "News", icon: Newspaper },
 };
+
+const KIND_LABEL: Record<FeedKind, string> = { posts: "Posts", news: "News", forum: "Forum", polls: "Polls", events: "Events", lists: "Lists" };
 
 type Cols = Record<HomeSide, HomePanelSlot[]>;
 const split = (l: Layout): Cols => ({ left: l.panels.filter((p) => p.side === "left"), right: l.panels.filter((p) => p.side === "right") });
@@ -36,6 +39,8 @@ export function HomeLayoutSettings({ s }: { s: SiteSettings }) {
   const [pending, start] = useTransition();
   const [cols, setCols] = useState<Cols>(() => split(homeLayout(s.home)));
   const [calendar, setCalendar] = useState(() => homeLayout(s.home).calendar);
+  const [kinds, setKinds] = useState(() => homeLayout(s.home).feed);
+  const [hero, setHero] = useState(() => homeLayout(s.home).hero);
   const [dragging, setDragging] = useState<HomePanel | null>(null);
   const dragRef = useRef<HomePanel | null>(null);
 
@@ -161,11 +166,44 @@ export function HomeLayoutSettings({ s }: { s: SiteSettings }) {
           </button>
         </div>
       </div>
+      <div className="setting-row">
+        <span className="grow">
+          <b>{t("The feed shows")}</b>
+          <span className="small muted">{t("What's in the feed in the middle, and in its filters. One at least.")}</span>
+        </span>
+        <div className="pills" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {FEED_KINDS.map((k) => {
+            const on = kinds.includes(k);
+            const feature = FEED_FEATURE[k];
+            const off = feature && !s.features[feature];
+            return (
+              <button
+                key={k}
+                type="button"
+                className={`pill ${on ? "active" : ""}`}
+                aria-pressed={on}
+                disabled={!!off || (on && kinds.length === 1)}
+                title={off ? t("Off under Features & permissions") : undefined}
+                onClick={() => setKinds((x) => FEED_KINDS.filter((y) => (y === k ? !on : x.includes(y))))}
+              >
+                {t(KIND_LABEL[k])}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="setting-row">
+        <span className="grow">
+          <b>{t("News banner")}</b>
+          <span className="small muted">{t("Pinned news, or news from the last week, in a banner above the feed.")}</span>
+        </span>
+        <Switch on={hero} onChange={setHero} label={t("News banner")} />
+      </div>
       <SaveBar
         pending={pending}
         onSave={() =>
           start(async () => {
-            const r = await saveSettingsAction({ home: { panels: [...cols.left, ...cols.right], calendar } });
+            const r = await saveSettingsAction({ home: { panels: [...cols.left, ...cols.right], calendar, feed: kinds, hero } });
             if (!r.ok) toast(r.error, { kind: "err" });
             else {
               toast(t("Saved. The front page looks like this now, for everyone."));
