@@ -12,6 +12,9 @@
 html.app-page:not([data-frame="on"]) .site-footer {
   display: none;
 }
+html[data-width="wide"] .chat-shell {
+  width: calc(100% - 28px);
+}
 @media (max-width: 1000px) {
   .chat-shell {
     --side-w: 270px;

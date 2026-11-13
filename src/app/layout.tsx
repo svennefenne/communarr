@@ -76,6 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-backdrop={theme.backdrop}
       data-motion={user && !user.theme.motion ? "off" : undefined}
       data-density={user?.theme.density === "compact" ? "compact" : undefined}
+      data-width={user?.theme.wide ? "wide" : undefined}
       suppressHydrationWarning
     >
       <head>

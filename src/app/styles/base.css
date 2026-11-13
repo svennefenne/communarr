@@ -247,6 +247,18 @@ hr {
 .page.mid {
   width: min(1080px, 100% - 32px);
 }
+/* wide mode (the user menu, Settings → Display): the page fills the screen, its side columns out at
+   the edges and the middle filling the room between them; pages for reading (narrow, mid) keep theirs */
+html[data-width="wide"] .page:not(.narrow, .mid),
+html[data-width="wide"] .announce {
+  width: calc(100% - 32px);
+}
+/* (the switch in the menu only where it makes a difference) */
+@media (max-width: 1359px) {
+  .menu-item.menu-wide {
+    display: none;
+  }
+}
 .page-head {
   display: flex;
   align-items: flex-end;

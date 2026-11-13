@@ -29,6 +29,8 @@ export interface ThemePrefs {
   textSize: number;
   /** compact lists */
   density: "comfy" | "compact";
+  /** wide: the pages fill the screen, their side columns at its edges (else they stop at 1320px, the chat at 1480px) */
+  wide: boolean;
   /** the same look on all your devices (else each device keeps its own: lib/look.ts) */
   mirror: boolean;
 }

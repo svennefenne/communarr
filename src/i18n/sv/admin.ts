@@ -469,6 +469,8 @@ const sv: Record<string, string> = {
   "Text size": "Textstorlek",
   Compact: "Kompakt",
   "Smaller text, tighter spacing, and cards that show less (shorter text, smaller pictures, no excerpts): more on the screen.": "Mindre text, tätare avstånd och kort som visar mindre (kortare text, mindre bilder, inga utdrag): mer på skärmen.",
+  "Wide mode": "Brett läge",
+  "On a wide screen, the page fills it: the side columns out at its edges, and the middle between them.": "På en bred skärm fyller sidan hela bredden: sidokolumnerna ute vid kanterna och mitten emellan.",
   Animations: "Animationer",
 
   // notifications (components/settings/NotifySettings.tsx, NOTIFY_KINDS in lib/types.ts)

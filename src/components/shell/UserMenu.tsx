@@ -59,6 +59,7 @@ export function UserMenu() {
   const { wipe, setWipe } = useTransitions();
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
+  const [wide, setWide] = useState(me?.theme.wide ?? false);
   const router = useRouter();
   // in an app (Android's, the desktop's): a newer version of it on the server (a dot on the button, and
   // a row in the menu), or Check for updates; its version in small print at the end
@@ -109,6 +110,13 @@ export function UserMenu() {
     if (on) delete document.documentElement.dataset.motion;
     else document.documentElement.dataset.motion = "off";
     await setPrefsAction({ motion: on, wipes: on });
+  };
+  // the page across the whole screen (this device's, like the rest of the look)
+  const toggleWide = async (on: boolean) => {
+    setWide(on);
+    if (on) document.documentElement.dataset.width = "wide";
+    else delete document.documentElement.dataset.width;
+    await setPrefsAction({ wide: on });
   };
   // the site's sounds (Admin → Sounds), not voice chat
   const toggleSounds = async (on: boolean) => {
@@ -228,6 +236,10 @@ export function UserMenu() {
             <Languages size={17} />
             <span className="grow">{t("Language")}</span>
             <LanguageToggle short />
+          </div>
+          <div className="menu-item menu-wide" style={{ cursor: "default" }}>
+            <span className="grow">{t("Wide mode")}</span>
+            <Switch on={wide} onChange={toggleWide} label={t("Wide mode")} />
           </div>
           <div className="menu-item" style={{ cursor: "default" }}>
             <span className="grow">{t("Animations")}</span>

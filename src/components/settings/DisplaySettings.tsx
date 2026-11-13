@@ -82,6 +82,21 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
             }}
           />
         </div>
+        <div className="setting-row">
+          <div className="grow">
+            <b>{t("Wide mode")}</b>
+            <span className="small muted">{t("On a wide screen, the page fills it: the side columns out at its edges, and the middle between them.")}</span>
+          </div>
+          <Switch
+            on={!!p.wide}
+            label={t("Wide mode")}
+            onChange={(v) => {
+              if (v) document.documentElement.dataset.width = "wide";
+              else delete document.documentElement.dataset.width;
+              void save({ wide: v });
+            }}
+          />
+        </div>
       </section>
       <section className="panel panel-pad">
         <h2 className="h2">{t("On all your devices")}</h2>

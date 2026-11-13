@@ -2,17 +2,73 @@
 .home-head {
   margin-bottom: 18px;
 }
-.home-side {
+/* the feed, and its side columns (each stays in view, scrolling on its own when it's taller than the
+   screen): on a wide screen chat and the forum on the left (.home-left) and the rest on the right; on
+   a narrower one all of them on the right, chat and the forum last; on a phone none (the strip above) */
+.home-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+.home-main {
+  min-width: 0;
+}
+.home-sides,
+.home-left,
+.home-right {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
   max-height: calc(100dvh - var(--header-h) - 32px - var(--frame-b));
   overflow-y: auto;
   scrollbar-width: none;
   padding-bottom: 8px;
 }
-.home-side::-webkit-scrollbar {
+.home-sides {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.home-sides > * {
+  position: static;
+  max-height: none;
+  overflow: visible;
+  padding-bottom: 0;
+}
+.home-left {
+  order: 1;
+}
+.home-sides::-webkit-scrollbar,
+.home-left::-webkit-scrollbar,
+.home-right::-webkit-scrollbar {
   display: none;
 }
+@media (min-width: 1280px) {
+  .home-cols:has(.home-left) {
+    grid-template-columns: 300px minmax(0, 1fr) 340px;
+  }
+  .home-sides {
+    display: contents;
+  }
+  .home-sides > * {
+    position: sticky;
+    max-height: calc(100dvh - var(--header-h) - 32px - var(--frame-b));
+    overflow-y: auto;
+    padding-bottom: 8px;
+  }
+  .home-left {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .home-cols:has(.home-left) .home-main {
+    grid-column: 2;
+  }
+}
 @media (max-width: 1060px) {
-  .home-side {
+  .home-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-sides {
     display: none;
   }
 }
