@@ -17,9 +17,11 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { builder } from "./builder.mjs";
 
 const require = createRequire(import.meta.url);
-const here = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const here = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const macZipAt = args.indexOf("--mac-zip");
 const macZip = macZipAt >= 0 ? args.splice(macZipAt, 2)[1] : null;
@@ -50,7 +52,7 @@ const sha256 = (f) => crypto.createHash("sha256").update(fs.readFileSync(f)).dig
 // where it reads it out of the file itself: it does that here too)
 const macosVersion = require(path.join(here, "node_modules", "app-builder-lib", "out", "util", "macosVersion.js"));
 macosVersion.isMacOsCatalina = () => true;
-const { build } = require(path.join(here, "node_modules", "electron-builder"));
+const { build } = builder();
 const config = structuredClone(pkg.build);
 Object.assign(config, {
   appId: site.id,

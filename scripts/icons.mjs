@@ -65,6 +65,10 @@ const png = (s, name) => sharp(Buffer.from(s)).png().toFile(new URL(name, assets
 const dot = (size, s, color = "#e2533a", ring = "#070b10") =>
   s.replace("</svg>", `<circle cx="${size * 0.78}" cy="${size * 0.22}" r="${size * 0.21}" fill="${ring}"/><circle cx="${size * 0.78}" cy="${size * 0.22}" r="${size * 0.16}" fill="${color}"/></svg>`);
 await png(svg({ size: 1024 }), "icon.png");
+// Linux's: a set up to 512, the largest size icon themes have (AppImageLauncher puts the AppImage's
+// largest in the size it is, and a 1024 one isn't found there)
+fs.mkdirSync(new URL("linux/", assets), { recursive: true });
+for (const size of [16, 24, 32, 48, 64, 128, 256, 512]) await png(svg({ size }), `linux/${size}x${size}.png`);
 await png(svg({ size: 1024 }).replace(/<svg ([^>]*)>/, `<svg $1><g transform="translate(100 100) scale(${824 / 1024})">`).replace("</svg>", "</g></svg>"), "icon-mac.png");
 for (const [size, suffix] of [[32, ""], [64, "@2x"]]) {
   await png(svg({ size }), `tray${suffix}.png`);

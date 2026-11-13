@@ -47,7 +47,7 @@ const store = new Store(app.getPath("userData"));
 setLang(store.data.lang ?? app.getPreferredSystemLanguages()[0] ?? app.getLocale());
 /** where this copy runs from: the AppImage on Linux, else the program */
 const EXEC = process.env.APPIMAGE || process.execPath;
-if (process.platform === "linux" && process.env.APPIMAGE && !CHECK) integrate(site, EXEC, path.join(ASSETS, "icon.png"));
+if (process.platform === "linux" && process.env.APPIMAGE && !CHECK) integrate(site, EXEC, path.join(ASSETS, "linux", "512x512.png"));
 
 let win: BrowserWindow | null = null;
 let tray: AppTray | null = null;
@@ -291,7 +291,7 @@ async function check() {
   let ok = true;
   try {
     say(`${site.name} ${VERSION} (${PLATFORM}), Electron ${process.versions.electron}`);
-    for (const f of ["icon.png", "tray.png", "tray-unread.png", "trayTemplate.png", "overlay-unread.png"]) {
+    for (const f of ["icon.png", "linux/512x512.png", "tray.png", "tray-unread.png", "trayTemplate.png", "overlay-unread.png"]) {
       if (nativeImage.createFromPath(path.join(ASSETS, f)).isEmpty()) throw new Error(`${f} is missing`);
     }
     const w = new BrowserWindow({ show: false, webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true } });

@@ -48,7 +48,7 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"    # no certificate: a Mac's app is signed ad hoc (package.json):
           CSC_FOR_PULL_REQUEST: "true"            # a pull request's too
-        run: npx electron-builder ${{ matrix.target }} --publish never
+        run: node scripts/build.mjs ${{ matrix.target }}
 
       # the app's own check: its parts are there and its pages talk to it (a display to start on, and
       # no sandbox helper outside the AppImage); then the AppImage itself
