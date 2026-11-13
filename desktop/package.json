@@ -1,7 +1,7 @@
 {
   "name": "communarr-desktop",
   "productName": "Communarr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Communarr on the computer: the site in its own window, in the tray when it's closed.",
   "author": "svennefenne",
@@ -41,7 +41,7 @@
     "linux": {
       "target": "AppImage",
       "executableName": "communarr",
-      "icon": "assets/icon.png",
+      "icon": "assets/linux",
       "category": "Network",
       "artifactName": "communarr-desktop-linux-x86_64.AppImage",
       "desktop": {
