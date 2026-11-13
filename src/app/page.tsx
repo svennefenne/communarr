@@ -38,20 +38,28 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         <Greeting name={u.name} />
       </div>
       <MobileStrip events={events} members={members.filter((m) => m.id !== u.id)} />
-      <div className="with-side">
-        <div className="stack loose" style={{ minWidth: 0 }}>
+      {/* the feed between two side columns: chat and the forum on the left, the rest on the right
+          (on a narrower screen they're all on the right; on a phone, the strip above instead) */}
+      <div className="home-cols">
+        <div className="stack loose home-main">
           <PushPrompt />
           {hero && filter === "all" ? <NewsHero post={hero} /> : null}
           <Feed initial={items} initialFilter={filter} groups={postableGroups(u)} sections stickyFilters />
         </div>
-        <aside className="stack home-side side-sticky">
-          {f.calendar ? <UpcomingWidget events={events} /> : null}
-          {f.chat ? <ChatWidget rooms={rooms} /> : null}
-          <OnlineWidget members={members.filter((m) => m.id !== u.id)} />
-          <PollsWidget polls={polls} />
-          {f.forum ? <ForumWidget threads={threads} /> : null}
-          {f.groups ? <GroupsWidget groups={groups} /> : null}
-        </aside>
+        <div className="home-sides">
+          {f.chat || f.forum ? (
+            <aside className="stack home-left">
+              {f.chat ? <ChatWidget rooms={rooms} /> : null}
+              {f.forum ? <ForumWidget threads={threads} /> : null}
+            </aside>
+          ) : null}
+          <aside className="stack home-right">
+            {f.calendar ? <UpcomingWidget events={events} /> : null}
+            <OnlineWidget members={members.filter((m) => m.id !== u.id)} />
+            <PollsWidget polls={polls} />
+            {f.groups ? <GroupsWidget groups={groups} /> : null}
+          </aside>
+        </div>
       </div>
     </div>
   );
