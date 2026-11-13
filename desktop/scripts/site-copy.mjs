@@ -125,7 +125,13 @@ async function mac() {
   fs.copyFileSync(siteJson, path.join(app, "Contents", "Resources", "site.json"));
   const rc = await rcodesign();
   execFileSync(rc, ["sign", app], { stdio: ["ignore", "ignore", "inherit"] });
-  execFileSync(rc, ["verify", app], { stdio: ["ignore", "ignore", "inherit"] });
+  // signed again: the app's program carries an ad hoc signature of its own (no longer the linker's), and
+  // the app's files are sealed with it (rcodesign's verify can't judge an ad hoc signature)
+  const exe = xml.match(/<key>CFBundleExecutable<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
+  if (!exe) throw new Error("the app's Info.plist names no program");
+  const info = execFileSync(rc, ["print-signature-info", path.join(app, "Contents", "MacOS", exe)], { stdio: ["ignore", "pipe", "ignore"] }).toString();
+  if (!/ADHOC/.test(info) || /LINKER_SIGNED/.test(info) || !fs.existsSync(path.join(app, "Contents", "_CodeSignature", "CodeResources")))
+    throw new Error("the app wasn't signed again");
   const target = path.join(path.resolve(out), file("macos-arm64.zip"));
   fs.rmSync(target, { force: true });
   execFileSync("zip", ["-qry", target, path.basename(app)], { cwd: dir });
