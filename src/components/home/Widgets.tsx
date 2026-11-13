@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, CalendarDays, Hash, Headphones, Lock, MessageCircle, MessagesSquare, UsersRound, Vote } from "lucide-react";
-import type { EventView, PollView, PostView, ThreadCard } from "@/lib/contentTypes";
+import { ArrowRight, CalendarDays, Hash, Headphones, ListChecks, Lock, MessageCircle, MessagesSquare, UsersRound, Vote } from "lucide-react";
+import type { EventView, ListCard, PollView, PostView, ThreadCard } from "@/lib/contentTypes";
 import type { RoomInfo } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
 import { plainText } from "@/lib/plainText";
@@ -14,7 +14,7 @@ import { Time } from "@/components/ui/Time";
 import { DateTile, EventWhen } from "@/components/feed/EventCard";
 import { TypingDots, TypingLine, useTyping } from "@/components/chat/useTyping";
 
-function Widget({ title, icon, href, more, children }: { title: string; icon: React.ReactNode; href?: string; more?: string; children: React.ReactNode }) {
+export function Widget({ title, icon, href, more, children }: { title: string; icon: React.ReactNode; href?: string; more?: string; children: React.ReactNode }) {
   const t = useT();
   return (
     <section className="panel widget">
@@ -251,6 +251,39 @@ export function ForumWidget({ threads }: { threads: ThreadCard[] }) {
           {tr("Quiet so far.")}{" "}
           <Link href="/forum/new" className="link">
             {tr("Start a thread")}
+          </Link>
+        </div>
+      )}
+    </Widget>
+  );
+}
+
+/** The latest changed lists, and how far each is filled in (yours to fill in: marked) */
+export function ListsWidget({ lists }: { lists: ListCard[] }) {
+  const t = useT();
+  return (
+    <Widget title={t("Lists")} icon={<ListChecks size={14} />} href="/lists">
+      {lists.length ? (
+        <div className="list">
+          {lists.map((l) => (
+            <Link key={l.id} href={`/lists/${l.id}`} className="list-row">
+              <span className="grow" style={{ minWidth: 0 }}>
+                <b className="ellipsis" style={{ display: "block" }}>
+                  {l.title}
+                </b>
+                <span className="tiny muted ellipsis" style={{ display: "block" }}>
+                  {l.autoRows || !l.rows ? t.n(l.filled, "{n} row filled in", "{n} rows filled in") : t("{n} of {total} rows filled in", { n: l.filled, total: l.rows })}
+                </span>
+              </span>
+              {l.mine ? <span className="badge accent">{t("You're on it")}</span> : null}
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="panel-body small muted">
+          {t("No lists yet.")}{" "}
+          <Link href="/lists/new" className="link">
+            {t("Make one")}
           </Link>
         </div>
       )}

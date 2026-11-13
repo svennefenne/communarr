@@ -4,6 +4,7 @@ import { isLang, type Lang } from "./i18n";
 import type { Backdrop, LibraryBackdrop } from "./theme";
 import type { TimeFormat, WeekStart } from "./clock";
 import { DEFAULT_SOUNDS, type SoundSettings } from "./sounds";
+import { DEFAULT_HOME, type HomeLayout } from "./homePanels";
 
 /** Site settings (Admin). Stored as JSON per key; anything missing falls back to DEFAULTS. */
 
@@ -70,6 +71,8 @@ export interface SiteSettings {
   defaultRoom: number;
   /** sounds for things that happen (Admin → Sounds) */
   sounds: SoundSettings;
+  /** the front page's side columns (Admin → Front page); read it through homeLayout (lib/homePanels.ts) */
+  home: HomeLayout;
 }
 
 export const DEFAULTS: SiteSettings = {
@@ -104,6 +107,7 @@ export const DEFAULTS: SiteSettings = {
   weekStart: 1,
   defaultRoom: -1,
   sounds: DEFAULT_SOUNDS,
+  home: DEFAULT_HOME,
 };
 
 /** The default texts in the other languages (until an admin writes their own). */

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, AtSign, Bell, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Smile, Sparkles, Type, Users, Volume2 } from "lucide-react";
+import { Activity, AtSign, Bell, Columns3, Flag, Languages, LayoutGrid, Mail, MessageSquareText, MessagesSquare, Palette, Server, SlidersHorizontal, Smile, Sparkles, Type, Users, Volume2 } from "lucide-react";
 import { requireMod } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { activity, adminMembers, auditLog, overview, system } from "@/lib/admin";
@@ -20,6 +20,7 @@ import { Feedback } from "@/components/admin/Feedback";
 import { listFeedback, openFeedback } from "@/lib/feedback";
 import { AnnouncementSettings, FeatureSettings, IdentitySettings, LookSettings } from "@/components/admin/LookSettings";
 import { TextsEditor } from "@/components/admin/TextsEditor";
+import { HomeLayoutSettings } from "@/components/admin/HomeLayout";
 import { ForumCategories } from "@/components/admin/ForumCategories";
 import { DefaultRoom, GroupsRooms, NotifyVoice, SystemSection, type AdminGroup, type AdminRoom } from "@/components/admin/SystemSections";
 import { MailAdmin } from "@/components/admin/MailAdmin";
@@ -102,7 +103,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { label: t("Content"), items: [{ id: "content", label: t("Announcement & filter") }, { id: "forum", label: t("Forum categories") }, { id: "emojis", label: t("Emoji") }] },
     ...(admin
       ? [
-          { label: t("Look"), items: [{ id: "identity", label: t("Name & texts") }, { id: "texts", label: t("Texts") }, { id: "look", label: t("Colours & background") }] },
+          { label: t("Look"), items: [{ id: "identity", label: t("Name & texts") }, { id: "texts", label: t("Texts") }, { id: "look", label: t("Colours & background") }, { id: "front", label: t("Front page") }] },
           {
             label: t("Site"),
             items: [
@@ -180,6 +181,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </Section>
               <Section id="look" title={t("Colours & background")} icon={<Palette size={18} />} hint={t("The default look for everyone")}>
                 <LookSettings s={s} />
+              </Section>
+              <Section id="front" title={t("Front page")} icon={<Columns3 size={18} />} hint={t("What's beside the feed, and where")}>
+                <HomeLayoutSettings s={s} />
               </Section>
               <Section id="features" title={t("Features & permissions")} icon={<SlidersHorizontal size={18} />}>
                 <FeatureSettings s={s} bggToken={!!bggToken()} />
