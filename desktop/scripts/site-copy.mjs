@@ -62,7 +62,7 @@ Object.assign(config, {
   // (the package's name is the Windows installation's folder: one of its own, beside Communarr's)
   extraMetadata: { name: `${slug(site.name)}-desktop`, productName: site.name, desktopName: `${site.id}.desktop` },
 });
-config.linux = { ...config.linux, executableName: slug(site.name), artifactName: file("linux-x86_64.AppImage"), desktop: { entry: { StartupWMClass: site.id } } };
+config.linux = { ...config.linux, executableName: slug(site.name), artifactName: file("linux-x86_64.AppImage"), desktop: { entry: { ...config.linux.desktop?.entry, StartupWMClass: site.id } } };
 config.win = { ...config.win, artifactName: file("windows-x64-setup.exe") };
 await build({ projectDir: here, linux: ["AppImage"], win: ["nsis"], x64: true, publish: "never", config });
 for (const end of ["linux-x86_64.AppImage", "windows-x64-setup.exe"]) fs.copyFileSync(path.join(work, "release", file(end)), path.join(out, file(end)));
