@@ -3,9 +3,10 @@
 // the menus ("Communarr (0.1.0)"); the configuration has no way to leave it out.
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-export const here = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+export const here = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const lib = (p) => path.join(here, "node_modules", ...p.split("/"));
 
 export function builder() {

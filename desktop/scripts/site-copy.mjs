@@ -17,10 +17,11 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { builder } from "./builder.mjs";
 
 const require = createRequire(import.meta.url);
-const here = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const here = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const macZipAt = args.indexOf("--mac-zip");
 const macZip = macZipAt >= 0 ? args.splice(macZipAt, 2)[1] : null;
