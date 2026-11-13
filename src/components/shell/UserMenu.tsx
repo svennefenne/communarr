@@ -187,7 +187,7 @@ export function UserMenu() {
                 setGetApp(true);
               }}
             >
-              <MonitorSmartphone size={17} /> {t("Get the app")}
+              <MonitorSmartphone size={17} /> {t("Download the app")}
             </button>
           ) : null}
           {update ? (

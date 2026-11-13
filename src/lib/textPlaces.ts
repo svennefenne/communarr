@@ -16,7 +16,7 @@ const RULES: [RegExp, string][] = [
   [/^components\/shell\/StatusDialog/, "Set a status"],
   [/^components\/shell\/FeedbackDialog/, "Send feedback"],
   [/^components\/shell\/OnlineButton/, "Who's here"],
-  [/^components\/shell\/InstallButton/, "Get the app"],
+  [/^components\/shell\/InstallButton/, "Download the app"],
   [/^components\/shell\/Announcement/, "Announcement bar"],
   [/^components\/shell\//, "Top bar"],
   [/^components\/app\/LanguageToggle/, "Language switch"],
