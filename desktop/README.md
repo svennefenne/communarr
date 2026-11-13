@@ -46,8 +46,9 @@ address the first time; a server's own copy goes straight there.
   again. macOS asks the first time the app uses the microphone, the camera or the screen.
 - **Linux**: `communarr-desktop-linux-x86_64.AppImage` is the whole app in one file. Make it executable
   (in the file's properties, or `chmod +x`) and start it. It puts itself in the desktop's menus (and keeps
-  them pointing at the file wherever it's moved); with AppImageLauncher it lets that do it. On GNOME,
-  tray icons need the *AppIndicator and KStatusNotifierItem Support* extension.
+  them pointing at the file wherever it's moved). AppImageLauncher leaves it be (it would put it in the
+  menus a second time), and an entry it made for an older version is taken away. On GNOME, tray icons
+  need the *AppIndicator and KStatusNotifierItem Support* extension.
 
 ## A server's own copy
 
