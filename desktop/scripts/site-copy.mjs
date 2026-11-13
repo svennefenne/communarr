@@ -57,7 +57,8 @@ Object.assign(config, {
   productName: site.name,
   directories: { output: path.join(work, "release") },
   extraResources: [{ from: siteJson, to: "site.json" }],
-  extraMetadata: { productName: site.name, desktopName: `${site.id}.desktop` },
+  // (the package's name is the Windows installation's folder: one of its own, beside Communarr's)
+  extraMetadata: { name: `${slug(site.name)}-desktop`, productName: site.name, desktopName: `${site.id}.desktop` },
 });
 config.linux = { ...config.linux, executableName: slug(site.name), artifactName: file("linux-x86_64.AppImage"), desktop: { entry: { StartupWMClass: site.id } } };
 config.win = { ...config.win, artifactName: file("windows-x64-setup.exe") };

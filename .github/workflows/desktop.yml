@@ -46,7 +46,8 @@ jobs:
 
       - name: Build
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"    # no certificate: a Mac's app is signed ad hoc (package.json)
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"    # no certificate: a Mac's app is signed ad hoc (package.json),
+          CSC_FOR_PULL_REQUEST: "true"            # a pull request's too
         run: npx electron-builder ${{ matrix.target }} --publish never
 
       # the app's own check: its parts are there and its pages talk to it (a display to start on, and
@@ -76,8 +77,10 @@ jobs:
         run: |
           $setup = Start-Process -FilePath "release\${{ matrix.asset }}" -ArgumentList "/S" -Wait -PassThru
           if ($setup.ExitCode) { Write-Output "Installing failed ($($setup.ExitCode))"; exit 1 }
-          $dir = "$env:LOCALAPPDATA\Programs\Communarr"
-          if (-not (Test-Path "$dir\Communarr.exe")) { Get-ChildItem "$env:LOCALAPPDATA\Programs" ; Write-Output "Not installed where expected"; exit 1 }
+          # (electron-builder names the folder after the package: communarr-desktop)
+          $dir = (Get-ChildItem "$env:LOCALAPPDATA\Programs" -Directory | Where-Object { Test-Path "$($_.FullName)\Communarr.exe" } | Select-Object -First 1).FullName
+          if (-not $dir) { Get-ChildItem -Recurse -Depth 1 "$env:LOCALAPPDATA\Programs"; Write-Output "Not installed"; exit 1 }
+          Write-Output "Installed in $dir"
           $p = Start-Process -FilePath "$dir\Communarr.exe" -ArgumentList "--check", "--report", "$env:RUNNER_TEMP\check.txt" -PassThru
           if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Output "The check didn't finish"; exit 1 }
           Get-Content "$env:RUNNER_TEMP\check.txt"
