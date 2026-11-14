@@ -69,13 +69,7 @@ export function NotificationList({ initial }: { initial: NotificationItem[] }) {
       </div>
       <div className="panel list">
         {shown.map((n) => (
-          <NotificationRow
-            key={n.id}
-            n={n}
-            onOpen={() => {
-              if (!n.read) void markReadAction([n.id]);
-            }}
-          />
+          <NotificationRow key={n.id} n={n} />
         ))}
         {!shown.length ? <Empty icon={<Bell size={24} />} title={unreadOnly ? t("All caught up") : t("Nothing yet")}>{t("Mentions, replies, invitations and reminders show up here.")}</Empty> : null}
       </div>

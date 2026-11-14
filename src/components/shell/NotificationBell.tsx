@@ -29,7 +29,15 @@ export function NotificationRow({ n, onOpen }: { n: NotificationItem; onOpen?: (
   const Icon = KIND_ICON[n.kind] || Bell;
   const t = useT();
   return (
-    <Link href={n.url} className={`list-row notif-row ${n.read ? "" : "unread"}`} onClick={onOpen}>
+    <Link
+      href={n.url}
+      className={`list-row notif-row ${n.read ? "" : "unread"}`}
+      onClick={() => {
+        // (opened: read, wherever it leads)
+        if (!n.read) void markReadAction([n.id]);
+        onOpen?.();
+      }}
+    >
       <span className="notif-pic">
         {n.actor ? <Avatar user={n.actor} size={36} /> : <span className="avatar" style={{ width: 36, height: 36 }} />}
         <span className="notif-kind">

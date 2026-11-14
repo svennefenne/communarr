@@ -14,6 +14,7 @@ import { Reactions } from "./Reactions";
 import { ItemMenu } from "./ItemMenu";
 import { addCommentAction, commentsAction, deleteCommentAction, editCommentAction } from "@/app/actions/content";
 import { MentionScope } from "@/components/editor/mentionScope";
+import { useSeen } from "@/components/app/Seen";
 
 function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCancel, sendLabel }: { placeholder: string; onSend: (html: string) => Promise<boolean>; autoFocus?: boolean; draftKey?: string; initial?: string; onCancel?: () => void; sendLabel?: string }) {
   const t = useT();
@@ -54,14 +55,18 @@ function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCance
   );
 }
 
+const PAGE: Record<CommentTarget, string> = { post: "/posts", poll: "/polls", event: "/events", list: "/lists" };
+
 function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: CommentView; type: CommentTarget; id: number; onChanged: () => void; onReply: (c: CommentView) => void; replyTo: number | null; depth: number }) {
   const me = useMe();
   const t = useT();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const { confirm, node } = useConfirm();
+  // (a notification about it points at the thing's page, here)
+  const seen = useSeen<HTMLDivElement>(`${PAGE[type]}/${id}#c-${c.id}`);
   return (
-    <div className={`comment ${depth ? "reply" : ""}`} id={`c-${c.id}`}>
+    <div className={`comment ${depth ? "reply" : ""}`} id={`c-${c.id}`} ref={seen}>
       <Avatar user={c.author} size={depth ? 28 : 34} presence />
       <div className="comment-main">
         <div className="comment-bubble">

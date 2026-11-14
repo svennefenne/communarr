@@ -9,6 +9,7 @@ import { useCompact, useT } from "@/components/app/AppProvider";
 import { Time } from "@/components/ui/Time";
 import { ShareButton } from "@/components/content/Share";
 import { GroupChip } from "./PostCard";
+import { useSeen } from "@/components/app/Seen";
 
 export function CategoryChip({ c, link = true }: { c: Thread["category"]; link?: boolean }) {
   const inner = (
@@ -36,8 +37,9 @@ export function ThreadFeedCard({ thread: t, section = false }: { thread: Thread;
   const tr = useT();
   const compact = useCompact();
   const replies = tr.n(t.replies, "{n} reply", "{n} replies");
+  const seen = useSeen<HTMLElement>(`/forum/t/${t.id}`);
   return (
-    <article className="panel thread-feed-card">
+    <article className="panel thread-feed-card" ref={seen}>
       {section ? <CardSection kind="thread" /> : null}
       <header className="post-head">
         <span className="kind-icon forum">

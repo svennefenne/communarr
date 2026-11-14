@@ -102,9 +102,20 @@ export function markRead(userId: number, ids: number[] | "all") {
   return unread;
 }
 
-/** Mark notifications pointing at a page read (opening the page counts as reading them). */
-export function markReadByUrl(userId: number, url: string) {
-  const r = db().prepare("update notifications set read_at = ? where user_id = ? and read_at is null and (url = ? or url like ?)").run(now(), userId, url, url + "#%");
+/** The addresses of a member's unread notifications (the page notices when you've seen one of them). */
+export function unreadUrls(userId: number): string[] {
+  return (db().prepare("select distinct url from notifications where user_id = ? and read_at is null").all(userId) as { url: string }[]).map((r) => r.url);
+}
+
+/**
+ * The member has seen these things: a page they opened, or a post, comment, reply or message that was on
+ * their screen a moment. Their notifications pointing exactly there go read (and the bell and the app's
+ * badge count down at once).
+ */
+export function markSeen(userId: number, urls: string[]) {
+  const list = [...new Set(urls)].filter((u) => typeof u === "string" && u.startsWith("/")).slice(0, 50);
+  if (!list.length) return;
+  const r = db().prepare(`update notifications set read_at = ? where user_id = ? and read_at is null and url in (${list.map(() => "?").join(",")})`).run(now(), userId, ...list);
   if (r.changes) {
     const unread = (db().prepare("select count(*) c from notifications where user_id = ? and read_at is null").get(userId) as { c: number }).c;
     sendTo(userId, "notifyCount", { unread });

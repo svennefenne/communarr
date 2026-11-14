@@ -12,6 +12,7 @@ import { EmojiPopover, QUICK_REACTIONS } from "@/components/ui/EmojiPicker";
 import { RichText } from "@/components/content/RichText";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { Emoji, onlyEmoji } from "@/components/emoji/Emojis";
+import { useSeen } from "@/components/app/Seen";
 
 /** the reactions chat suggests: the usual ones without 😂 (the picker still has every emoji) */
 const CHAT_REACTIONS = QUICK_REACTIONS.filter((e) => e !== "😂");
@@ -35,6 +36,7 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
   const ed = useRef<EditorHandle>(null);
   const press = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mine = m.author?.id === me.id;
+  const seenRef = useSeen<HTMLDivElement>(m.kind === "system" ? null : `/chat/${m.room}?m=${m.id}`);
 
   if (m.kind === "system")
     return (
@@ -65,6 +67,7 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
     <div
       className={`msg ${compact ? "compact" : ""} ${mine ? "mine" : ""} ${highlight ? "hl" : ""} ${m.pinned ? "pinned" : ""}`}
       id={`m-${m.id}`}
+      ref={seenRef}
       onTouchStart={startPress}
       onTouchEnd={endPress}
       onTouchMove={endPress}

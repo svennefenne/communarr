@@ -17,7 +17,7 @@ let appLooking: boolean | null = null;
  * Looking at the site: its tab in sight. In the desktop app, its window in front: one in the tray or
  * behind other windows gets the notifications, as Discord's does (its page always seems in sight).
  */
-const looking = () => (inDesktopApp() ? (appLooking ?? document.hasFocus()) : document.visibilityState === "visible");
+export const looking = () => (inDesktopApp() ? (appLooking ?? document.hasFocus()) : document.visibilityState === "visible");
 
 /**
  * Everything the pages share in the browser: who you are, the site's switches, unread counts,

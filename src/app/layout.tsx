@@ -16,6 +16,7 @@ import { siteIcons } from "@/lib/siteIcons";
 import { themeColor, themeCss } from "@/lib/theme";
 import { themeForUser } from "@/lib/themes";
 import { AppProvider } from "@/components/app/AppProvider";
+import { SeenNotifications } from "@/components/app/Seen";
 import { EmojiProvider } from "@/components/emoji/Emojis";
 import { Backdrop } from "@/components/shell/Backdrop";
 import { Header } from "@/components/shell/Header";
@@ -111,6 +112,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <StreamPlayer />
                   {user ? <SiteSounds /> : null}
                   {user ? <LinkPeekHost /> : null}
+                  {user ? <SeenNotifications /> : null}
                   <SearchOverlay />
                   <Lightbox />
                   <ScrollHints />

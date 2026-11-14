@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useT } from "@/components/app/AppProvider";
+import { useSeen } from "@/components/app/Seen";
 
 const KEY = "hd.adminFolded";
 
@@ -44,6 +45,8 @@ export function FoldAll() {
 /** One part of the Admin page: a title that folds it away (remembered), and a link target (#id). */
 export function Section({ id, title, icon, hint, children, badge }: { id: string; title: string; icon: React.ReactNode; hint?: string; children: React.ReactNode; badge?: number }) {
   const [open, setOpen] = useState(true);
+  // (notifications for admins point at their part: "/admin#reports")
+  const seen = useSeen<HTMLDivElement>(`/admin#${id}`);
   useEffect(() => {
     setOpen(!folded().includes(id) || window.location.hash === `#${id}`);
     const onHash = () => window.location.hash === `#${id}` && setOpen(true);
@@ -80,7 +83,11 @@ export function Section({ id, title, icon, hint, children, badge }: { id: string
         {badge ? <span className="badge hot">{badge}</span> : null}
         <ChevronDown size={18} className={`admin-chevron ${open ? "open" : ""}`} />
       </button>
-      {open ? <div className="admin-section-body">{children}</div> : null}
+      {open ? (
+        <div className="admin-section-body" ref={seen}>
+          {children}
+        </div>
+      ) : null}
     </section>
   );
 }
