@@ -249,6 +249,13 @@ html[data-backdrop="plain"] .backdrop {
   flex: none;
   display: none;
 }
+/* Home: its house, not its name */
+.tab.icon-only {
+  padding-inline: 10px;
+}
+.tab.icon-only svg {
+  display: block;
+}
 .tab:hover {
   background: var(--hover);
 }

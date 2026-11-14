@@ -7,17 +7,19 @@ export interface Section {
   icon: LucideIcon;
   feature?: keyof Features;
   exact?: boolean;
+  /** in the header, its icon instead of its name (the name still said to screen readers, and on hover) */
+  iconOnly?: boolean;
 }
 
-/** The sections in the header (and the phone's bottom bar: the first four that are on, then More). */
+/** The sections in the header, in its order (the phone's bottom bar has its own: barSections). */
 export const SECTIONS: Section[] = [
-  { href: "/", label: "Home", icon: House, exact: true },
+  { href: "/", label: "Home", icon: House, exact: true, iconOnly: true },
+  { href: "/groups", label: "Groups", icon: UsersRound, feature: "groups" },
   { href: "/forum", label: "Forum", icon: MessagesSquare, feature: "forum" },
   { href: "/chat", label: "Chat", icon: MessageCircle, feature: "chat" },
   { href: "/calendar", label: "Calendar", icon: CalendarDays, feature: "calendar" },
   { href: "/polls", label: "Polls", icon: Vote, feature: "polls" },
   { href: "/lists", label: "Lists", icon: ListChecks, feature: "lists" },
-  { href: "/groups", label: "Groups", icon: UsersRound, feature: "groups" },
 ];
 
 /** More places, in the drawer. */
@@ -34,6 +36,12 @@ export const ADMIN: Section = { href: "/admin", label: "Admin", icon: ShieldChec
 
 export function visibleSections(features: Features) {
   return SECTIONS.filter((s) => !s.feature || features[s.feature]);
+}
+
+/** The phone's bottom bar: the first four that are on, groups after the rest (they're under More), then More. */
+export function barSections(features: Features) {
+  const on = visibleSections(features);
+  return [...on.filter((s) => s.href !== "/groups"), ...on.filter((s) => s.href === "/groups")].slice(0, 4);
 }
 
 /** Every place in the menus that's switched on (the editor's Link offers them). */
