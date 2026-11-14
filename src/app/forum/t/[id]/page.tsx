@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { canSeeThread, categories, countView, markThreadRead, pageOfReply, threadPage, threadRow } from "@/lib/forum";
-import { markReadByUrl } from "@/lib/notify";
 import { ThreadView } from "@/components/forum/ThreadView";
 import { BackPill } from "@/components/ui/BackPill";
 import { requestT } from "@/lib/t";
@@ -27,7 +26,6 @@ export default async function ThreadPage({ params, searchParams }: { params: Pro
   if (!data) notFound();
   countView(id);
   markThreadRead(u, id);
-  markReadByUrl(u.id, `/forum/t/${id}`);
   const cats = categories(u).map((c) => ({ id: c.id, name: c.name, icon: c.icon }));
   return (
     <div className="page mid follows-middle" data-middle>

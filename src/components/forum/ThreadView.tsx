@@ -20,6 +20,7 @@ import { plainText } from "@/lib/plainText";
 import { MoveDialog } from "./MoveDialog";
 import { deleteReplyAction, deleteThreadAction, editReplyAction, editThreadAction, followAction, moderateThreadAction, quoteAction, replyAction, saveAction } from "@/app/actions/content";
 import { MentionScope } from "@/components/editor/mentionScope";
+import { useSeen } from "@/components/app/Seen";
 
 
 interface Props {
@@ -66,6 +67,8 @@ function ForumPost({
   const [pending, start] = useTransition();
   const { confirm, node } = useConfirm();
   const anchor = isOpening ? "p-0" : `p-${r.id}`;
+  // (a notification about a reply points at its short link)
+  const seen = useSeen<HTMLElement>(isOpening ? null : `/go/reply/${r.id}`);
   const fresh = !isOpening && r.createdAt > newSince && r.author.id !== me?.id;
   const save = () =>
     start(async () => {
@@ -78,7 +81,7 @@ function ForumPost({
       }
     });
   return (
-    <article className={`panel forum-post ${fresh ? "fresh" : ""}`} id={anchor}>
+    <article className={`panel forum-post ${fresh ? "fresh" : ""}`} id={anchor} ref={seen}>
       <aside className="fp-author">
         <Avatar user={r.author} size={52} presence />
         <div className="fp-who">

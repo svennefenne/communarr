@@ -17,6 +17,7 @@ import { Comments } from "@/components/content/Comments";
 import { ItemMenu } from "@/components/content/ItemMenu";
 import { ShareButton } from "@/components/content/Share";
 import { deletePostAction, lockCommentsAction, pinPostAction, saveAction } from "@/app/actions/content";
+import { useSeen } from "@/components/app/Seen";
 
 export function GroupChip({ g }: { g: { slug: string; name: string; color: string } }) {
   return (
@@ -61,12 +62,13 @@ export function PostCard({ post, full = false, onGone, section = false }: { post
   const [count, setCount] = useState(post.comments);
   const [gone, setGone] = useState(false);
   const { confirm, node } = useConfirm();
+  const seen = useSeen<HTMLElement>(`/posts/${post.id}`);
   if (gone) return null;
   const news = p.kind === "news";
   // compact, in a list: a news item is its headline, how it starts and a small picture beside them
   const brief = news && compact && !full;
   return (
-    <article className={`panel post-card ${news ? "news" : ""} ${p.pinned ? "pinned" : ""}`} id={`post-${p.id}`}>
+    <article className={`panel post-card ${news ? "news" : ""} ${p.pinned ? "pinned" : ""}`} id={`post-${p.id}`} ref={seen}>
       {section ? <CardSection kind={news ? "news" : "post"} /> : null}
       {news && p.cover && !brief ? (
         <div className="post-cover" style={{ backgroundImage: `url("${p.cover}")` }} />

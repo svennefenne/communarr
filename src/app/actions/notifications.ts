@@ -1,7 +1,7 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
-import { listNotifications, markRead } from "@/lib/notify";
+import { listNotifications, markRead, markSeen, unreadUrls } from "@/lib/notify";
 
 export async function listNotificationsAction(before?: number, unreadOnly = false) {
   const u = await requireUser();
@@ -11,4 +11,14 @@ export async function listNotificationsAction(before?: number, unreadOnly = fals
 export async function markReadAction(ids: number[] | "all") {
   const u = await requireUser();
   return markRead(u.id, ids === "all" ? "all" : ids.map(Number).filter(Number.isFinite));
+}
+
+export async function unreadUrlsAction() {
+  const u = await requireUser();
+  return unreadUrls(u.id);
+}
+
+export async function seenAction(urls: string[]) {
+  const u = await requireUser();
+  if (Array.isArray(urls)) markSeen(u.id, urls);
 }

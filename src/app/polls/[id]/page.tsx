@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getPoll } from "@/lib/polls";
-import { markReadByUrl } from "@/lib/notify";
 import { requestT } from "@/lib/t";
 import { PollCard } from "@/components/feed/PollCard";
 import { BackPill } from "@/components/ui/BackPill";
@@ -19,7 +18,6 @@ export default async function PollPage({ params }: { params: Promise<{ id: strin
   const id = Number((await params).id);
   const p = getPoll(u, id);
   if (!p) notFound();
-  markReadByUrl(u.id, `/polls/${id}`);
   const t = await requestT();
   return (
     <div className="page narrow follows-middle" data-middle>

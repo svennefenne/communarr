@@ -12,6 +12,7 @@ import { CardSection } from "@/components/feed/CardSection";
 import { CommentCount, GroupChip } from "@/components/feed/PostCard";
 import { ShareButton } from "@/components/content/Share";
 import { ListTable, useListView } from "./ListTable";
+import { useSeen } from "@/components/app/Seen";
 
 /**
  * A list in Lists and the feed: what it's for, its columns, and how far it's been filled in. view: the
@@ -40,8 +41,9 @@ function CardBody({ l, section, children }: { l: ListCard; section: boolean; chi
   const me = useMe();
   const compact = useCompact();
   const share = l.rows ? Math.round((l.filled / l.rows) * 100) : 0;
+  const seen = useSeen<HTMLElement>(`/lists/${l.id}`);
   return (
-    <article className="panel list-card" id={`list-${l.id}`}>
+    <article className="panel list-card" id={`list-${l.id}`} ref={seen}>
       {section ? <CardSection kind="list" /> : null}
       <header className="post-head">
         <span className="kind-icon list">

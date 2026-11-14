@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getEvent } from "@/lib/events";
-import { markReadByUrl } from "@/lib/notify";
 import { EventDetail } from "@/components/events/EventDetail";
 import { BackPill } from "@/components/ui/BackPill";
 import { requestT } from "@/lib/t";
@@ -23,7 +22,6 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   const id = Number((await params).id);
   const e = getEvent(u, id);
   if (!e) notFound();
-  markReadByUrl(u.id, `/events/${id}`);
   // the previews of its links the site already has (the rest are fetched in the browser)
   const base = await baseUrl();
   const previews: Record<string, LinkPreview | null> = {};

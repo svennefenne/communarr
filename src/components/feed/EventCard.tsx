@@ -12,6 +12,7 @@ import { clock } from "@/lib/clock";
 import { Time } from "@/components/ui/Time";
 import { rsvpAction } from "@/app/actions/content";
 import { GroupChip } from "./PostCard";
+import { useSeen } from "@/components/app/Seen";
 
 
 /** The date as a little calendar page. */
@@ -98,8 +99,9 @@ export function EventCard({ event, compact = false, section = false }: { event: 
   const t = useT();
   const [e, setE] = useState(event);
   const url = `/events/${e.id}`;
+  const seen = useSeen<HTMLElement>(url);
   return (
-    <article className={`panel event-card ${e.cancelled ? "cancelled" : ""}`} style={{ ["--ec" as string]: e.color }}>
+    <article className={`panel event-card ${e.cancelled ? "cancelled" : ""}`} style={{ ["--ec" as string]: e.color }} ref={seen}>
       {section ? <CardSection kind="event" /> : null}
       {!compact ? (
         <header className="post-head">

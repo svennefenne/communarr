@@ -17,6 +17,7 @@ import { ItemMenu } from "@/components/content/ItemMenu";
 import { ShareButton } from "@/components/content/Share";
 import { CommentCount, GroupChip } from "./PostCard";
 import { addOptionAction, closePollAction, deletePollAction, pollAction, saveAction, voteAction } from "@/app/actions/content";
+import { useSeen } from "@/components/app/Seen";
 
 /** A poll: vote right here, see how it's going, and talk about it. */
 export function PollCard({ poll, full = false, section = false }: { poll: PollView; full?: boolean; section?: boolean }) {
@@ -31,6 +32,7 @@ export function PollCard({ poll, full = false, section = false }: { poll: PollVi
   const [adding, setAdding] = useState("");
   const [open, setOpen] = useState(full);
   const [count, setCount] = useState(poll.comments);
+  const seen = useSeen<HTMLElement>(`/polls/${poll.id}`);
   const [gone, setGone] = useState(false);
   const [pending, start] = useTransition();
   const { confirm, node } = useConfirm();
@@ -64,7 +66,7 @@ export function PollCard({ poll, full = false, section = false }: { poll: PollVi
   };
 
   return (
-    <article className="panel poll-card" id={`poll-${p.id}`}>
+    <article className="panel poll-card" id={`poll-${p.id}`} ref={seen}>
       {section ? <CardSection kind="poll" /> : null}
       <header className="post-head">
         <span className="kind-icon poll">
