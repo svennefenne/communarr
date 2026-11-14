@@ -32,6 +32,7 @@ export async function setPrefsAction(patch: Partial<ThemePrefs>) {
   if (typeof patch.wide === "boolean") next.wide = patch.wide;
   if (typeof patch.feedWidth === "number") next.feedWidth = cleanFeedWidth(patch.feedWidth);
   if (patch.forumView === "cards" || patch.forumView === "list") next.forumView = patch.forumView;
+  if (typeof patch.navIcons === "boolean") next.navIcons = patch.navIcons;
   if (typeof patch.mirror === "boolean") next.mirror = patch.mirror;
   if (patch.custom === null) next.custom = null;
   else if (typeof patch.custom === "number") {

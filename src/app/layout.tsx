@@ -77,6 +77,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-motion={user && !user.theme.motion ? "off" : undefined}
       data-density={user?.theme.density === "compact" ? "compact" : undefined}
       data-width={user?.theme.wide ? "wide" : undefined}
+      data-nav={user?.theme.navIcons ? "icons" : undefined}
       data-feed={user?.theme.feedWidth ? "set" : undefined}
       style={user?.theme.feedWidth ? ({ "--feed-w": `${user.theme.feedWidth}px` } as React.CSSProperties) : undefined}
       suppressHydrationWarning

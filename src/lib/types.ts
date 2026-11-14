@@ -33,6 +33,8 @@ export interface ThemePrefs {
   wide: boolean;
   /** the middle in px (the front page's feed, the chat's room, a forum, polls, lists), when not wide (0: as it comes; FEED_WIDTH's range) */
   feedWidth: number;
+  /** the header's sections as their icons, not their names (Home is always its house) */
+  navIcons: boolean;
   /** the forum's front: its categories as cards, or as rows with their counts and latest post */
   forumView: "cards" | "list";
   /** the same look on all your devices (else each device keeps its own: lib/look.ts) */
