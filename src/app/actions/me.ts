@@ -15,7 +15,7 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-/** Change some of your display preferences (scheme, mode, wipes, motion, text size, density, width, the middle's width, theme, mirroring); the look is for this device. */
+/** Change some of your display preferences (scheme, mode, wipes, motion, text size, density, width, the middle's width, the forum's view, theme, mirroring); the look is for this device. */
 export async function setPrefsAction(patch: Partial<ThemePrefs>) {
   const u = await requireUser();
   const next: ThemePrefs = { ...u.theme };
@@ -31,6 +31,7 @@ export async function setPrefsAction(patch: Partial<ThemePrefs>) {
   if (patch.density === "comfy" || patch.density === "compact") next.density = patch.density;
   if (typeof patch.wide === "boolean") next.wide = patch.wide;
   if (typeof patch.feedWidth === "number") next.feedWidth = cleanFeedWidth(patch.feedWidth);
+  if (patch.forumView === "cards" || patch.forumView === "list") next.forumView = patch.forumView;
   if (typeof patch.mirror === "boolean") next.mirror = patch.mirror;
   if (patch.custom === null) next.custom = null;
   else if (typeof patch.custom === "number") {

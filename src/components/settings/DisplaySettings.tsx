@@ -102,7 +102,7 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
           <div className="grow">
             <b>{t("Middle's width")}</b>
             <span className="small muted">
-              {p.wide ? t("The front page's middle, the feed, when wide mode is off (now it fills the screen).") : t("The front page's middle, the feed, on a screen with room for the side columns.")}{" "}
+              {p.wide ? t("The middle of the front page, the chat, a forum, polls and lists, when wide mode is off (now they fill the screen).") : t("The middle of the front page, the chat, a forum, polls and lists, on a screen with room for it.")}{" "}
               {p.feedWidth ? `${p.feedWidth} px` : t("Standard")}
             </span>
           </div>

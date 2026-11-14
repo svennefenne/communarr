@@ -22,7 +22,7 @@ export default async function PollPage({ params }: { params: Promise<{ id: strin
   markReadByUrl(u.id, `/polls/${id}`);
   const t = await requestT();
   return (
-    <div className="page narrow">
+    <div className="page narrow follows-middle" data-middle>
       <BackPill href="/polls" label={t("Polls")} />
       <PollCard poll={p} full />
     </div>

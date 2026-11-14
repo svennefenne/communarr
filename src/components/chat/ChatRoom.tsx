@@ -342,7 +342,7 @@ export function ChatRoom(p: Props) {
   if (!me) return null;
   return (
     <MentionScope ids={members.map((m) => m.user.id)} label="In the chat">
-      <section className="panel chat-room">
+      <section className="panel chat-room" data-middle>
         <header className="chat-head">
           <Link href="/chat" className="icon-btn sm chat-back" aria-label={t("All chats")}>
             <ChevronLeft size={20} />

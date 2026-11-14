@@ -33,7 +33,7 @@ export default async function PollsPage({ searchParams }: { searchParams: Promis
   if (tab === "todo") polls = polls.filter((p) => !p.voted);
   const canCreate = s.canCreate.polls === "members" || u.isMod;
   return (
-    <div className="page narrow">
+    <div className="page narrow follows-middle" data-middle>
       <div className="page-head">
         <div>
           <span className="eyebrow">{t("Ask everyone")}</span>

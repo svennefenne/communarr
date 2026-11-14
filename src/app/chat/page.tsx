@@ -24,7 +24,7 @@ export default async function ChatIndex({ searchParams }: { searchParams: Promis
   const t = await requestT();
   const open = defaultRoomFor(u);
   return (
-    <section className="panel chat-room chat-empty">
+    <section className="panel chat-room chat-empty" data-middle>
       {open ? <OpenDefaultRoom id={open} /> : null}
       <Empty icon={<MessageCircle size={26} />} title={t("Pick a chat")}>
         {t("Choose a room or a person on the left, or start something new with the buttons at the top. Every room has a voice channel: press the headphones to talk.")}

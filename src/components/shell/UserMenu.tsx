@@ -18,7 +18,7 @@ import { appInfo, appUpdate, tellApp, type AppInfo } from "@/components/app/andr
 import type { ThemePrefs } from "@/lib/types";
 import { cleanFeedWidth, FEED_WIDTH } from "@/lib/look";
 
-/** The front page's middle at a width (live, before it's kept): 0 as it comes. */
+/** The middle at a width (live, before it's kept): 0 as it comes. */
 export function showFeedWidth(px: number) {
   const r = document.documentElement;
   if (px) {
@@ -29,12 +29,19 @@ export function showFeedWidth(px: number) {
     r.style.removeProperty("--feed-w");
   }
 }
-/** What the front page's middle is now (to start the slider at, when it's as it comes). */
-export const feedWidthNow = () => cleanFeedWidth(document.querySelector(".home-main")?.getBoundingClientRect().width ?? 632);
-/** The widest the front page's middle can be on this screen, beside its side columns (the slider's end). */
+/**
+ * The page's middle, the part the slider sets (data-middle): the front page's feed, the chat's room,
+ * a forum's, polls' and lists' pages. None: no slider here.
+ */
+const middle = () => document.querySelector<HTMLElement>("[data-middle]");
+/** What the middle is now (to start the slider at, when it's as it comes). */
+export const feedWidthNow = () => cleanFeedWidth(middle()?.getBoundingClientRect().width ?? 632);
+/** The widest the middle can be on this screen, beside what's beside it (the slider's end). */
 function feedWidthMax() {
-  const page = document.querySelector(".page.home");
-  const sides = page ? parseFloat(getComputedStyle(page).getPropertyValue("--home-sides")) || 0 : 0;
+  const m = middle();
+  const around = m?.closest<HTMLElement>(".chat-shell, .page");
+  // (its side columns and the gaps: what the page is wider than the middle)
+  const sides = m && around ? Math.max(0, around.getBoundingClientRect().width - m.getBoundingClientRect().width) : 0;
   const room = document.documentElement.clientWidth - 32 - sides;
   return Math.max(FEED_WIDTH.min, Math.min(FEED_WIDTH.max, Math.floor(room / FEED_WIDTH.step) * FEED_WIDTH.step));
 }
@@ -82,11 +89,13 @@ export function UserMenu() {
   const [motion, setMotion] = useState(me?.theme.motion ?? true);
   const [sounds, setSounds] = useState(me?.theme.sounds ?? true);
   const [wide, setWide] = useState(me?.theme.wide ?? false);
-  // the front page's middle: kept (0: as it comes), and where the slider is
+  // the middle's width: kept (0: as it comes), and where the slider is
   const [feedW, setFeedW] = useState(me?.theme.feedWidth ?? 0);
   const [slider, setSlider] = useState(0);
   const [sliderMax, setSliderMax] = useState<number>(FEED_WIDTH.max);
-  const onHome = usePathname() === "/";
+  // a page with a middle (the front page, the chat, a forum, polls, lists): its slider, once the menu's open
+  const pathname = usePathname();
+  const [hasMiddle, setHasMiddle] = useState(false);
   const router = useRouter();
   // in an app (Android's, the desktop's): a newer version of it on the server (a dot on the button, and
   // a row in the menu), or Check for updates; its version in small print at the end
@@ -119,12 +128,14 @@ export function UserMenu() {
   // (--menu-top: where it starts), and the page behind it stays still while it's open
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!open || !onHome || wide) return;
+    if (!open) return;
+    setHasMiddle(!!middle());
+    if (!middle() || wide) return;
     // (as the page is now: wide mode's switch changes it before this)
     const max = feedWidthMax();
     setSliderMax(max);
     setSlider(Math.min(max, feedW || feedWidthNow()));
-  }, [open, onHome, feedW, wide]);
+  }, [open, pathname, feedW, wide]);
   useLayoutEffect(() => {
     const el = menuRef.current;
     if (!open || !el) return;
@@ -152,7 +163,7 @@ export function UserMenu() {
     else delete document.documentElement.dataset.width;
     await setPrefsAction({ wide: on });
   };
-  // the front page's middle (this device's): shown as the slider moves, kept when it's let go
+  // the middle (this device's, everywhere it is): shown as the slider moves, kept when it's let go
   const keepFeedWidth = async (px: number) => {
     setFeedW(px);
     showFeedWidth(px);
@@ -282,7 +293,7 @@ export function UserMenu() {
             <span className="grow">{t("Wide mode")}</span>
             <Switch on={wide} onChange={toggleWide} label={t("Wide mode")} />
           </div>
-          {onHome && !wide ? (
+          {hasMiddle && !wide ? (
             <div className="menu-item menu-feed-width" style={{ cursor: "default" }}>
               <span className="grow">{t("Middle's width")}</span>
               <input
