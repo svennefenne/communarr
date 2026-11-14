@@ -2,6 +2,7 @@ import "server-only";
 import { UserError } from "./errors";
 import { db, now, tx } from "./db";
 import { notify } from "./notify";
+import { tellMentioned } from "./mentions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { groupRoom, syncGroupMember } from "./chat";
@@ -202,6 +203,7 @@ export function createGroup(u: User, o: { name: string; tagline?: string; descri
     return groupRow(id)!;
   });
   indexItem("group", g.id, privacy === "secret" ? `g:${g.id}` : "members", u.id, g.created_at, g.name, `${g.tagline} ${desc.text}`);
+  tellMentioned(u, desc.mentions, { sees: (x) => canReadGroup(x, g), title: "{name} mentioned you in the group {group}", vars: { name: u.name, group: g.name }, url: `/groups/${encodeURIComponent(g.slug)}/about` });
   return g;
 }
 
@@ -226,6 +228,11 @@ export function updateGroup(u: User, id: number, o: { name?: string; tagline?: s
       id,
     );
   if (g.room_id && name !== g.name) db().prepare("update rooms set name = ? where id = ?").run(name, g.room_id);
+  // someone mentioned in its description, who wasn't before, hears about it
+  if (desc) {
+    const after = groupRow(id)!;
+    tellMentioned(u, desc.mentions, { before: g.description_html, sees: (x) => canReadGroup(x, after), title: "{name} mentioned you in the group {group}", vars: { name: u.name, group: name }, url: `/groups/${encodeURIComponent(after.slug)}/about` });
+  }
   // what's posted in the group follows its privacy in search (only the group's own things)
   if (privacy !== g.privacy) {
     const scope = scopeFor({ id, privacy });

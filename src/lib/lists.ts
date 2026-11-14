@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { UserError } from "./errors";
 import { db, now, tx } from "./db";
 import { notify } from "./notify";
+import { tellMentioned } from "./mentions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, newInFeed } from "./groups";
@@ -372,11 +373,14 @@ export function createList(u: User, o: ListInput): number {
   });
   reindex(id);
   const url = `/lists/${id}`;
-  if (groupId) notify(memberIdsOf(groupId), { kind: "group", actorId: u.id, title: "New list in {group}: {title}", vars: { group: groupRow(groupId)!.name, title }, url });
+  const row = listRow(id)!;
+  const mentioned = tellMentioned(u, c.mentions, { sees: (x) => canSeeList(x, row), title: "{name} mentioned you in a list", body: "{title}", vars: { name: u.name, title }, url });
+  const rest = (ids: number[]) => ids.filter((x) => !mentioned.includes(x));
+  if (groupId) notify(rest(memberIdsOf(groupId)), { kind: "group", actorId: u.id, title: "New list in {group}: {title}", vars: { group: groupRow(groupId)!.name, title }, url });
   // one everyone sees: everyone hears (a group's list is the group's news, above)
   else if (!priv) {
     const all = (db().prepare("select id from users where banned = 0").all() as { id: number }[]).map((r) => r.id);
-    notify(all, { kind: "listNew", actorId: u.id, title: "{name} made a list: {title}", vars: { name: u.name, title }, url, tag: `list-${id}` });
+    notify(rest(all), { kind: "listNew", actorId: u.id, title: "{name} made a list: {title}", vars: { name: u.name, title }, url, tag: `list-${id}` });
   }
   if (!priv) newInFeed({ type: "list", id, by: u.id, group: groupId });
   return id;
@@ -438,8 +442,11 @@ export function updateList(u: User, id: number, o: Partial<ListInput>) {
     keepEmptyLast({ ...l, auto_rows: auto });
   });
   if (l.author_id !== u.id) audit(u.id, "list changed", `#${id}`, title);
+  // someone mentioned in the edit, who wasn't before, hears about it (and not again that it changed)
+  const after = listRow(id)!;
+  const mentioned = c ? tellMentioned(u, c.mentions, { before: l.description_html, sees: (x) => canSeeList(x, after), title: "{name} mentioned you in a list", body: "{title}", vars: { name: u.name, title }, url: `/lists/${id}` }) : [];
   // (not when only its author sees it now)
-  const tell = priv ? [] : [...on].filter((who) => firstIn10Minutes(`list:${who}:${id}`));
+  const tell = priv ? [] : [...on].filter((who) => !mentioned.includes(who) && firstIn10Minutes(`list:${who}:${id}`));
   if (tell.length) notify(tell, { kind: "listEdit", actorId: u.id, title: "{name} changed the list “{title}”", vars: { name: u.name, title }, url: `/lists/${id}`, tag: `list-${id}` });
   reindex(id);
   // comments follow the list ("only me": only its author finds them in search)

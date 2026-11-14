@@ -130,7 +130,7 @@ export function ListDetail({ list: initial }: { list: ListView }) {
             <MessageSquare size={15} /> {comments ? t.n(comments, "{n} comment", "{n} comments") : t("No comments yet")}
           </span>
         </footer>
-        <Comments type="list" id={l.id} onCount={setComments} />
+        <Comments type="list" id={l.id} onCount={setComments} people={[l.author.id]} />
       </section>
       {node}
     </div>

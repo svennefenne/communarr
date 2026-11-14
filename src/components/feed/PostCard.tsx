@@ -172,7 +172,7 @@ export function PostCard({ post, full = false, onGone, section = false }: { post
         {p.visibility !== "private" ? <ShareButton url={`/posts/${p.id}`} title={p.title || plainText(p.html).slice(0, 120)} kind={news ? "news" : "post"} /> : null}
         <CommentCount count={count} compact={compact} className={`btn btn-ghost btn-sm ${open ? "on" : ""}`} onClick={() => setOpen((o) => !o)} aria-expanded={open} />
       </footer>
-      {open ? <Comments type="post" id={p.id} locked={p.commentsLocked} onCount={setCount} /> : null}
+      {open ? <Comments type="post" id={p.id} locked={p.commentsLocked} onCount={setCount} people={[p.author.id]} /> : null}
       {node}
     </article>
   );

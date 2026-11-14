@@ -2,6 +2,7 @@ import "server-only";
 import { UserError } from "./errors";
 import { db, now, tx } from "./db";
 import { notify } from "./notify";
+import { tellMentioned } from "./mentions";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
@@ -345,6 +346,8 @@ export function editThread(u: User, id: number, o: { title: string; html: string
   if (b.empty) throw new ForumError("Write something first.");
   db().prepare("update forum_threads set title = ?, body_html = ?, body_text = ?, edited_at = ? where id = ?").run(title, b.html, b.text, now(), id);
   indexItem("thread", id, threadScope(categoryRow(t.category_id)!), t.author_id, t.created_at, title, b.text);
+  // someone mentioned in the edit, who wasn't before, hears about it
+  tellMentioned(u, b.mentions, { before: t.body_html, sees: (x) => canSeeThread(x, t), title: "{name} mentioned you in the forum", body: "{title}", vars: { name: u.name, title }, url: `/forum/t/${id}` });
 }
 
 export function editReply(u: User, id: number, html: string) {
@@ -356,6 +359,7 @@ export function editReply(u: User, id: number, html: string) {
   db().prepare("update forum_posts set body_html = ?, body_text = ?, edited_at = ? where id = ?").run(b.html, b.text, now(), id);
   const t = threadRow(r.thread_id)!;
   indexItem("reply", id, threadScope(categoryRow(t.category_id)!), r.author_id, r.created_at, t.title, b.text);
+  tellMentioned(u, b.mentions, { before: r.body_html, sees: (x) => canSeeThread(x, t), title: "{name} mentioned you in “{title}”", body: "{excerpt}", vars: { name: u.name, title: t.title, excerpt: b.text.slice(0, 160) }, url: `/go/reply/${id}` });
 }
 
 export function deleteReply(u: User, id: number) {

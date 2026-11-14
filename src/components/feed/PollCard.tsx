@@ -223,7 +223,7 @@ export function PollCard({ poll, full = false, section = false }: { poll: PollVi
         <ShareButton url={`/polls/${p.id}`} title={p.question} kind="poll" />
         <CommentCount count={count} compact={compact} className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => !o)} />
       </footer>
-      {open ? <Comments type="poll" id={p.id} onCount={setCount} /> : null}
+      {open ? <Comments type="poll" id={p.id} onCount={setCount} people={[p.author.id]} /> : null}
       {node}
     </article>
   );
