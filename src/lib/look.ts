@@ -10,7 +10,7 @@ import type { ThemePrefs } from "./types";
  * Someone who mirrors their devices (Settings → Display) sees the account's look everywhere. Their
  * devices' cookies are still kept to the look they show, so turning it off leaves each one as it is.
  */
-export type Look = Pick<ThemePrefs, "scheme" | "mode" | "custom" | "density" | "textSize" | "wide" | "feedWidth">;
+export type Look = Pick<ThemePrefs, "scheme" | "mode" | "custom" | "density" | "textSize" | "wide" | "feedWidth" | "navIcons">;
 
 /** the front page's middle, when someone sets its width: 0 is as it comes */
 export const FEED_WIDTH = { min: 480, max: 1200, step: 20 };
@@ -19,14 +19,14 @@ export const cleanFeedWidth = (n: unknown) => (typeof n === "number" && n > 0 ? 
 export const LOOK_DAYS = 400;
 export const lookCookie = (userId: number) => `hd_look_${userId}`;
 
-/** "1.nord.dark.0.c.110.w.720": scheme, mode, own theme (0: none), compact (c) or not (n), text size, wide (w) or not (n), the front page's middle (0: as it comes) */
+/** "1.nord.dark.0.c.110.w.720.i": scheme, mode, own theme (0: none), compact (c) or not (n), text size, wide (w) or not (n), the middle (0: as it comes), the header's sections as icons (i) or names (n) */
 export function encodeLook(p: Look): string {
-  return ["1", p.scheme, p.mode, p.custom ?? 0, p.density === "compact" ? "c" : "n", p.textSize, p.wide ? "w" : "n", cleanFeedWidth(p.feedWidth)].join(".");
+  return ["1", p.scheme, p.mode, p.custom ?? 0, p.density === "compact" ? "c" : "n", p.textSize, p.wide ? "w" : "n", cleanFeedWidth(p.feedWidth), p.navIcons ? "i" : "n"].join(".");
 }
 
 /** What a look cookie says (anything odd in it is left out). */
 export function decodeLook(raw: string | undefined): Partial<Look> {
-  const [v, scheme, mode, custom, density, size, wide, feedWidth] = (raw || "").split(".");
+  const [v, scheme, mode, custom, density, size, wide, feedWidth, nav] = (raw || "").split(".");
   if (v !== "1") return {};
   const out: Partial<Look> = {};
   if (/^[a-z0-9-]{1,40}$/.test(scheme ?? "")) out.scheme = scheme;
@@ -37,6 +37,8 @@ export function decodeLook(raw: string | undefined): Partial<Look> {
   // (a cookie from before wide mode has no say in it: the account's choice stands)
   if (wide === "w" || wide === "n") out.wide = wide === "w";
   if (/^\d{1,4}$/.test(feedWidth ?? "")) out.feedWidth = cleanFeedWidth(Number(feedWidth));
+  // (nor one from before the header's icons)
+  if (nav === "i" || nav === "n") out.navIcons = nav === "i";
   return out;
 }
 

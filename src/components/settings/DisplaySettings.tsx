@@ -85,6 +85,21 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
         </div>
         <div className="setting-row">
           <div className="grow">
+            <b>{t("Icons in the header")}</b>
+            <span className="small muted">{t("The sections at the top as their icons instead of their names (Home is always its house). A section's name shows when you hold the pointer over it.")}</span>
+          </div>
+          <Switch
+            on={!!p.navIcons}
+            label={t("Icons in the header")}
+            onChange={(v) => {
+              if (v) document.documentElement.dataset.nav = "icons";
+              else delete document.documentElement.dataset.nav;
+              void save({ navIcons: v });
+            }}
+          />
+        </div>
+        <div className="setting-row">
+          <div className="grow">
             <b>{t("Wide mode")}</b>
             <span className="small muted">{t("On a wide screen, the page fills it: the side columns out at its edges, and the middle between them.")}</span>
           </div>

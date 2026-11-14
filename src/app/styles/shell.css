@@ -249,6 +249,27 @@ html[data-backdrop="plain"] .backdrop {
   flex: none;
   display: none;
 }
+/* Home: its house, not its name; and every section so, for someone who wants them all as icons
+   (Settings → Display: "Icons in the header"), their names still said to screen readers */
+.tab.icon-only {
+  padding-inline: 10px;
+}
+.tab.icon-only svg,
+html[data-nav="icons"] .tab svg {
+  display: block;
+}
+html[data-nav="icons"] .tab {
+  padding: 8px 10px;
+}
+html[data-nav="icons"] .tab .tab-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .tab:hover {
   background: var(--hover);
 }

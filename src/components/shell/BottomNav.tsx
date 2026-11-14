@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { useApp, useT } from "@/components/app/AppProvider";
-import { isActive, isBare, visibleSections } from "./nav";
+import { barSections, isActive, isBare } from "./nav";
 import { Drawer } from "./Drawer";
 
 /** Phones: the first four sections and More, in a glass bar along the bottom. */
@@ -16,7 +16,7 @@ export function BottomNav() {
   const [drawer, setDrawer] = useState(false);
   useEffect(() => setDrawer(false), [pathname]);
   if (!me || isBare(pathname)) return null;
-  const shown = visibleSections(site.features).slice(0, 4);
+  const shown = barSections(site.features);
   const moreActive = !shown.some((s) => isActive(s, pathname));
   return (
     <>

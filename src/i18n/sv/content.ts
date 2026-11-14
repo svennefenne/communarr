@@ -350,6 +350,8 @@ const sv: Record<string, string> = {
   // the forum's front as cards or a list; the middle's width everywhere it is
   "Show the forums as": "Visa forumen som",
   Cards: "Kort",
+  "Icons in the header": "Ikoner i toppmenyn",
+  "The sections at the top as their icons instead of their names (Home is always its house). A section's name shows when you hold the pointer over it.": "Delarna högst upp som ikoner i stället för namn (Hem är alltid ett hus). Namnet syns när du håller muspekaren över en ikon.",
   "The middle of the front page, the chat, a forum, polls and lists, when wide mode is off (now they fill the screen).": "Mittpanelen på förstasidan, i chatten, i forumet, omröstningar och listor, när brett läge är av (nu fyller de skärmen).",
   "The middle of the front page, the chat, a forum, polls and lists, on a screen with room for it.": "Mittpanelen på förstasidan, i chatten, i forumet, omröstningar och listor, på en skärm där den får plats.",
 };

@@ -111,9 +111,9 @@ function SiteHeader({ pathname }: { pathname: string }) {
             const Icon = s.icon;
             const dot = s.href === "/chat" && counts.chat > 0;
             return (
-              <Link key={s.href} href={s.href} data-section className={`tab ${i === activeIdx ? "active" : ""}`} aria-current={i === activeIdx ? "page" : undefined} title={t(s.label)}>
+              <Link key={s.href} href={s.href} data-section className={`tab ${i === activeIdx ? "active" : ""} ${s.iconOnly ? "icon-only" : ""}`} aria-current={i === activeIdx ? "page" : undefined} title={t(s.label)}>
                 <Icon size={18} aria-hidden />
-                <span className="tab-label">{t(s.label)}</span>
+                <span className={s.iconOnly ? "sr-only" : "tab-label"}>{t(s.label)}</span>
                 {dot ? <span className="tab-dot" title={t("New messages")} /> : null}
               </Link>
             );
