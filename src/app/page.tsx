@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { requireUser } from "@/lib/auth";
 import { feed } from "@/lib/feed";
 import { latestNews, listPosts } from "@/lib/posts";
-import { eventsBetween, upcoming } from "@/lib/events";
+import { countdownFor, eventsBetween, upcoming } from "@/lib/events";
 import { roomsFor } from "@/lib/chat";
 import { latestThreads } from "@/lib/forum";
 import { listPolls } from "@/lib/polls";
@@ -19,6 +19,7 @@ import { Announcement } from "@/components/shell/Announcement";
 import { PushPrompt } from "@/components/home/PushPrompt";
 import { ChatWidget, ForumWidget, Greeting, GroupsWidget, ListsWidget, MobileStrip, NewsHero, NewsWidget, OnlineWidget, PollsWidget, UpcomingWidget } from "@/components/home/Widgets";
 import { MonthWidget } from "@/components/home/MonthWidget";
+import { CountdownHead } from "@/components/home/Countdown";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   const shown = new Set([...sides.left, ...sides.right]);
   // (what's coming up is the phone's strip too)
   const events = f.calendar ? upcoming(u, 5) : [];
+  // an event counting down: the heading (instead of the greeting)
+  const countdown = f.calendar ? countdownFor(u) : null;
   const month = (() => {
     if (!shown.has("calendar") || layout.calendar !== "month") return null;
     const m = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -83,7 +86,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   return (
     <div className={`page home sides-${sides.left.length && sides.right.length ? "both" : sides.left.length ? "left" : sides.right.length ? "right" : "none"}`}>
       <div className="page-head home-head">
-        <Greeting name={u.name} />
+        {countdown ? (
+          <CountdownHead
+            name={u.name}
+            e={{ id: countdown.id, title: countdown.title, startAt: countdown.startAt, endAt: countdown.endAt, allDay: countdown.allDay, going: countdown.going }}
+            now={Date.now()}
+          />
+        ) : (
+          <Greeting name={u.name} />
+        )}
       </div>
       <MobileStrip events={events} members={others} />
       {/* the feed between the side columns (on a narrower screen, all of them on the right: the left

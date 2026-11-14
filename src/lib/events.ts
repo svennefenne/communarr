@@ -39,9 +39,14 @@ export interface EventRow {
   edited_at: number | null;
   /** 1: only the one who planned it sees it ("Only me") */
   private: number;
+  /** a countdown on the front page: from how many days before it, 0 the whole time (null: none) */
+  countdown: number | null;
 }
 
 export class EventError extends UserError {}
+
+/** the event whose countdown goes before the others' (its form, for admins: "Pin it"), in meta */
+const PIN = "countdown.pin";
 
 export const EVENT_COLORS = ["#d65a2b", "#e2a634", "#2f7088", "#4f8f50", "#9c5bb5", "#d4689a", "#5b7bd6", "#c8412f"];
 
@@ -99,6 +104,7 @@ export function toEventViews(u: User, rows: EventRow[]): EventView[] {
   const counts = commentCounts("event", ids);
   const rs = db().prepare(`select event_id, user_id, status from event_rsvps where event_id in (${ids.map(() => "?").join(",")}) order by updated_at`).all(...ids) as { event_id: number; user_id: number; status: RsvpStatus }[];
   const people = summaries(rs.map((r) => r.user_id));
+  const pin = Number(getMeta(PIN)) || 0;
   return rows.map((r) => {
     const mine = rs.find((x) => x.event_id === r.id && x.user_id === u.id);
     const who = (s: RsvpStatus) => rs.filter((x) => x.event_id === r.id && x.status === s).map((x) => people.get(x.user_id)!).filter(Boolean);
@@ -128,6 +134,8 @@ export function toEventViews(u: User, rows: EventRow[]): EventView[] {
       comments: counts.get(r.id) ?? 0,
       reactions: reacts.get(r.id) ?? [],
       canEdit: r.author_id === u.id || u.isMod,
+      countdown: r.countdown,
+      countdownPinned: r.countdown !== null && r.id === pin,
     };
   });
 }
@@ -169,6 +177,35 @@ export function upcoming(u: User, limit = 5, o: { groupId?: number } = {}): Even
     .slice(0, limit);
 }
 
+/**
+ * The countdown at the top of someone's front page: of the events with one that they can see, the next
+ * to start (a repeating one's next time) once it's within its days, the pinned one first. A group's
+ * counts down only for its members (not for the admins who can read every group). None: null.
+ */
+export function countdownFor(u: User): EventView | null {
+  const t = now();
+  const gf = groupFilter(u);
+  const rows = db()
+    .prepare(
+      `select * from events where countdown is not null and cancelled = 0 and ${gf.sql} and (private = 0 or author_id = ?)
+       and (group_id is null or group_id in (select group_id from group_members where user_id = ?))
+       and (repeat != 'none' or start_at > ?) and (repeat = 'none' or repeat_until is null or repeat_until > ?)`,
+    )
+    .all(...gf.params, u.id, u.id, t, t) as EventRow[];
+  const pin = Number(getMeta(PIN)) || 0;
+  const pinned = (r: EventRow) => (r.id === pin ? 1 : 0);
+  let best: { r: EventRow; at: number } | null = null;
+  for (const r of rows) {
+    // its next start (now or later), within its days
+    const at = occurrences(r, t, t + 3 * 366 * 86_400_000, 4).find((s) => s > t);
+    if (!at || (r.countdown! > 0 && at - t > r.countdown! * 86_400_000)) continue;
+    if (!best || pinned(r) > pinned(best.r) || (pinned(r) === pinned(best.r) && at < best.at)) best = { r, at };
+  }
+  if (!best) return null;
+  const v = toEventViews(u, [best.r])[0];
+  return { ...v, occurrence: best.at, startAt: best.at, endAt: best.at + (best.r.end_at - best.r.start_at) };
+}
+
 export interface EventInput {
   title: string;
   html?: string;
@@ -186,6 +223,10 @@ export interface EventInput {
   repeatRule?: RepeatRule | null;
   repeatUntil?: number | null;
   capacity?: number | null;
+  /** a countdown on the front page: from how many days before, 0 the whole time (null: none) */
+  countdown?: number | null;
+  /** its countdown goes before the others' (admins and moderators) */
+  countdownPin?: boolean;
 }
 
 function validate(o: EventInput) {
@@ -220,7 +261,16 @@ function validate(o: EventInput) {
     repeatRule: rule ? JSON.stringify(rule) : null,
     repeatUntil: repeat !== "none" && !rule?.count && o.repeatUntil && o.repeatUntil > start ? o.repeatUntil : null,
     capacity: o.capacity && o.capacity > 0 ? Math.min(10000, Math.round(o.capacity)) : null,
+    countdown: typeof o.countdown === "number" && Number.isFinite(o.countdown) ? Math.max(0, Math.min(366, Math.round(o.countdown))) : null,
   };
+}
+
+/** Pin an event's countdown, or unpin it (only admins and moderators; one at a time). */
+function pinCountdown(u: User, id: number, countdown: number | null, pin: boolean | undefined) {
+  if (!u.isMod || pin === undefined) return;
+  const was = Number(getMeta(PIN)) || 0;
+  if (pin && countdown !== null) setMeta(PIN, String(id));
+  else if (was === id) setMeta(PIN, "");
 }
 
 export function createEvent(u: User, o: EventInput): number {
@@ -237,15 +287,16 @@ export function createEvent(u: User, o: EventInput): number {
     const id = Number(
       db()
         .prepare(
-          "insert into events (author_id, title, description_html, description_text, location, start_at, end_at, all_day, color, cover, group_id, repeat, repeat_rule, repeat_until, capacity, private, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "insert into events (author_id, title, description_html, description_text, location, start_at, end_at, all_day, color, cover, group_id, repeat, repeat_rule, repeat_until, capacity, private, countdown, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(u.id, v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, groupId, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, t).lastInsertRowid,
+        .run(u.id, v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, groupId, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, v.countdown, t).lastInsertRowid,
     );
     // the one who plans it is going
     db().prepare("insert into event_rsvps (event_id, user_id, status, updated_at) values (?, ?, 'going', ?)").run(id, u.id, t);
     indexItem("event", id, eventScope(groupId, priv, u.id), u.id, t, v.title, `${v.location} ${v.c.text}`);
     return id;
   });
+  pinCountdown(u, id, v.countdown, o.countdownPin);
   // only them: nobody to invite or tell
   if (priv) return id;
   const url = `/events/${id}`;
@@ -284,8 +335,9 @@ export function updateEvent(u: User, id: number, o: EventInput) {
   // "Only me" or everyone can change (a group's event stays the group's)
   const priv = e.group_id ? false : o.private === undefined ? !!e.private : !!o.private;
   db()
-    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, repeat = ?, repeat_rule = ?, repeat_until = ?, capacity = ?, private = ?, edited_at = ? where id = ?")
-    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, now(), id);
+    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, repeat = ?, repeat_rule = ?, repeat_until = ?, capacity = ?, private = ?, countdown = ?, edited_at = ? where id = ?")
+    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, v.countdown, now(), id);
+  pinCountdown(u, id, v.countdown, o.countdownPin);
   indexItem("event", id, eventScope(e.group_id, priv, e.author_id), e.author_id, e.created_at, v.title, `${v.location} ${v.c.text}`);
   // comments follow the event (private: only its author finds them in search)
   db().prepare("update search_index set scope = ? where kind = 'comment' and ref in (select id from comments where target_type = 'event' and target_id = ?)").run(eventScope(e.group_id, priv, e.author_id), id);

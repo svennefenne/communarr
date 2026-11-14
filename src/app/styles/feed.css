@@ -2,6 +2,59 @@
 .home-head {
   margin-bottom: 18px;
 }
+/* the heading counting down to an event (its form: "Count down to it on the front page"): the time
+   left in gold, what's left of the day, when and who below, the greeting moved up into the line above */
+.countdown-title {
+  text-wrap: balance;
+}
+.countdown-title em {
+  font-style: normal;
+  color: var(--accent-2);
+}
+.countdown-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 12px;
+  font-size: 0.9375rem;
+  color: var(--text-dim);
+  transition: color 150ms;
+}
+.countdown-sub:hover {
+  color: var(--text);
+}
+.countdown-rest {
+  font-size: 1.125rem;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.countdown-going {
+  gap: 8px;
+}
+.countdown-go {
+  flex: none;
+  transition: transform 150ms var(--lift-ease);
+}
+.countdown-sub:hover .countdown-go {
+  transform: translateX(3px);
+}
+/* a dot between its parts, where they're on one line */
+@media (min-width: 700px) {
+  .countdown-sub > span + span::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    margin-right: 14px;
+    border-radius: 50%;
+    background: var(--faint);
+    vertical-align: middle;
+  }
+  .countdown-going::before {
+    margin-right: 6px !important;
+  }
+}
 /* the feed, and its side columns (Admin → Front page; each stays in view, scrolling on its own when
    it's taller than the screen): on a wide screen the left one's parts (.home-left) left of the feed and
    the right one's right of it; on a narrower one all of them right of it, the left one's last; on a
