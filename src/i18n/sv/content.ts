@@ -347,6 +347,11 @@ const sv: Record<string, string> = {
   "{name} mentioned you in a list": "{name} nämnde dig i en lista",
   "{name} mentioned you in the group {group}": "{name} nämnde dig i gruppen {group}",
   "{name} mentioned you on their profile": "{name} nämnde dig på sin profil",
+  // the forum's front as cards or a list; the middle's width everywhere it is
+  "Show the forums as": "Visa forumen som",
+  Cards: "Kort",
+  "The middle of the front page, the chat, a forum, polls and lists, when wide mode is off (now they fill the screen).": "Mittpanelen på förstasidan, i chatten, i forumet, omröstningar och listor, när brett läge är av (nu fyller de skärmen).",
+  "The middle of the front page, the chat, a forum, polls and lists, on a screen with room for it.": "Mittpanelen på förstasidan, i chatten, i forumet, omröstningar och listor, på en skärm där den får plats.",
 };
 
 export default sv;

@@ -31,7 +31,7 @@ export default async function ListsPage({ searchParams }: { searchParams: Promis
   const whole = new Map(lists.filter((l) => l.showAll).map((l) => [l.id, getList(u, l.id)] as const));
   const canCreate = s.canCreate.lists === "members" || u.isMod;
   return (
-    <div className="page narrow">
+    <div className="page narrow follows-middle" data-middle>
       <div className="page-head">
         <div>
           <span className="eyebrow">{t("Fill in together")}</span>

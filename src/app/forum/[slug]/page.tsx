@@ -37,7 +37,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const link = (o: { sort?: string; page?: number }) => `/forum/${c.slug}?sort=${o.sort ?? sort}${(o.page ?? 1) > 1 ? `&page=${o.page}` : ""}`;
   const canStart = !c.locked || u.isMod;
   return (
-    <div className="page mid">
+    <div className="page mid follows-middle" data-middle>
       <BackPill href="/forum" label={t("Forum")} />
       <div className="page-head">
         <div className="row" style={{ gap: 16, alignItems: "flex-end" }}>

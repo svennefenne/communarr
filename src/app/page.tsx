@@ -101,7 +101,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           one's parts last; on a phone, the strip above instead) */}
       <FeedScope initial={filter}>
         <div className={`home-cols ${sides.left.length ? "has-left" : ""} ${sides.right.length ? "has-right" : ""}`}>
-          <div className="stack loose home-main">
+          <div className="stack loose home-main" data-middle>
             {/* (the announcement as wide as the feed, on a wide screen; a narrower one has it on top) */}
             <Announcement inPage />
             <PushPrompt />

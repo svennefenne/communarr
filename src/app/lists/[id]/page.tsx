@@ -25,7 +25,7 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
   const t = await requestT();
   return (
     // (a list with many columns gets the wide page, so they fit side by side)
-    <div className={l.columns.length > 4 ? "page" : "page mid"}>
+    <div className={`${l.columns.length > 4 ? "page" : "page mid"} follows-middle`} data-middle>
       <BackPill href="/lists" label={t("Lists")} />
       <ListDetail list={l} />
     </div>

@@ -145,13 +145,25 @@
   }
 }
 
-/* the front page's middle at a width of someone's own (user menu, Settings → Display; --feed-w on
-   <html>): the page as wide as that and its side columns, as far as the screen goes. Wide mode fills
-   the screen instead, and a screen without the side columns has the feed across it as before.
+/* the middle at a width of someone's own (user menu, Settings → Display; --feed-w on <html>): the
+   front page as wide as that and its side columns, as far as the screen goes; the chat's room as wide
+   as that beside its list (and its members); a forum, polls and lists (.follows-middle) as wide as that.
+   Wide mode fills the screen instead, and a screen without the side columns keeps them as they come.
    --home-sides: the side columns and their gaps, as they are at that size */
 @media (min-width: 1061px) {
   html[data-feed]:not([data-width="wide"]) .page.home {
     width: min(100% - 32px, var(--feed-w) + var(--home-sides));
+  }
+  html[data-feed]:not([data-width="wide"]) .page.follows-middle {
+    width: min(100% - 32px, var(--feed-w));
+  }
+  html[data-feed]:not([data-width="wide"]) .chat-shell {
+    width: min(100% - 28px, var(--feed-w) + var(--side-w) + 14px);
+  }
+}
+@media (min-width: 1100px) {
+  html[data-feed]:not([data-width="wide"]) .chat-shell:has(> .chat-people) {
+    width: min(100% - 28px, var(--feed-w) + var(--side-w) + 14px + 250px + 14px);
   }
 }
 .page.home.sides-none {

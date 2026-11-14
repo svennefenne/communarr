@@ -30,7 +30,7 @@ export default async function ThreadPage({ params, searchParams }: { params: Pro
   markReadByUrl(u.id, `/forum/t/${id}`);
   const cats = categories(u).map((c) => ({ id: c.id, name: c.name, icon: c.icon }));
   return (
-    <div className="page mid">
+    <div className="page mid follows-middle" data-middle>
       <BackPill href={`/forum/${data.category.slug}`} label={data.category.name} />
       <ThreadView {...data} categories={cats} />
     </div>

@@ -31,8 +31,10 @@ export interface ThemePrefs {
   density: "comfy" | "compact";
   /** wide: the pages fill the screen, their side columns at its edges (else they stop at 1320px, the chat at 1480px) */
   wide: boolean;
-  /** the front page's middle (its feed) in px, when not wide (0: as it comes; FEED_WIDTH's range) */
+  /** the middle in px (the front page's feed, the chat's room, a forum, polls, lists), when not wide (0: as it comes; FEED_WIDTH's range) */
   feedWidth: number;
+  /** the forum's front: its categories as cards, or as rows with their counts and latest post */
+  forumView: "cards" | "list";
   /** the same look on all your devices (else each device keeps its own: lib/look.ts) */
   mirror: boolean;
 }
