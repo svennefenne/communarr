@@ -834,6 +834,75 @@
   width: 64px;
   height: 110px;
 }
+/* placing a banner (BannerCrop): its frame at 3:1, the picture dragged about in it over a blurred copy
+   of it; the band a wide screen shows marked, the rest (only a phone's) dimmed */
+.banner-crop {
+  position: relative;
+  aspect-ratio: 3 / 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--field);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.banner-crop:active {
+  cursor: grabbing;
+}
+.banner-crop:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.banner-crop-fill {
+  position: absolute;
+  inset: 0;
+  background: center / cover no-repeat;
+  transform: scale(1.15);
+  filter: blur(12px) brightness(0.75);
+}
+.banner-crop img {
+  position: absolute;
+  max-width: none;
+  height: auto;
+  pointer-events: none;
+}
+.banner-crop-wait {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  color: var(--muted);
+}
+.banner-crop-band {
+  position: absolute;
+  inset-inline: 0;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
+  outline: 2px dashed rgb(255 255 255 / 0.85);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+.banner-crop-tag,
+.banner-crop-phone {
+  position: absolute;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  pointer-events: none;
+}
+.banner-crop-tag {
+  top: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.6);
+}
+.banner-crop-phone {
+  top: 6px;
+  opacity: 0.85;
+}
 
 /* the people picker */
 .picker-list {

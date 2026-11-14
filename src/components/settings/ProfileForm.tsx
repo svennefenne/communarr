@@ -72,7 +72,7 @@ export function ProfileForm({ p }: { p: ProfileData }) {
       <div className="panel panel-pad stack loose">
         <div className="grid-2">
           <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="round" label={t("Profile picture")} />
-          <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label={t("Banner on your profile")} />
+          <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label={t("Banner on your profile")} size={t("Any picture: you place it when you've chosen it, and see what a computer and a phone show.")} />
         </div>
         {/* (the name everyone sees is the alias, under Settings → Account) */}
         <div className="grid-2">
