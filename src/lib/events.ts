@@ -8,9 +8,8 @@ import { notify } from "./notify";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
-import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf } from "./groups";
+import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, newInFeed } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
-import { broadcast } from "./hub";
 import { commentCounts, groupRefs } from "./posts";
 import { getMeta, getSettings, setMeta } from "./settings";
 import { serverT } from "./t";
@@ -255,7 +254,7 @@ export function createEvent(u: User, o: EventInput): number {
   const mentioned = usersWho(v.c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeEvent(x, row));
   if (mentioned.length) notify(mentioned, { kind: "invite", actorId: u.id, title: "{name} invited you to {title}", body: "{when}", vars, url });
   if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: "New event in {group}: {title}", body: "{when}", vars: { ...vars, group: groupRow(groupId)!.name }, url });
-  broadcast("feed", { type: "event", id, by: u.id, group: groupId });
+  newInFeed({ type: "event", id, by: u.id, group: groupId });
   return id;
 }
 

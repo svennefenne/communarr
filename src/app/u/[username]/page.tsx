@@ -8,6 +8,9 @@ import { listGroups } from "@/lib/groups";
 import { db } from "@/lib/db";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { Feed } from "@/components/feed/Feed";
+import { FeedFilterCard, FeedScope } from "@/components/feed/FeedFilters";
+import { getSettings } from "@/lib/settings";
+import { homeLayout } from "@/lib/homePanels";
 import { RichText } from "@/components/content/RichText";
 import { BackPill } from "@/components/ui/BackPill";
 import { requestT } from "@/lib/t";
@@ -28,41 +31,46 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const theirs = new Set((db().prepare("select group_id from group_members where user_id = ?").all(p.id) as { group_id: number }[]).map((r) => r.group_id));
   const { mine, others } = listGroups(u);
   const groups = [...mine, ...others].filter((g) => theirs.has(g.id) && g.privacy !== "secret");
+  // the feed's filters above it, or on top in the side column (Admin → Front page)
+  const aside = homeLayout(getSettings().home).pageFilters === "side";
   return (
     <div className="page">
       <BackPill href="/members" label={t("Members")} />
       <ProfileHeader
         p={{ ...summary(p), banner: p.banner, pronouns: p.pronouns, location: p.location, website: p.website, birthday: p.birthday, createdAt: p.createdAt, lastSeen: p.lastSeen, stats: stats(p.id) }}
       />
-      <div className="with-side feed-cols" style={{ marginTop: 18, ["--feed-head-rows" as string]: 2 }}>
-        <div className="stack feed-main" style={{ minWidth: 0 }}>
-          <span className="eyebrow">{t("What {name} has been up to", { name: p.name.split(" ")[0] })}</span>
-          <Feed initial={feed(u, { authorId: p.id })} groups={[]} composer={false} authorId={p.id} />
-        </div>
-        <aside className="stack side-sticky">
-          <section className="panel panel-pad">
-            <span className="eyebrow">{t("About")}</span>
-            <div style={{ marginTop: 10 }}>{p.bioHtml ? <RichText html={p.bioHtml} /> : <p className="small muted" style={{ margin: 0 }}>{t("Nothing here yet.")}</p>}</div>
-          </section>
-          {groups.length ? (
-            <section className="panel">
-              <div className="panel-head">
-                <span className="eyebrow">{t("Groups")}</span>
-              </div>
-              <div className="list">
-                {groups.map((g) => (
-                  <Link key={g.id} href={`/groups/${g.slug}`} className="list-row">
-                    <span className="group-avatar" style={{ ["--gc" as string]: g.color, backgroundImage: g.avatar ? `url("${g.avatar}")` : undefined }}>
-                      {g.avatar ? "" : g.name.slice(0, 1)}
-                    </span>
-                    <b className="grow ellipsis">{g.name}</b>
-                  </Link>
-                ))}
-              </div>
+      <FeedScope>
+        <div className="with-side feed-cols" style={{ marginTop: 18, ["--feed-head-rows" as string]: aside ? 1 : 2 }}>
+          <div className="stack feed-main" style={{ minWidth: 0 }}>
+            <span className="eyebrow">{t("What {name} has been up to", { name: p.name.split(" ")[0] })}</span>
+            <Feed initial={feed(u, { authorId: p.id })} groups={[]} composer={false} authorId={p.id} filtersAside={aside} />
+          </div>
+          <aside className="stack side-sticky">
+            {aside ? <FeedFilterCard /> : null}
+            <section className="panel panel-pad">
+              <span className="eyebrow">{t("About")}</span>
+              <div style={{ marginTop: 10 }}>{p.bioHtml ? <RichText html={p.bioHtml} /> : <p className="small muted" style={{ margin: 0 }}>{t("Nothing here yet.")}</p>}</div>
             </section>
-          ) : null}
-        </aside>
-      </div>
+            {groups.length ? (
+              <section className="panel">
+                <div className="panel-head">
+                  <span className="eyebrow">{t("Groups")}</span>
+                </div>
+                <div className="list">
+                  {groups.map((g) => (
+                    <Link key={g.id} href={`/groups/${g.slug}`} className="list-row">
+                      <span className="group-avatar" style={{ ["--gc" as string]: g.color, backgroundImage: g.avatar ? `url("${g.avatar}")` : undefined }}>
+                        {g.avatar ? "" : g.name.slice(0, 1)}
+                      </span>
+                      <b className="grow ellipsis">{g.name}</b>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </aside>
+        </div>
+      </FeedScope>
     </div>
   );
 }

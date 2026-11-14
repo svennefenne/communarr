@@ -14,10 +14,10 @@ import { Time } from "@/components/ui/Time";
 import { DateTile, EventWhen } from "@/components/feed/EventCard";
 import { TypingDots, TypingLine, useTyping } from "@/components/chat/useTyping";
 
-export function Widget({ title, icon, href, more, children }: { title: string; icon: React.ReactNode; href?: string; more?: string; children: React.ReactNode }) {
+export function Widget({ title, icon, href, more, className, children }: { title: string; icon: React.ReactNode; href?: string; more?: string; className?: string; children: React.ReactNode }) {
   const t = useT();
   return (
-    <section className="panel widget">
+    <section className={`panel widget ${className ?? ""}`}>
       <div className="panel-head">
         <span className="eyebrow row" style={{ gap: 7 }}>
           {icon} {title}

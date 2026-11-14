@@ -375,7 +375,7 @@
 /* Admin → Front page: the side columns' parts, either side of the feed (HomeLayoutSettings) */
 .home-arrange {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 172px minmax(0, 1fr);
   gap: 12px;
 }
 .home-arrange-col {
@@ -443,11 +443,24 @@
   background: repeating-linear-gradient(135deg, var(--hover) 0 8px, transparent 8px 16px);
   border: 1px solid var(--line);
 }
+/* the feed's filters above the feed, in the narrow middle: their name on a line of its own, the
+   buttons under it */
+@media (min-width: 761px) {
+  .home-arrange-col.mid .home-arrange-row {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 6px;
+  }
+  .home-arrange-col.mid .home-arrange-row > .grow {
+    flex-basis: calc(100% - 56px);
+  }
+}
 @media (max-width: 760px) {
   .home-arrange {
     grid-template-columns: minmax(0, 1fr);
   }
-  .home-arrange-col[aria-hidden] {
-    display: none;
+  .home-arrange-feed {
+    flex-direction: row;
+    min-height: 44px;
   }
 }

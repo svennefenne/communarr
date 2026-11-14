@@ -47,6 +47,18 @@
 .home-right::-webkit-scrollbar {
   display: none;
 }
+/* (the feed's filters, from the left: first, not last, where they'd be out of sight) */
+@media (max-width: 1279px) {
+  .home-left {
+    display: contents;
+  }
+  .home-left > * {
+    order: 1;
+  }
+  .home-left > .feed-filter-card {
+    order: -1;
+  }
+}
 @media (min-width: 1280px) {
   .home-cols.has-left {
     grid-template-columns: 300px minmax(0, 1fr);
@@ -322,6 +334,56 @@
 .feed-filters {
   align-self: flex-start;
   max-width: 100%;
+}
+/* the feed's filters in a card in the side column (Admin → Front page; FeedFilterCard): the row of
+   pills stood on end, one under the other, as it doesn't fit across there. Beside the feed on a wide
+   screen; a narrower one has no side column, and the row's above the feed again */
+.feed-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px 8px;
+}
+.feed-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    color 120ms;
+}
+.feed-filter-row:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.feed-filter-row.active,
+.feed-filter-row.active:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+@media (min-width: 1061px) {
+  .feed-filters.aside-wide,
+  .feed-filters-bar.aside-wide {
+    display: none;
+  }
+}
+@media (max-width: 1060px) {
+  .feed-filter-card {
+    display: none;
+  }
 }
 /* the front page's filters on a phone (Feed's stickyFilters): they stay under the top bar as the feed
    scrolls, in a strip edge to edge once they're there (the padding taken back by the margins, so the

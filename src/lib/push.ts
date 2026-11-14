@@ -107,11 +107,11 @@ export function devices(userId: number) {
 /**
  * A push to all of someone's devices: browsers (web push), phones with the Android app (Firebase) and
  * computers with the desktop app (down its live stream). Someone at a computer with the desktop app
- * running gets it there only.
+ * running gets it there only, unless it's to go everywhere (a test, sent from any of them).
  */
-export async function pushTo(userId: number, payload: PushPayload): Promise<{ sent: number; failed: number }> {
+export async function pushTo(userId: number, payload: PushPayload, o: { everywhere?: boolean } = {}): Promise<{ sent: number; failed: number }> {
   const desk = pushToDesktops(userId, payload);
-  if (desk.active) return { sent: desk.sent, failed: 0 };
+  if (desk.active && !o.everywhere) return { sent: desk.sent, failed: 0 };
   const [web, app] = await Promise.all([pushToBrowsers(userId, payload), pushToApps(userId, payload)]);
   return { sent: web.sent + app.sent + desk.sent, failed: web.failed + app.failed };
 }
