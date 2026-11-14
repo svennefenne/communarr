@@ -2,6 +2,7 @@ import "server-only";
 import { UserError } from "./errors";
 import { db, now } from "./db";
 import { notify } from "./notify";
+import { tellMentioned } from "./mentions";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml } from "./sanitize";
 import { indexItem, unindex } from "./search";
@@ -133,6 +134,16 @@ export function editComment(u: User, cid: number, html: string) {
   db().prepare("update comments set body_html = ?, body_text = ?, edited_at = ? where id = ?").run(c.html, c.text, now(), cid);
   const t = target(u, r.target_type, r.target_id);
   if (t) indexItem("comment", cid, t.scope, u.id, r.created_at, serverT()("Comment on {title}", { title: t.title }), c.text);
+  // someone mentioned in the edit, who wasn't before, hears about it
+  if (t)
+    tellMentioned(u, c.mentions, {
+      before: r.body_html,
+      sees: (x) => !!target(x, r.target_type, r.target_id),
+      title: "{name} mentioned you in a comment",
+      body: "{text}",
+      vars: { name: u.name, title: t.title, text: c.text.slice(0, 160) },
+      url: `${t.url}#c-${cid}`,
+    });
 }
 
 export function deleteComment(u: User, cid: number) {

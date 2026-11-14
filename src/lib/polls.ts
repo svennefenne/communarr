@@ -2,6 +2,7 @@ import "server-only";
 import { UserError } from "./errors";
 import { db, now, tx } from "./db";
 import { notify } from "./notify";
+import { mentionsIn, tellMentioned } from "./mentions";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
@@ -200,6 +201,15 @@ export function createPoll(u: User, o: PollInput): number {
 }
 
 export function updatePoll(u: User, id: number, o: Partial<PollInput> & { options?: string[] }) {
+  const before = pollRow(id)?.description_html ?? "";
+  updatePollRow(u, id, o);
+  if (o.html === undefined) return;
+  // someone mentioned in the edit, who wasn't before, hears about it
+  const p = pollRow(id)!;
+  tellMentioned(u, mentionsIn(p.description_html), { before, sees: (x) => canSeePoll(x, p), title: "{name} mentioned you in a poll", body: "{text}", vars: { name: u.name, text: p.question }, url: `/polls/${id}` });
+}
+
+function updatePollRow(u: User, id: number, o: Partial<PollInput> & { options?: string[] }) {
   const p = pollRow(id);
   if (!p) throw new PollError("That poll is gone.");
   if (p.author_id !== u.id && !u.isMod) throw new PollError("Only the one who asked can change the poll.");

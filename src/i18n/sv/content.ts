@@ -338,6 +338,15 @@ const sv: Record<string, string> = {
   "{h} h {m} min {s} s": "{h} tim {m} min {s} sek",
   "{m} min {s} s": "{m} min {s} sek",
   "{s} s": "{s} sek",
+  // the @ list's headings, and being mentioned where it's new
+  "In the chat": "I chatten",
+  "In the group": "I gruppen",
+  "In the conversation": "I samtalet",
+  "In the thread": "I tråden",
+  "Everyone else": "Alla andra",
+  "{name} mentioned you in a list": "{name} nämnde dig i en lista",
+  "{name} mentioned you in the group {group}": "{name} nämnde dig i gruppen {group}",
+  "{name} mentioned you on their profile": "{name} nämnde dig på sin profil",
 };
 
 export default sv;

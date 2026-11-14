@@ -5,6 +5,7 @@ import { canSeeGroup, groupInfo, groupRow } from "@/lib/groups";
 import { getSettings } from "@/lib/settings";
 import { GroupHeader } from "@/components/groups/GroupHeader";
 import { BackPill } from "@/components/ui/BackPill";
+import { MentionScope } from "@/components/editor/mentionScope";
 import { requestT } from "@/lib/t";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,9 @@ export default async function GroupLayout({ params, children }: { params: Promis
       <BackPill href="/groups" label={t("Groups")} />
       <GroupHeader g={g} features={{ calendar: s.features.calendar, polls: s.features.polls, chat: s.features.chat }} />
       {g.canRead ? (
-        children
+        <MentionScope ids={g.members.map((m) => m.id)} label="In the group">
+          {children}
+        </MentionScope>
       ) : (
         <div className="panel panel-pad row" style={{ marginTop: 18 }}>
           <Lock size={20} className="muted" />

@@ -4,6 +4,7 @@ import { db, now, tx } from "./db";
 import { broadcast, isInRoom, sendTo, sendToMany } from "./hub";
 import { kickFromVoice } from "./voice";
 import { notify } from "./notify";
+import { tellMentioned } from "./mentions";
 import { reactionsFor, reactionsRaw, clearReactions, toggleReaction } from "./reactions";
 import { cleanHtml, cleanLine, textToHtml } from "./sanitize";
 import { indexItem, linkTarget, unindex } from "./search";
@@ -529,6 +530,20 @@ export function editMessage(u: User, id: number, html: string): ChatMessage {
   indexItem("message", id, scopeOf(r), u.id, m.created_at, r.kind === "dm" ? serverT()("Direct message") : r.name, c.text);
   const msg = toMessages([db().prepare("select * from messages where id = ?").get(id) as MessageRow], u.id)[0];
   emit(r, "msgEdit", { room: r.id, message: { ...msg, reactions: undefined } });
+  // someone mentioned in the edit, who wasn't before: as when it was sent
+  const excerpt = c.text.slice(0, 180);
+  tellMentioned(u, c.mentions, {
+    before: m.body_html,
+    sees: (x) => {
+      const mm = member(r.id, x.id);
+      return (isOpenRoom(r) || !!mm) && mm?.notify !== "none" && !isInRoom(x.id, r.id);
+    },
+    title: r.kind === "dm" ? "{name} mentioned you in a message" : "{name} mentioned you in {room}",
+    body: excerpt ? "{text}" : "📷 Picture",
+    vars: { name: u.name, room: r.name, text: excerpt },
+    url: `/chat/${r.id}?m=${id}`,
+    tag: `room-${r.id}`,
+  });
   return msg;
 }
 

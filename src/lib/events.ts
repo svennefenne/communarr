@@ -5,6 +5,7 @@ import { UserError } from "./errors";
 import crypto from "node:crypto";
 import { db, now, tx } from "./db";
 import { notify } from "./notify";
+import { tellMentioned } from "./mentions";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
@@ -341,6 +342,11 @@ export function updateEvent(u: User, id: number, o: EventInput) {
   indexItem("event", id, eventScope(e.group_id, priv, e.author_id), e.author_id, e.created_at, v.title, `${v.location} ${v.c.text}`);
   // comments follow the event (private: only its author finds them in search)
   db().prepare("update search_index set scope = ? where kind = 'comment' and ref in (select id from comments where target_type = 'event' and target_id = ?)").run(eventScope(e.group_id, priv, e.author_id), id);
+  // someone mentioned in the edit, who wasn't before, is invited (as when it was planned)
+  if (!priv) {
+    const after = eventRow(id)!;
+    tellMentioned(u, v.c.mentions, { before: e.description_html, sees: (x) => canSeeEvent(x, after), kind: "invite", title: "{name} invited you to {title}", body: "{when}", vars: { name: u.name, title: v.title, when: when(v.start, !!v.allDay, serverT().locale) }, url: `/events/${id}` });
+  }
   // a new time or place is worth a ping; reminders go out again for the new time
   const moved = v.start !== e.start_at || v.end !== e.end_at;
   if (moved) db().prepare("delete from event_reminders where event_id = ?").run(id);

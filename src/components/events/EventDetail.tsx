@@ -156,7 +156,7 @@ export function EventDetail({ event, previews }: { event: EventView; previews?: 
         </article>
         <section className="panel panel-pad">
           <span className="eyebrow">{t("Talk about it")}</span>
-          <Comments type="event" id={e.id} />
+          <Comments type="event" id={e.id} people={[e.author.id, ...e.going.map((x) => x.id), ...e.maybe.map((x) => x.id)]} />
         </section>
       </div>
       <aside className="stack side-sticky">

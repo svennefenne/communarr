@@ -1,12 +1,14 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { ReactRenderer } from "@tiptap/react";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 import type { UserSummary } from "@/lib/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { mentionOpen } from "./mentionState";
-import { useT } from "@/components/app/AppProvider";
+import { useMentionScope } from "./mentionScope";
+import { orderMentions } from "@/lib/mentionOrder";
+import { useApp, useT } from "@/components/app/AppProvider";
 
 /** Everyone, fetched once per page for @mentions. */
 let members: Promise<UserSummary[]> | null = null;
@@ -31,22 +33,43 @@ interface ListHandle {
   onKeyDown: (e: KeyboardEvent) => boolean;
 }
 
+/**
+ * The @ list: everyone (narrowed by what's typed), the people of the place being written in first (a
+ * chat's, a group's: MentionScope), then whoever's online, then the rest, under a heading each.
+ */
 const MentionList = forwardRef<ListHandle, SuggestionProps<Item>>(function MentionList(props, ref) {
   const t = useT();
+  const { presence, me } = useApp();
+  const tiers = useMentionScope();
+  const sections = useMemo(
+    () =>
+      orderMentions(
+        props.items.map((it) => it.user),
+        props.query,
+        tiers,
+        (id) => (presence.get(id) ?? "offline") !== "offline",
+        me?.id,
+      ),
+    [props.items, props.query, tiers, presence, me?.id],
+  );
+  const flat = sections.flatMap((s) => s.items);
   const [sel, setSel] = useState(0);
-  useEffect(() => setSel(0), [props.items]);
+  useEffect(() => setSel(0), [props.items, props.query]);
+  const box = useRef<HTMLDivElement>(null);
+  // the chosen one stays in view as the arrows go down a long list
+  useEffect(() => box.current?.querySelector<HTMLElement>(".menu-item.sel")?.scrollIntoView({ block: "nearest" }), [sel]);
   const pick = (i: number) => {
-    const it = props.items[i];
-    if (it) props.command({ id: it.id, label: it.label });
+    const u = flat[i];
+    if (u) props.command({ id: u.username, label: u.name });
   };
   useImperativeHandle(ref, () => ({
     onKeyDown: (e) => {
       if (e.key === "ArrowUp") {
-        setSel((s) => (s + props.items.length - 1) % Math.max(1, props.items.length));
+        setSel((s) => (s + flat.length - 1) % Math.max(1, flat.length));
         return true;
       }
       if (e.key === "ArrowDown") {
-        setSel((s) => (s + 1) % Math.max(1, props.items.length));
+        setSel((s) => (s + 1) % Math.max(1, flat.length));
         return true;
       }
       if (e.key === "Enter" || e.key === "Tab") {
@@ -56,15 +79,28 @@ const MentionList = forwardRef<ListHandle, SuggestionProps<Item>>(function Menti
       return false;
     },
   }));
-  if (!props.items.length) return <div className="panel mention-list muted small" style={{ padding: "10px 12px" }}>{t("No one by that name")}</div>;
+  if (!flat.length) return <div className="panel mention-list muted small" style={{ padding: "10px 12px" }}>{t("No one by that name")}</div>;
+  let i = 0;
   return (
-    <div className="panel mention-list" role="listbox">
-      {props.items.map((it, i) => (
-        <button key={it.id} type="button" role="option" aria-selected={i === sel} className={`menu-item ${i === sel ? "sel" : ""}`} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(i)}>
-          <Avatar user={it.user} size={24} />
-          <span className="ellipsis">{it.label}</span>
-          <span className="muted small">@{it.id}</span>
-        </button>
+    <div className="panel mention-list" role="listbox" aria-label={t("Mention someone")} ref={box}>
+      {sections.map((s) => (
+        <div key={s.label ?? "all"} role="group" aria-label={s.label ? t(s.label) : undefined}>
+          {s.label ? (
+            <div className="mention-sec" aria-hidden>
+              {t(s.label)}
+            </div>
+          ) : null}
+          {s.items.map((u) => {
+            const at = i++;
+            return (
+              <button key={u.id} type="button" role="option" aria-selected={at === sel} className={`menu-item ${at === sel ? "sel" : ""}`} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(at)}>
+                <Avatar user={u} size={24} presence />
+                <span className="ellipsis grow">{u.name}</span>
+                <span className="muted small">@{u.username}</span>
+              </button>
+            );
+          })}
+        </div>
       ))}
     </div>
   );
@@ -85,11 +121,8 @@ export const mentionSuggestion: Omit<SuggestionOptions<Item>, "editor"> = {
   items: async ({ query }) => {
     const q = query.toLowerCase();
     const list = await loadMembers();
-    return list
-      .filter((u) => !q || u.username.toLowerCase().includes(q) || u.name.toLowerCase().includes(q))
-      .sort((a, b) => Number(!a.username.toLowerCase().startsWith(q)) - Number(!b.username.toLowerCase().startsWith(q)))
-      .slice(0, 8)
-      .map((u) => ({ id: u.username, label: u.name, user: u }));
+    // (everyone it fits: the list puts them in order, by where they're written to)
+    return list.filter((u) => !q || u.username.toLowerCase().includes(q) || u.name.toLowerCase().includes(q)).map((u) => ({ id: u.username, label: u.name, user: u }));
   },
   render: () => {
     let renderer: ReactRenderer<ListHandle, SuggestionProps<Item>> | null = null;

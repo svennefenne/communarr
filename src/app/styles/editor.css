@@ -409,7 +409,23 @@
 .mention-list {
   min-width: 240px;
   max-width: 320px;
+  max-height: min(340px, 45vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   padding: 4px;
+}
+/* a heading in the @ list: the people of the place written in, who's online, everyone else */
+.mention-sec {
+  padding: 10px 12px 4px;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+.mention-list > div:first-child .mention-sec {
+  padding-top: 6px;
 }
 .mention-list .menu-item.sel {
   background: var(--hover);

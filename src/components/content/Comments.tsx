@@ -13,6 +13,7 @@ import { RichText } from "./RichText";
 import { Reactions } from "./Reactions";
 import { ItemMenu } from "./ItemMenu";
 import { addCommentAction, commentsAction, deleteCommentAction, editCommentAction } from "@/app/actions/content";
+import { MentionScope } from "@/components/editor/mentionScope";
 
 function CommentBox({ placeholder, onSend, autoFocus, draftKey, initial, onCancel, sendLabel }: { placeholder: string; onSend: (html: string) => Promise<boolean>; autoFocus?: boolean; draftKey?: string; initial?: string; onCancel?: () => void; sendLabel?: string }) {
   const t = useT();
@@ -147,8 +148,11 @@ function Comment({ c, type, id, onChanged, onReply, replyTo, depth }: { c: Comme
   );
 }
 
-/** Comments under a post, poll or event: the list, answers one level in, and a box to write. */
-export function Comments({ type, id, initial, locked = false, onCount }: { type: CommentTarget; id: number; initial?: CommentView[]; locked?: boolean; onCount?: (n: number) => void }) {
+/**
+ * Comments under a post, poll or event: the list, answers one level in, and a box to write. `people`:
+ * the thing's own (who made it, who's going), first in the @ list with those who've commented.
+ */
+export function Comments({ type, id, initial, locked = false, onCount, people = [] }: { type: CommentTarget; id: number; initial?: CommentView[]; locked?: boolean; onCount?: (n: number) => void; people?: number[] }) {
   const me = useMe();
   const t = useT();
   const toast = useToast();
@@ -170,33 +174,35 @@ export function Comments({ type, id, initial, locked = false, onCount }: { type:
   });
   if (!me) return null;
   return (
-    <div className="comments">
-      {list === null ? <div className="skeleton" style={{ height: 50 }} /> : null}
-      {list?.map((c) => (
-        <Comment key={c.id} c={c} type={type} id={id} onChanged={load} onReply={(x) => setReplyTo(x.id === -1 ? null : x.id)} replyTo={replyTo} depth={0} />
-      ))}
-      {locked ? (
-        <p className="small muted">{t("Comments are closed.")}</p>
-      ) : (
-        <div className="comment">
-          <Avatar user={me} size={34} />
-          <div className="comment-main">
-            <CommentBox
-              placeholder={t(list && !list.length ? "Be the first to comment…" : "Write a comment…")}
-              draftKey={`c-${type}-${id}`}
-              onSend={async (html) => {
-                const r = await addCommentAction(type, id, html);
-                if (!r.ok) {
-                  toast(r.error, { kind: "err" });
-                  return false;
-                }
-                await load();
-                return true;
-              }}
-            />
+    <MentionScope ids={[...people, ...(list ?? []).flatMap((c) => [c.author.id, ...c.replies.map((r) => r.author.id)])]} label="In the conversation">
+      <div className="comments">
+        {list === null ? <div className="skeleton" style={{ height: 50 }} /> : null}
+        {list?.map((c) => (
+          <Comment key={c.id} c={c} type={type} id={id} onChanged={load} onReply={(x) => setReplyTo(x.id === -1 ? null : x.id)} replyTo={replyTo} depth={0} />
+        ))}
+        {locked ? (
+          <p className="small muted">{t("Comments are closed.")}</p>
+        ) : (
+          <div className="comment">
+            <Avatar user={me} size={34} />
+            <div className="comment-main">
+              <CommentBox
+                placeholder={t(list && !list.length ? "Be the first to comment…" : "Write a comment…")}
+                draftKey={`c-${type}-${id}`}
+                onSend={async (html) => {
+                  const r = await addCommentAction(type, id, html);
+                  if (!r.ok) {
+                    toast(r.error, { kind: "err" });
+                    return false;
+                  }
+                  await load();
+                  return true;
+                }}
+              />
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </MentionScope>
   );
 }

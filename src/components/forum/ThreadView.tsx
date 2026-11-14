@@ -19,6 +19,7 @@ import { CategoryChip } from "@/components/feed/ThreadCard";
 import { plainText } from "@/lib/plainText";
 import { MoveDialog } from "./MoveDialog";
 import { deleteReplyAction, deleteThreadAction, editReplyAction, editThreadAction, followAction, moderateThreadAction, quoteAction, replyAction, saveAction } from "@/app/actions/content";
+import { MentionScope } from "@/components/editor/mentionScope";
 
 
 interface Props {
@@ -236,114 +237,116 @@ export function ThreadView(p: Props) {
     ) : null;
 
   return (
-    <div className="stack">
-      <div className="page-head" style={{ marginBottom: 6 }}>
-        <div style={{ minWidth: 0 }}>
-          <div className="row wrap" style={{ gap: 8, marginBottom: 10 }}>
-            <CategoryChip c={t.category} />
-            {t.pinned ? (
-              <span className="badge accent">
-                <Pin size={11} /> {tr("Pinned")}
-              </span>
-            ) : null}
-            {t.locked ? (
-              <span className="badge danger">
-                <Lock size={11} /> {tr("Locked")}
-              </span>
-            ) : null}
+    <MentionScope ids={[p.opening.author.id, ...p.replies.map((r) => r.author.id)]} label="In the thread">
+      <div className="stack">
+        <div className="page-head" style={{ marginBottom: 6 }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="row wrap" style={{ gap: 8, marginBottom: 10 }}>
+              <CategoryChip c={t.category} />
+              {t.pinned ? (
+                <span className="badge accent">
+                  <Pin size={11} /> {tr("Pinned")}
+                </span>
+              ) : null}
+              {t.locked ? (
+                <span className="badge danger">
+                  <Lock size={11} /> {tr("Locked")}
+                </span>
+              ) : null}
+            </div>
+            <h1 className="h2 thread-h1">{t.title}</h1>
+            <div className="small muted" style={{ marginTop: 6 }}>
+              {tr.n(t.replies, "{n} reply", "{n} replies")} · {tr.n(t.views, "{n} view", "{n} views")} · {tr("started")} <Time t={t.createdAt} />
+            </div>
           </div>
-          <h1 className="h2 thread-h1">{t.title}</h1>
-          <div className="small muted" style={{ marginTop: 6 }}>
-            {tr.n(t.replies, "{n} reply", "{n} replies")} · {tr.n(t.views, "{n} view", "{n} views")} · {tr("started")} <Time t={t.createdAt} />
-          </div>
-        </div>
-        <div className="page-actions">
-          <button
-            type="button"
-            className={`btn btn-sm ${following ? "btn-secondary" : ""}`}
-            onClick={async () => {
-              const r = await followAction(t.id, !following);
-              if (r.ok) {
-                setFollowing(r.data);
-                toast(r.data ? tr("You'll hear about new replies.") : tr("No more notifications from this thread."));
-              }
-            }}
-          >
-            {following ? <Bell size={15} /> : <BellOff size={15} />} {following ? tr("Following") : tr("Follow")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={async () => {
-              const r = await saveAction("thread", t.id);
-              if (r.ok) setSaved(r.data);
-            }}
-          >
-            {saved ? tr("Saved") : tr("Save")}
-          </button>
-          <ShareButton url={`/forum/t/${t.id}`} title={t.title} kind="thread" className="btn btn-sm" words />
-          {p.canModerate ? (
-            <>
-              <button type="button" className="btn btn-sm" onClick={() => mod({ pinned: !t.pinned })}>
-                {t.pinned ? <PinOff size={15} /> : <Pin size={15} />} {t.pinned ? tr("Unpin") : tr("Pin")}
-              </button>
-              <button type="button" className="btn btn-sm" onClick={() => mod({ locked: !t.locked })}>
-                {t.locked ? <LockOpen size={15} /> : <Lock size={15} />} {t.locked ? tr("Unlock") : tr("Lock")}
-              </button>
-              <button type="button" className="btn btn-sm" onClick={() => setMoving({})}>
-                <FolderInput size={15} /> {tr("Move")}
-              </button>
-            </>
-          ) : null}
-        </div>
-      </div>
-      {pager}
-      {p.page === 1 ? <ForumPost r={p.opening} threadId={t.id} isOpening onQuote={quote} title={t.title} onEdited={() => router.refresh()} newSince={p.lastRead} onMove={p.canModerate ? () => setMoving({}) : undefined} /> : null}
-      {p.replies.map((r) => (
-        <ForumPost key={r.id} r={r} threadId={t.id} isOpening={false} onQuote={quote} onEdited={() => router.refresh()} newSince={p.lastRead} onMove={p.canModerate ? () => setMoving({ reply: r }) : undefined} />
-      ))}
-      {newReplies ? (
-        <button
-          type="button"
-          className="fresh-pill"
-          style={{ position: "static" }}
-          onClick={() => {
-            setNewReplies(0);
-            router.push(pageLink(p.pages));
-            router.refresh();
-          }}
-        >
-          {tr.n(newReplies, "{n} new reply: show", "{n} new replies: show")}
-        </button>
-      ) : null}
-      {pager}
-      {p.canReply ? (
-        <div className="panel panel-pad" ref={boxWrap}>
-          <div className="row" style={{ marginBottom: 10 }}>
-            <Reply size={17} className="muted" />
-            <b>{tr("Reply")}</b>
-            {t.locked ? <span className="badge danger">{tr("Locked: moderators only")}</span> : null}
-          </div>
-          <RichEditor ref={box} placeholder={tr("Write a reply… (select text in a post and press Quote to quote it)")} minHeight={130} draftKey={`reply-${t.id}`} onSubmit={send} previews />
-          <div className="row" style={{ justifyContent: "flex-end", marginTop: 10 }}>
-            <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={send}>
-              <Send size={16} /> {tr("Post reply")}
+          <div className="page-actions">
+            <button
+              type="button"
+              className={`btn btn-sm ${following ? "btn-secondary" : ""}`}
+              onClick={async () => {
+                const r = await followAction(t.id, !following);
+                if (r.ok) {
+                  setFollowing(r.data);
+                  toast(r.data ? tr("You'll hear about new replies.") : tr("No more notifications from this thread."));
+                }
+              }}
+            >
+              {following ? <Bell size={15} /> : <BellOff size={15} />} {following ? tr("Following") : tr("Follow")}
             </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={async () => {
+                const r = await saveAction("thread", t.id);
+                if (r.ok) setSaved(r.data);
+              }}
+            >
+              {saved ? tr("Saved") : tr("Save")}
+            </button>
+            <ShareButton url={`/forum/t/${t.id}`} title={t.title} kind="thread" className="btn btn-sm" words />
+            {p.canModerate ? (
+              <>
+                <button type="button" className="btn btn-sm" onClick={() => mod({ pinned: !t.pinned })}>
+                  {t.pinned ? <PinOff size={15} /> : <Pin size={15} />} {t.pinned ? tr("Unpin") : tr("Pin")}
+                </button>
+                <button type="button" className="btn btn-sm" onClick={() => mod({ locked: !t.locked })}>
+                  {t.locked ? <LockOpen size={15} /> : <Lock size={15} />} {t.locked ? tr("Unlock") : tr("Lock")}
+                </button>
+                <button type="button" className="btn btn-sm" onClick={() => setMoving({})}>
+                  <FolderInput size={15} /> {tr("Move")}
+                </button>
+              </>
+            ) : null}
           </div>
         </div>
-      ) : (
-        <div className="panel panel-pad small muted row">
-          <Lock size={16} /> {tr("This thread is locked.")}
-        </div>
-      )}
-      {moving ? (
-        <MoveDialog
-          thread={{ id: t.id, title: t.title, categoryId: t.category.id }}
-          reply={moving.reply ? { id: moving.reply.id, text: plainText(moving.reply.html) } : undefined}
-          categories={p.categories}
-          onClose={() => setMoving(null)}
-        />
-      ) : null}
-    </div>
+        {pager}
+        {p.page === 1 ? <ForumPost r={p.opening} threadId={t.id} isOpening onQuote={quote} title={t.title} onEdited={() => router.refresh()} newSince={p.lastRead} onMove={p.canModerate ? () => setMoving({}) : undefined} /> : null}
+        {p.replies.map((r) => (
+          <ForumPost key={r.id} r={r} threadId={t.id} isOpening={false} onQuote={quote} onEdited={() => router.refresh()} newSince={p.lastRead} onMove={p.canModerate ? () => setMoving({ reply: r }) : undefined} />
+        ))}
+        {newReplies ? (
+          <button
+            type="button"
+            className="fresh-pill"
+            style={{ position: "static" }}
+            onClick={() => {
+              setNewReplies(0);
+              router.push(pageLink(p.pages));
+              router.refresh();
+            }}
+          >
+            {tr.n(newReplies, "{n} new reply: show", "{n} new replies: show")}
+          </button>
+        ) : null}
+        {pager}
+        {p.canReply ? (
+          <div className="panel panel-pad" ref={boxWrap}>
+            <div className="row" style={{ marginBottom: 10 }}>
+              <Reply size={17} className="muted" />
+              <b>{tr("Reply")}</b>
+              {t.locked ? <span className="badge danger">{tr("Locked: moderators only")}</span> : null}
+            </div>
+            <RichEditor ref={box} placeholder={tr("Write a reply… (select text in a post and press Quote to quote it)")} minHeight={130} draftKey={`reply-${t.id}`} onSubmit={send} previews />
+            <div className="row" style={{ justifyContent: "flex-end", marginTop: 10 }}>
+              <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={send}>
+                <Send size={16} /> {tr("Post reply")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="panel panel-pad small muted row">
+            <Lock size={16} /> {tr("This thread is locked.")}
+          </div>
+        )}
+        {moving ? (
+          <MoveDialog
+            thread={{ id: t.id, title: t.title, categoryId: t.category.id }}
+            reply={moving.reply ? { id: moving.reply.id, text: plainText(moving.reply.html) } : undefined}
+            categories={p.categories}
+            onClose={() => setMoving(null)}
+          />
+        ) : null}
+      </div>
+    </MentionScope>
   );
 }

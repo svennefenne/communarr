@@ -4,6 +4,7 @@ import { UserError } from "./errors";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { hashPassword, verifyPassword } from "./auth";
 import { indexItem } from "./search";
+import { tellMentioned } from "./mentions";
 import { broadcast, dropUser } from "./hub";
 import { USERNAME_RE, type User, type UserRow } from "./users";
 import { NOTIFY_KINDS, type NotifyKind, type NotifyPrefs } from "./types";
@@ -23,7 +24,8 @@ export interface ProfileInput {
 
 /** The profile (the name shown is the alias: setAlias, under Settings → Account). */
 export function updateProfile(u: User, o: ProfileInput) {
-  const bio = o.bioHtml !== undefined ? cleanHtml(o.bioHtml, { maxLength: 20_000 }).html : u.bioHtml;
+  const c = o.bioHtml !== undefined ? cleanHtml(o.bioHtml, { maxLength: 20_000 }) : null;
+  const bio = c ? c.html : u.bioHtml;
   let website = o.website !== undefined ? cleanLine(o.website, 200) : u.website;
   if (website && !/^https?:\/\//i.test(website)) website = `https://${website}`;
   const birthday = o.birthday === undefined ? u.birthday : o.birthday && /^\d{2}-\d{2}$/.test(o.birthday) ? o.birthday : null;
@@ -42,6 +44,8 @@ export function updateProfile(u: User, o: ProfileInput) {
     );
   indexItem("user", u.id, "members", u.id, u.createdAt, u.name, `${u.username} ${o.location ?? u.location}`);
   broadcast("profile", { id: u.id });
+  // someone mentioned in the profile, who wasn't before, hears about it
+  if (c) tellMentioned(u, c.mentions, { before: u.bioHtml, sees: () => true, title: "{name} mentioned you on their profile", vars: { name: u.name }, url: `/u/${encodeURIComponent(u.username)}` });
 }
 
 /**

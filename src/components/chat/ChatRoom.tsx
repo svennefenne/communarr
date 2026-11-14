@@ -41,6 +41,7 @@ import {
   typingAction,
   archiveRoomAction,
 } from "@/app/actions/chat";
+import { MentionScope } from "@/components/editor/mentionScope";
 
 interface Props {
   info: RoomInfo;
@@ -340,7 +341,7 @@ export function ChatRoom(p: Props) {
 
   if (!me) return null;
   return (
-    <>
+    <MentionScope ids={members.map((m) => m.user.id)} label="In the chat">
       <section className="panel chat-room">
         <header className="chat-head">
           <Link href="/chat" className="icon-btn sm chat-back" aria-label={t("All chats")}>
@@ -665,6 +666,6 @@ export function ChatRoom(p: Props) {
       {ui.people ? (
         <ChatPeople info={info} members={members} canManage={p.canManage} onMembers={setMembers} onInvite={() => setPanel("invite")} onClose={() => ui.setPeople(false)} />
       ) : null}
-    </>
+    </MentionScope>
   );
 }
