@@ -67,8 +67,16 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
         </div>
       </div>
       <div className="grid-2">
-        <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="square" label={t("Group picture")} />
-        <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label={t("Banner across the top")} />
+        {/* (the sizes they're cut to on the way in: uploads.ts) */}
+        <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="square" label={t("Group picture")} size={t("Square, 512 × 512 px or bigger.")} />
+        <ImagePick
+          value={banner}
+          onChange={setBanner}
+          kind="banner"
+          shape="wide"
+          label={t("Banner across the top")}
+          size={t("1800 × 600 px (3:1). A wide screen shows only its middle band, so keep what matters in the middle.")}
+        />
       </div>
       <div className="field">
         <span className="label">{t("Colour")}</span>

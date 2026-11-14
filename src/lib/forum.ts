@@ -5,7 +5,7 @@ import { notify } from "./notify";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
-import { canPostInGroup, canReadGroup, groupRow, groupScope, readableGroupIds } from "./groups";
+import { canPostInGroup, canReadGroup, groupRow, groupScope, newInFeed, readableGroupIds } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { audit } from "./auth";
@@ -298,7 +298,7 @@ export function createThread(u: User, o: { categoryId: number; title: string; ht
   });
   const mentioned = usersWho(b.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeeCategory(x, c));
   notify(mentioned, { kind: "mention", actorId: u.id, title: "{name} mentioned you in the forum", body: "{title}", vars: { name: u.name, title }, url: `/forum/t/${id}` });
-  broadcast("feed", { type: "thread", id, by: u.id, group: c.group_id });
+  newInFeed({ type: "thread", id, by: u.id, group: c.group_id });
   return id;
 }
 

@@ -13,6 +13,7 @@ export function ImagePick({
   kind,
   shape = "wide",
   label,
+  size,
   whole = false,
 }: {
   value: string | null;
@@ -20,6 +21,8 @@ export function ImagePick({
   kind: "avatar" | "banner" | "cover" | "background" | "logo" | "emoji";
   shape?: "round" | "square" | "wide" | "tall";
   label: string;
+  /** the size the picture's best at (it's cut to it), and what of it shows */
+  size?: string;
   /** show all of it (a logo) instead of filling the box */
   whole?: boolean;
 }) {
@@ -51,6 +54,7 @@ export function ImagePick({
       </label>
       <div className="stack tight">
         <span className="small">{label}</span>
+        {size ? <span className="tiny muted">{size}</span> : null}
         {value ? null : <span className="tiny muted">{t("Tap to choose a picture")}</span>}
         <span className="row wrap" style={{ gap: 4 }}>
           <ImageLinkButton kind={kind} onImage={onChange} className="btn btn-ghost btn-xs" />

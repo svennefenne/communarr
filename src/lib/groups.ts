@@ -5,7 +5,7 @@ import { notify } from "./notify";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
 import { groupRoom, syncGroupMember } from "./chat";
-import { sendToMany } from "./hub";
+import { broadcast, sendToMany } from "./hub";
 import { summaries, type User } from "./users";
 import type { UserSummary } from "./types";
 
@@ -66,6 +66,19 @@ export function groupRow(idOrSlug: number | string): GroupRow | null {
 export function groupRole(groupId: number, userId: number): GroupRole | null {
   const r = db().prepare("select role from group_members where group_id = ? and user_id = ?").get(groupId, userId) as { role: GroupRole } | undefined;
   return r?.role ?? null;
+}
+
+/**
+ * Something new for the feed, live (its "new things" pill, its sound): to everyone, or one in a group
+ * that isn't open only to those who may read it, its members and the moderators (not even that it's
+ * there gets out).
+ */
+export function newInFeed(e: { type: string; id: number; by: number; group: number | null }) {
+  const g = e.group ? groupRow(e.group) : null;
+  if (!e.group || g?.privacy === "open") return broadcast("feed", e);
+  if (!g) return;
+  const mods = (db().prepare("select id from users where role in ('admin', 'moderator')").all() as { id: number }[]).map((r) => r.id);
+  sendToMany([...memberIdsOf(g.id), ...mods], "feed", e);
 }
 
 /** Groups whose insides someone may see: open ones and their own (moderators see all). */

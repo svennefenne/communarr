@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, CalendarDays, FileText, Layers, ListChecks, MessagesSquare, Newspaper, Vote } from "lucide-react";
+import { ArrowUp, Layers } from "lucide-react";
 import type { FeedFilter, FeedItem } from "@/lib/contentTypes";
 import { useApp, useLive, useT } from "@/components/app/AppProvider";
 import { Empty } from "@/components/ui/ui";
@@ -13,19 +13,10 @@ import { ListCardView } from "@/components/lists/ListCard";
 import { Composer, type ComposerGroup } from "./Composer";
 import { feedAction } from "@/app/actions/content";
 import type { FeedKind } from "@/lib/homePanels";
+import { feedFilters, useFeedScope } from "./FeedFilters";
 
 /** what a "feed" message from the server says came, as the feed's kind */
 const LIVE_KIND: Record<string, FeedKind> = { post: "posts", news: "news", thread: "forum", poll: "polls", event: "events", list: "lists" };
-
-const FILTERS: { id: FeedFilter; label: string; icon: React.ComponentType<{ size?: number }>; feature?: "forum" | "polls" | "calendar" | "news" | "lists" }[] = [
-  { id: "all", label: "Everything", icon: Layers },
-  { id: "posts", label: "Posts", icon: FileText },
-  { id: "news", label: "News", icon: Newspaper, feature: "news" },
-  { id: "forum", label: "Forum", icon: MessagesSquare, feature: "forum" },
-  { id: "polls", label: "Polls", icon: Vote, feature: "polls" },
-  { id: "events", label: "Events", icon: CalendarDays, feature: "calendar" },
-  { id: "lists", label: "Lists", icon: ListChecks, feature: "lists" },
-];
 
 /** One thing in the feed; section: a strip on top saying which part of the site it's from (the front page). */
 export function FeedItemView({ item, section = false }: { item: FeedItem; section?: boolean }) {
@@ -57,6 +48,7 @@ export function Feed({
   stickyFilters = false,
   authorId,
   kinds,
+  filtersAside = false,
 }: {
   initial: { items: FeedItem[]; next: number | null };
   initialFilter?: FeedFilter;
@@ -72,10 +64,16 @@ export function Feed({
   authorId?: number;
   /** only these kinds (the front page's, Admin → Front page) */
   kinds?: FeedKind[];
+  /** its filters are in a card in the side column (FeedScope, FeedFilterCard): above it only on a narrower screen, which has no side column */
+  filtersAside?: boolean;
 }) {
   const { site, me } = useApp();
   const t = useT();
-  const [filter, setFilter] = useState<FeedFilter>(initialFilter);
+  // (a card in the side column chooses too: the scope's then)
+  const scope = useFeedScope();
+  const [own, setOwn] = useState<FeedFilter>(initialFilter);
+  const filter = scope?.filter ?? own;
+  const setFilter = scope?.setFilter ?? setOwn;
   const [items, setItems] = useState(initial.items);
   const [next, setNext] = useState(initial.next);
   const [loading, setLoading] = useState(false);
@@ -97,20 +95,31 @@ export function Feed({
     [groupId, authorId, kinds],
   );
 
-  const choose = (f: FeedFilter) => {
-    setFilter(f);
+  // a filter chosen (here, or in the side column's card): its list, from the start, and the address says which
+  const listed = useRef(filter);
+  useEffect(() => {
+    if (listed.current === filter) return;
+    listed.current = filter;
     setFresh(0);
+    const url = new URL(window.location.href);
+    if (filter === "all") url.searchParams.delete("show");
+    else url.searchParams.set("show", filter);
+    window.history.replaceState(window.history.state, "", url);
+    void load(filter);
+  }, [filter, load]);
+
+  const choose = (f: FeedFilter) => {
     // chosen up under the top bar: the new list from its start (where it is when the filters just get there)
     const el = bar.current;
     if (stuck && el && body.current) {
       const below = parseFloat(getComputedStyle(el).marginBottom) + parseFloat(getComputedStyle(el.parentElement!).rowGap);
       window.scrollBy({ top: body.current.getBoundingClientRect().top - el.getBoundingClientRect().bottom - below });
     }
-    const url = new URL(window.location.href);
-    if (f === "all") url.searchParams.delete("show");
-    else url.searchParams.set("show", f);
-    window.history.replaceState(window.history.state, "", url);
-    void load(f);
+    // (the one already chosen: anew)
+    if (f === filter) {
+      setFresh(0);
+      void load(f);
+    } else setFilter(f);
   };
 
   useEffect(() => {
@@ -155,10 +164,9 @@ export function Feed({
     setFresh((n) => n + 1);
   });
 
-  // (news is for everyone: not a group's)
-  const filters = FILTERS.filter((f) => (!f.feature || site.features[f.feature]) && !(groupId && f.id === "news") && (f.id === "all" || !kinds || kinds.includes(f.id)));
+  const filters = feedFilters(site.features, { groupId, kinds });
   const pills = (
-    <div className="pills scroll feed-filters" role="tablist" aria-label={t("Show")}>
+    <div className={`pills scroll feed-filters ${filtersAside && !stickyFilters ? "aside-wide" : ""}`} role="tablist" aria-label={t("Show")}>
       {filters.map((f) => {
         const Icon = f.icon;
         return (
@@ -183,14 +191,20 @@ export function Feed({
       ) : null}
       {/* (one kind only: nothing to choose between) */}
       {showFilters && filters.length < 3 ? null : showFilters && stickyFilters ? (
-        <div ref={bar} className={`feed-filters-bar ${stuck ? "stuck" : ""}`}>
+        <div ref={bar} className={`feed-filters-bar ${stuck ? "stuck" : ""} ${filtersAside ? "aside-wide" : ""}`}>
           {pills}
         </div>
       ) : showFilters ? (
         pills
       ) : null}
       {/* the items (with the "new things" pill over them): a page can line its side column up with this */}
-      <div className="feed-body" ref={body}>
+      <div
+        className="feed-body"
+        ref={(el) => {
+          body.current = el;
+          if (scope) scope.body.current = el;
+        }}
+      >
         {fresh ? (
           <button
             type="button"

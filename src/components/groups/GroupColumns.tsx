@@ -9,14 +9,31 @@ import { MembersWidget, UpcomingWidget } from "@/components/home/Widgets";
  * who's in it (left out on the members tab, which lists them all). Like a profile, the side column
  * only shows beside the tab on a wide screen. Nothing to show: the tab takes the whole width.
  * The side column starts level with the tab's first frame: buttons go in `top`, above both; a feed
- * that starts with its filters says so with `feedHead` (the rows above its first card).
+ * that starts with its filters says so with `feedHead` (the rows above its first card). `sideTop` goes
+ * first in the side column (the feed's filters, when they're there: Admin → Front page).
  */
-export function GroupColumns({ u, g, members = true, top, feedHead, children }: { u: User; g: GroupRow; members?: boolean; top?: React.ReactNode; feedHead?: number; children: React.ReactNode }) {
+export function GroupColumns({
+  u,
+  g,
+  members = true,
+  top,
+  feedHead,
+  sideTop,
+  children,
+}: {
+  u: User;
+  g: GroupRow;
+  members?: boolean;
+  top?: React.ReactNode;
+  feedHead?: number;
+  sideTop?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   const slug = encodeURIComponent(g.slug);
   const calendar = getSettings().features.calendar;
   const info = members ? groupInfo(u, g, true) : null;
   const head = top ? <div className="row wrap">{top}</div> : null;
-  if (!calendar && !info)
+  if (!calendar && !info && !sideTop)
     return (
       <div className="stack loose">
         {head}
@@ -31,6 +48,7 @@ export function GroupColumns({ u, g, members = true, top, feedHead, children }: 
           {children}
         </div>
         <aside className="stack side-sticky group-side">
+          {sideTop}
           {calendar ? <UpcomingWidget events={upcoming(u, 4, { groupId: g.id })} href={`/groups/${slug}/events`} planHref={`/events/new?group=${g.id}`} /> : null}
           {info ? <MembersWidget members={info.members} count={info.memberCount} href={`/groups/${slug}/members`} /> : null}
         </aside>

@@ -5,7 +5,7 @@ import { notify } from "./notify";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
-import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf } from "./groups";
+import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, newInFeed } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { broadcast } from "./hub";
 import { commentCounts, groupRefs } from "./posts";
@@ -195,7 +195,7 @@ export function createPoll(u: User, o: PollInput): number {
   const mentioned = usersWho(c.mentions.map((n) => userByName(n)?.id).filter((x): x is number => !!x), (x) => canSeePoll(x, row));
   if (mentioned.length) notify(mentioned, { kind: "mention", actorId: u.id, title: "{name} mentioned you in a poll", body: "{text}", vars: { name: u.name, text: question }, url });
   if (groupId) notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: "New poll in {group}: {question}", vars: { group: groupRow(groupId)!.name, question }, url });
-  broadcast("feed", { type: "poll", id, by: u.id, group: groupId });
+  newInFeed({ type: "poll", id, by: u.id, group: groupId });
   return id;
 }
 

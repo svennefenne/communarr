@@ -449,6 +449,22 @@ html[data-backdrop="plain"] .backdrop {
 .announce .grow p {
   margin: 0;
 }
+/* on the front page, on a wide screen: in the middle column, as wide as the feed (the one under the
+   header steps aside); a narrower screen keeps it under the header */
+.announce-wrap.in-page .announce {
+  margin: 0;
+  width: auto;
+}
+@media (min-width: 1061px) {
+  .announce-wrap.home-top {
+    display: none;
+  }
+}
+@media (max-width: 1060px) {
+  .announce-wrap.in-page {
+    display: none;
+  }
+}
 
 /* ── The frame round the whole site (Deck Force): glass down both sides and along the bottom,
    the page in a window with round corners. Tablets and up, when the theme has it on. ── */
@@ -485,6 +501,9 @@ html[data-backdrop="plain"] .backdrop {
   html[data-frame="on"] main,
   html[data-frame="on"] .announce-wrap {
     padding-inline: var(--frame);
+  }
+  html[data-frame="on"] .announce-wrap.in-page {
+    padding-inline: 0;
   }
   html[data-frame="on"] .site-frame {
     display: block;

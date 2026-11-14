@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   if (!user) return Response.json({ error: t("Log in first.") }, { status: 401 });
   const b = (await req.json().catch(() => ({}))) as { subscription?: { endpoint?: string; keys?: { p256dh?: string; auth?: string } }; test?: boolean };
   if (b.test) {
-    const r = await pushTo(user.id, { title: t("{site} says hi 👋", { site: getSettings().siteName }), body: t("Notifications work on this device."), url: "/settings/notifications", tag: "test" });
+    const r = await pushTo(user.id, { title: t("{site} says hi 👋", { site: getSettings().siteName }), body: t("Notifications work on this device."), url: "/settings/notifications", tag: "test" }, { everywhere: true });
     return Response.json(r);
   }
   const s = b.subscription;

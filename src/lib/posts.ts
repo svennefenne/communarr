@@ -5,10 +5,10 @@ import { notify } from "./notify";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
-import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, canManageGroup } from "./groups";
+import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, canManageGroup, newInFeed } from "./groups";
 import { GHOST, summaries, userByName, usersWho, type User } from "./users";
 import { getSettings } from "./settings";
-import { sendTo, broadcast } from "./hub";
+import { sendTo } from "./hub";
 import type { GroupRef, PostView } from "./contentTypes";
 
 export interface PostRow {
@@ -187,7 +187,7 @@ export function createPost(u: User, o: PostInput): number {
     const g = groupRow(groupId)!;
     notify(memberIdsOf(groupId).filter((x) => !mentioned.includes(x)), { kind: "group", actorId: u.id, title: "{name} posted in {group}", body: "{text}", vars: { name: u.name, group: g.name, text: preview }, url });
   }
-  broadcast("feed", { type: kind, id, by: u.id, group: groupId });
+  newInFeed({ type: kind, id, by: u.id, group: groupId });
   return id;
 }
 

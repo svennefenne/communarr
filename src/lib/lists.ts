@@ -5,7 +5,7 @@ import { db, now, tx } from "./db";
 import { notify } from "./notify";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
-import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf } from "./groups";
+import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, newInFeed } from "./groups";
 import { GHOST, summaries, type User } from "./users";
 import { broadcast } from "./hub";
 import { commentCounts, groupRefs } from "./posts";
@@ -378,7 +378,7 @@ export function createList(u: User, o: ListInput): number {
     const all = (db().prepare("select id from users where banned = 0").all() as { id: number }[]).map((r) => r.id);
     notify(all, { kind: "listNew", actorId: u.id, title: "{name} made a list: {title}", vars: { name: u.name, title }, url, tag: `list-${id}` });
   }
-  if (!priv) broadcast("feed", { type: "list", id, by: u.id, group: groupId });
+  if (!priv) newInFeed({ type: "list", id, by: u.id, group: groupId });
   return id;
 }
 

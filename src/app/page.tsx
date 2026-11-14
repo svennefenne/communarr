@@ -10,10 +10,12 @@ import { listLists } from "@/lib/lists";
 import { listGroups, postableGroups } from "@/lib/groups";
 import { allMembers } from "@/lib/users";
 import { getSettings } from "@/lib/settings";
-import { homeLayout, shownPanels, type FeedKind, type HomePanel } from "@/lib/homePanels";
+import { FEED_FEATURE, filtersPlace, homeLayout, shownPanels, type FeedKind, type HomePanel } from "@/lib/homePanels";
 import { monthGrid, monthKey } from "@/lib/monthGrid";
 import type { FeedFilter } from "@/lib/contentTypes";
 import { Feed } from "@/components/feed/Feed";
+import { FeedFilterCard, FeedScope } from "@/components/feed/FeedFilters";
+import { Announcement } from "@/components/shell/Announcement";
 import { PushPrompt } from "@/components/home/PushPrompt";
 import { ChatWidget, ForumWidget, Greeting, GroupsWidget, ListsWidget, MobileStrip, NewsHero, NewsWidget, OnlineWidget, PollsWidget, UpcomingWidget } from "@/components/home/Widgets";
 import { MonthWidget } from "@/components/home/MonthWidget";
@@ -35,7 +37,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   const hero = news && (news.pinned || Date.now() - news.createdAt < 7 * 86_400_000) ? news : null;
   const members = allMembers();
   const others = members.filter((m) => m.id !== u.id);
-  const sides = shownPanels(layout, f);
+  // the feed's filters: above it, in a side column, or none (one kind only: nothing to choose between)
+  const filters = kinds.filter((k) => !FEED_FEATURE[k] || f[FEED_FEATURE[k]!]).length > 1 ? filtersPlace(layout) : null;
+  const all = shownPanels(layout, f);
+  const sides = filters ? all : { left: all.left.filter((id) => id !== "filters"), right: all.right.filter((id) => id !== "filters") };
   const shown = new Set([...sides.left, ...sides.right]);
   // (what's coming up is the phone's strip too)
   const events = f.calendar ? upcoming(u, 5) : [];
@@ -47,6 +52,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   })();
   const panel = (id: HomePanel) => {
     switch (id) {
+      case "filters":
+        return <FeedFilterCard kinds={kinds} />;
       case "calendar":
         return month ? <MonthWidget initial={month} /> : <UpcomingWidget events={events} />;
       case "online":
@@ -81,19 +88,32 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
       <MobileStrip events={events} members={others} />
       {/* the feed between the side columns (on a narrower screen, all of them on the right: the left
           one's parts last; on a phone, the strip above instead) */}
-      <div className={`home-cols ${sides.left.length ? "has-left" : ""} ${sides.right.length ? "has-right" : ""}`}>
-        <div className="stack loose home-main">
-          <PushPrompt />
-          {hero && filter === "all" ? <NewsHero post={hero} /> : null}
-          <Feed initial={items} initialFilter={filter} groups={postableGroups(u)} sections stickyFilters kinds={kinds} />
-        </div>
-        {shown.size ? (
-          <div className="home-sides">
-            {column(sides.left, "home-left")}
-            {column(sides.right, "home-right")}
+      <FeedScope initial={filter}>
+        <div className={`home-cols ${sides.left.length ? "has-left" : ""} ${sides.right.length ? "has-right" : ""}`}>
+          <div className="stack loose home-main">
+            {/* (the announcement as wide as the feed, on a wide screen; a narrower one has it on top) */}
+            <Announcement inPage />
+            <PushPrompt />
+            {hero && filter === "all" ? <NewsHero post={hero} /> : null}
+            <Feed
+              initial={items}
+              initialFilter={filter}
+              groups={postableGroups(u)}
+              sections
+              stickyFilters
+              kinds={kinds}
+              showFilters={!!filters}
+              filtersAside={filters === "left" || filters === "right"}
+            />
           </div>
-        ) : null}
-      </div>
+          {shown.size ? (
+            <div className="home-sides">
+              {column(sides.left, "home-left")}
+              {column(sides.right, "home-right")}
+            </div>
+          ) : null}
+        </div>
+      </FeedScope>
     </div>
   );
 }

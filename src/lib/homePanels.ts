@@ -7,13 +7,15 @@ import type { FeedFilter } from "./contentTypes";
  * it through homeLayout, which fills in a part added later (at its default place) and drops anything odd.
  */
 
-export const HOME_PANELS = ["calendar", "online", "chat", "forum", "polls", "lists", "groups", "news"] as const;
+export const HOME_PANELS = ["filters", "calendar", "online", "chat", "forum", "polls", "lists", "groups", "news"] as const;
 export type HomePanel = (typeof HOME_PANELS)[number];
 export type HomeSide = "left" | "right";
+/** where a part is: a side column, or (the feed's filters only) above the feed in the middle */
+export type HomePlace = HomeSide | "middle";
 
 export interface HomePanelSlot {
   id: HomePanel;
-  side: HomeSide;
+  side: HomePlace;
   on: boolean;
 }
 
@@ -26,6 +28,8 @@ export interface HomeLayout {
   feed: FeedKind[];
   /** the latest news (pinned, or from the last week) in a banner above the feed */
   hero: boolean;
+  /** the feed's filters on a group's page and a profile: above the feed, or on top in the side column */
+  pageFilters: "feed" | "side";
 }
 
 /** the kinds of things in the feed (its filters, but "all") */
@@ -36,6 +40,7 @@ export const FEED_FEATURE: Record<FeedKind, keyof Features | null> = { posts: nu
 
 export const DEFAULT_HOME: HomeLayout = {
   panels: [
+    { id: "filters", side: "middle", on: true },
     { id: "chat", side: "left", on: true },
     { id: "forum", side: "left", on: true },
     { id: "lists", side: "left", on: true },
@@ -48,10 +53,12 @@ export const DEFAULT_HOME: HomeLayout = {
   calendar: "month",
   feed: FEED_KINDS,
   hero: true,
+  pageFilters: "feed",
 };
 
 /** The feature (Admin → Features) a part needs: off there, it's not on the front page either. */
 export const PANEL_FEATURE: Record<HomePanel, keyof Features | null> = {
+  filters: null,
   calendar: "calendar",
   online: null,
   chat: "chat",
@@ -73,15 +80,28 @@ export function homeLayout(raw: unknown): HomeLayout {
     const x = (p && typeof p === "object" ? p : {}) as Partial<Record<keyof HomePanelSlot, unknown>>;
     if (!isPanel(x.id) || seen.has(x.id)) continue;
     seen.add(x.id);
-    panels.push({ id: x.id, side: x.side === "left" ? "left" : "right", on: x.on !== false });
+    // (only the filters go in the middle)
+    panels.push({ id: x.id, side: x.side === "left" ? "left" : x.side === "middle" && x.id === "filters" ? "middle" : "right", on: x.on !== false });
   }
   for (const d of DEFAULT_HOME.panels) if (!seen.has(d.id)) panels.push({ ...d });
   const feed = FEED_KINDS.filter((k) => Array.isArray(r.feed) && r.feed.includes(k));
-  return { panels, calendar: r.calendar === "upcoming" ? "upcoming" : "month", feed: Array.isArray(r.feed) && feed.length ? feed : [...FEED_KINDS], hero: r.hero !== false };
+  return {
+    panels,
+    calendar: r.calendar === "upcoming" ? "upcoming" : "month",
+    feed: Array.isArray(r.feed) && feed.length ? feed : [...FEED_KINDS],
+    hero: r.hero !== false,
+    pageFilters: r.pageFilters === "side" ? "side" : "feed",
+  };
 }
 
-/** The parts that show, side by side: on, and their feature on. */
+/** The parts that show, side by side: on, and their feature on (the filters too, when they're in a side column). */
 export function shownPanels(layout: HomeLayout, features: Features): Record<HomeSide, HomePanel[]> {
   const on = layout.panels.filter((p) => p.on && (!PANEL_FEATURE[p.id] || features[PANEL_FEATURE[p.id]!]));
   return { left: on.filter((p) => p.side === "left").map((p) => p.id), right: on.filter((p) => p.side === "right").map((p) => p.id) };
+}
+
+/** where the feed's filters are on the front page: above the feed, in a side column, or nowhere (off) */
+export function filtersPlace(layout: HomeLayout): HomePlace | null {
+  const f = layout.panels.find((p) => p.id === "filters");
+  return f?.on ? f.side : null;
 }
