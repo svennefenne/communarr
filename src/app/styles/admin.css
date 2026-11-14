@@ -373,9 +373,10 @@
 }
 
 /* Admin → Front page: the side columns' parts, either side of the feed (HomeLayoutSettings) */
+/* (its columns: ArrangeBoard says, the narrow middle 172px) */
 .home-arrange {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 172px minmax(0, 1fr);
+  grid-template-columns: var(--arrange-cols, minmax(0, 1fr) 172px minmax(0, 1fr));
   gap: 12px;
 }
 .home-arrange-col {

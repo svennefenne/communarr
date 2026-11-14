@@ -23,7 +23,7 @@ function GroupCard({ g, t }: { g: GroupInfo; t: T }) {
           {g.avatar ? "" : g.name.slice(0, 1)}
         </span>
         <span className="grow" style={{ minWidth: 0 }}>
-          <b className="h3 ellipsis" style={{ display: "block" }}>
+          <b className="h3 ellipsis group-card-name" style={{ display: "block" }}>
             {g.name}
           </b>
           <span className="small dim clamp-2">{g.tagline || " "}</span>
