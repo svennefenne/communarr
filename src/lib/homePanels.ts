@@ -28,8 +28,25 @@ export interface HomeLayout {
   feed: FeedKind[];
   /** the latest news (pinned, or from the last week) in a banner above the feed */
   hero: boolean;
-  /** the feed's filters on a group's page and a profile: above the feed, or on top in the side column */
-  pageFilters: "feed" | "side";
+  /** a group's page: the parts of the side column beside its tabs, and its feed's filters */
+  group: PageSlot<GroupPart>[];
+  /** a profile: the same */
+  profile: PageSlot<ProfilePart>[];
+}
+
+/**
+ * A group's page and a profile (Admin → Front page too): the parts of the side column beside them, in
+ * order, each on or off; and the feed's filters, above the feed (the middle) or among those parts.
+ */
+export const GROUP_PARTS = ["filters", "upcoming", "members"] as const;
+export const PROFILE_PARTS = ["filters", "about", "groups"] as const;
+export type GroupPart = (typeof GROUP_PARTS)[number];
+export type ProfilePart = (typeof PROFILE_PARTS)[number];
+export type PagePlace = "middle" | "side";
+export interface PageSlot<P extends string = string> {
+  id: P;
+  side: PagePlace;
+  on: boolean;
 }
 
 /** the kinds of things in the feed (its filters, but "all") */
@@ -53,7 +70,16 @@ export const DEFAULT_HOME: HomeLayout = {
   calendar: "month",
   feed: FEED_KINDS,
   hero: true,
-  pageFilters: "feed",
+  group: [
+    { id: "filters", side: "middle", on: true },
+    { id: "upcoming", side: "side", on: true },
+    { id: "members", side: "side", on: true },
+  ],
+  profile: [
+    { id: "filters", side: "middle", on: true },
+    { id: "about", side: "side", on: true },
+    { id: "groups", side: "side", on: true },
+  ],
 };
 
 /** The feature (Admin → Features) a part needs: off there, it's not on the front page either. */
@@ -85,13 +111,37 @@ export function homeLayout(raw: unknown): HomeLayout {
   }
   for (const d of DEFAULT_HOME.panels) if (!seen.has(d.id)) panels.push({ ...d });
   const feed = FEED_KINDS.filter((k) => Array.isArray(r.feed) && r.feed.includes(k));
+  // (from before the side columns could be arranged: one choice for both, the filters above the feed or on top in the side column)
+  const aside = (r as { pageFilters?: unknown }).pageFilters === "side";
   return {
     panels,
     calendar: r.calendar === "upcoming" ? "upcoming" : "month",
     feed: Array.isArray(r.feed) && feed.length ? feed : [...FEED_KINDS],
     hero: r.hero !== false,
-    pageFilters: r.pageFilters === "side" ? "side" : "feed",
+    group: pageSlots(r.group, GROUP_PARTS, DEFAULT_HOME.group, aside),
+    profile: pageSlots(r.profile, PROFILE_PARTS, DEFAULT_HOME.profile, aside),
   };
+}
+
+/** A stored side column (a group's, a profile's), cleaned: each part once, the missing ones at their default place. */
+function pageSlots<P extends string>(raw: unknown, parts: readonly P[], defaults: PageSlot<P>[], filtersAside: boolean): PageSlot<P>[] {
+  const seen = new Set<P>();
+  const out: PageSlot<P>[] = [];
+  for (const p of Array.isArray(raw) ? raw : []) {
+    const x = (p && typeof p === "object" ? p : {}) as Partial<Record<keyof PageSlot, unknown>>;
+    if (!parts.includes(x.id as P) || seen.has(x.id as P)) continue;
+    seen.add(x.id as P);
+    // (only the filters go above the feed)
+    out.push({ id: x.id as P, side: x.side === "middle" && x.id === "filters" ? "middle" : "side", on: x.on !== false });
+  }
+  for (const d of defaults) if (!seen.has(d.id)) out.push({ ...d });
+  return filtersAside ? out.map((p) => (p.id === "filters" && p.side === "middle" ? { ...p, side: "side" } : p)) : out;
+}
+
+/** A group's or a profile's side column: its parts that are on, in order (the filters only when they're there); and where the filters are (nowhere: off). */
+export function pageColumn<P extends string>(slots: PageSlot<P>[]): { side: P[]; filters: PagePlace | null } {
+  const f = slots.find((p) => p.id === "filters");
+  return { side: slots.filter((p) => p.on && p.side === "side").map((p) => p.id), filters: f?.on ? f.side : null };
 }
 
 /** The parts that show, side by side: on, and their feature on (the filters too, when they're in a side column). */

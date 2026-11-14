@@ -75,7 +75,7 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
           kind="banner"
           shape="wide"
           label={t("Banner across the top")}
-          size={t("1800 × 600 px (3:1). A wide screen shows only its middle band, so keep what matters in the middle.")}
+          size={t("Saved as 1800 × 600 px. A wide screen shows only the band across its middle, about 1800 × 288 px: keep what matters there (a phone shows more of its height).")}
         />
       </div>
       <div className="field">

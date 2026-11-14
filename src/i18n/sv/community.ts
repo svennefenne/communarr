@@ -256,7 +256,7 @@ const sv: Record<string, string> = {
   "Group picture": "Gruppbild",
   "Banner across the top": "Banner högst upp",
   "Square, 512 × 512 px or bigger.": "Kvadratisk, 512 × 512 px eller större.",
-  "1800 × 600 px (3:1). A wide screen shows only its middle band, so keep what matters in the middle.": "1800 × 600 px (3:1). En bred skärm visar bara bandet i mitten, så håll det viktiga i mitten.",
+  "Saved as 1800 × 600 px. A wide screen shows only the band across its middle, about 1800 × 288 px: keep what matters there (a phone shows more of its height).": "Sparas som 1800 × 600 px. En bred skärm visar bara bandet tvärs över mitten, ungefär 1800 × 288 px: håll det viktiga där (en mobil visar mer av höjden).",
   Colour: "Färg",
   "Any colour": "Valfri färg",
   "About the group": "Om gruppen",
