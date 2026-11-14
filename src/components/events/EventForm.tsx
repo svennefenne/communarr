@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { ImagePlus, Send, X } from "lucide-react";
-import { useT, useToast } from "@/components/app/AppProvider";
+import { ImagePlus, Send, Timer, X } from "lucide-react";
+import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile } from "@/components/ui/ui";
 import { ImageLinkButton } from "@/components/ui/ImageLink";
@@ -32,6 +32,7 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
   const router = useRouter();
   const toast = useToast();
   const t = useT();
+  const { me } = useApp();
   const ed = useRef<EditorHandle>(null);
   const s0 = event ? new Date(event.startAt) : initialStart(date);
   const e0 = event ? new Date(event.endAt) : new Date(s0.getTime() + 2 * 3600_000);
@@ -52,6 +53,9 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
   const [capacity, setCapacity] = useState(event?.capacity ? String(event.capacity) : "");
   // who it's for: everyone (""), only me ("me") or a group
   const [group, setGroup] = useState<number | "" | "me">(event ? (event.private ? "me" : event.group?.id ?? "") : groupId ?? "");
+  // a countdown on the front page: from how many days before (0 right away), and pinned before the others
+  const [countdown, setCountdown] = useState<number | null>(event?.countdown ?? null);
+  const [pin, setPin] = useState(event?.countdownPinned ?? false);
   const [pending, start] = useTransition();
 
   // moving the start moves the end with it
@@ -102,6 +106,8 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         capacity: capacity ? Number(capacity) : null,
         groupId: typeof group === "number" ? group : null,
         private: group === "me",
+        countdown,
+        countdownPin: me?.isMod ? pin && countdown !== null : undefined,
       };
       const r = event ? await updateEventAction(event.id, input) : await createEventAction(input);
       if (!r.ok) {
@@ -234,6 +240,36 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
           {group === "me" ? <span className="small muted">{t("Only you see it, in your calendar. Nobody is invited or told.")}</span> : null}
         </div>
       ) : null}
+      <div className="panel-pad-sm inset stack">
+        <label className="check">
+          <input type="checkbox" checked={countdown !== null} onChange={(e) => setCountdown(e.target.checked ? 30 : null)} /> <Timer size={15} aria-hidden /> {t("Count down to it on the front page")}
+        </label>
+        <span className="small muted">
+          {group === "me"
+            ? t("The front page's heading counts down to it until it starts, only for you.")
+            : group || event?.group
+              ? t("The front page's heading counts down to it until it starts, for the group's members.")
+              : t("The front page's heading counts down to it until it starts, for everyone.")}
+        </span>
+        {countdown !== null ? (
+          <div className="grid-2" style={{ alignItems: "end" }}>
+            <div className="field">
+              <label htmlFor="ef-countdown">{t("Starts counting")}</label>
+              <select id="ef-countdown" className="select" value={countdown} onChange={(e) => setCountdown(Number(e.target.value))}>
+                <option value={30}>{t("30 days before")}</option>
+                <option value={14}>{t("14 days before")}</option>
+                <option value={7}>{t("7 days before")}</option>
+                <option value={0}>{t("Right away")}</option>
+              </select>
+            </div>
+            {me?.isMod ? (
+              <label className="check" style={{ minHeight: 40 }}>
+                <input type="checkbox" checked={pin} onChange={(e) => setPin(e.target.checked)} /> {t("Pin it: before other countdowns")}
+              </label>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
       <div className="row" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-ghost" onClick={() => router.back()}>
           {t("Cancel")}

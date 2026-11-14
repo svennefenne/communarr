@@ -33,7 +33,8 @@ export function Widget({ title, icon, href, more, className, children }: { title
   );
 }
 
-export function Greeting({ name }: { name: string }) {
+/** "Good evening, Anna" by the hour, and today's date (both once in the browser: its own clock) */
+export function useGreeting(name: string) {
   const t = useT();
   const [hi, setHi] = useState("Hi, {name}");
   const [day, setDay] = useState("");
@@ -43,13 +44,19 @@ export function Greeting({ name }: { name: string }) {
     setHi(h < 5 ? "Up late, {name}" : h < 10 ? "Good morning, {name}" : h < 17 ? "Hi, {name}" : h < 22 ? "Good evening, {name}" : "Good night, {name}");
     setDay(new Date().toLocaleDateString(t.locale, { weekday: "long", day: "numeric", month: "long" }));
   }, [t]);
+  return { hi: t(hi, { name: name.split(" ")[0] }), day };
+}
+
+export function Greeting({ name }: { name: string }) {
+  const t = useT();
+  const { hi, day } = useGreeting(name);
   return (
     <div>
       <span className="eyebrow" suppressHydrationWarning>
         {t("Front page")} {day ? `· ${day}` : ""}
       </span>
       <h1 className="display page-title" suppressHydrationWarning>
-        {t(hi, { name: name.split(" ")[0] })}
+        {hi}
       </h1>
     </div>
   );

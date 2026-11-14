@@ -137,6 +137,10 @@ export interface EventView {
   comments: number;
   reactions: Reaction[];
   canEdit: boolean;
+  /** a countdown on the front page: from how many days before, 0 the whole time (null: none) */
+  countdown: number | null;
+  /** its countdown goes before the others' (an admin pinned it) */
+  countdownPinned: boolean;
   /** for a repeating event shown in a calendar: this occurrence's start */
   occurrence?: number;
 }

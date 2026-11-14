@@ -317,6 +317,27 @@ const sv: Record<string, string> = {
   "Can't react to that.": "Det går inte att reagera på.",
   "That's switched off on this site.": "Det är avstängt på den här sajten.",
   "Only moderators can start that.": "Bara moderatorer kan starta det.",
+  // the countdown on the front page (an event's form, the front page's heading)
+  "Count down to it on the front page": "Räkna ned till det på förstasidan",
+  "The front page's heading counts down to it until it starts, for everyone.": "Rubriken på förstasidan räknar ned till det tills det börjar, för alla.",
+  "The front page's heading counts down to it until it starts, for the group's members.": "Rubriken på förstasidan räknar ned till det tills det börjar, för gruppens medlemmar.",
+  "The front page's heading counts down to it until it starts, only for you.": "Rubriken på förstasidan räknar ned till det tills det börjar, bara för dig.",
+  "Starts counting": "Börjar räkna",
+  "30 days before": "30 dagar innan",
+  "14 days before": "14 dagar innan",
+  "7 days before": "7 dagar innan",
+  "Right away": "Direkt",
+  "Pin it: before other countdowns": "Fäst den: före andra nedräkningar",
+  "{left} to {title}": "{left} till {title}",
+  "{n} hour": "{n} timme",
+  "{n} hours": "{n} timmar",
+  "{n} minute": "{n} minut",
+  "{n} minutes": "{n} minuter",
+  "{n} second": "{n} sekund",
+  "{n} seconds": "{n} sekunder",
+  "{h} h {m} min {s} s": "{h} tim {m} min {s} sek",
+  "{m} min {s} s": "{m} min {s} sek",
+  "{s} s": "{s} sek",
 };
 
 export default sv;

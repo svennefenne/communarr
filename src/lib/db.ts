@@ -558,6 +558,10 @@ const MIGRATIONS: string[] = [
   );
   create index app_push_user on app_push(user_id);
   `,
+  /* 18: a countdown on the front page (its heading, "18 days to …"): how many days before the event it
+         starts, 0 the whole time; null, none */ `
+  alter table events add column countdown integer;
+  `,
 ];
 
 function open(): Database.Database {
