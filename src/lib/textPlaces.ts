@@ -64,7 +64,7 @@ const RULES: [RegExp, string][] = [
   [/^components\/ui\/EmojiPicker/, "Emoji picker"],
   [/^components\/ui\/Time/, "Dates and times"],
   [/^components\/ui\/PeoplePicker/, "Picking people"],
-  [/^components\/ui\/ImagePick/, "Choosing a picture"],
+  [/^components\/ui\/(ImagePick|PictureCrop)/, "Choosing a picture"],
   [/^components\/ui\//, "Everywhere"],
   // settings and admin
   [/^components\/settings\/ProfileForm/, "Settings → Profile"],

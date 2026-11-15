@@ -68,7 +68,7 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
       </div>
       <div className="grid-2">
         {/* (the sizes they're cut to on the way in: uploads.ts) */}
-        <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="square" label={t("Group picture")} size={t("Square, 512 × 512 px or bigger.")} />
+        <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="square" place label={t("Group picture")} size={t("Any picture: you place it in the square when you've chosen it.")} />
         <ImagePick
           value={banner}
           onChange={setBanner}
