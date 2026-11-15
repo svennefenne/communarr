@@ -964,7 +964,7 @@ a.cat-last:hover .cat-last-title {
   width: 64px;
   height: 110px;
 }
-/* placing a banner (BannerCrop): its frame at 3:1, the picture dragged about in it over a blurred copy
+/* placing a banner (PictureCrop): its frame at 3:1, the picture dragged about in it over a blurred copy
    of it; the band a wide screen shows marked, the rest (only a phone's) dimmed */
 .banner-crop {
   position: relative;
@@ -982,6 +982,21 @@ a.cat-last:hover .cat-last-title {
 .banner-crop:focus-visible {
   outline: 2px solid var(--accent-2);
   outline-offset: 2px;
+}
+/* a group's picture, square with round corners like .group-avatar.big, or someone's, round */
+.picture-crop {
+  aspect-ratio: 1;
+  width: min(100%, 360px);
+  margin-inline: auto;
+  border-radius: 23%;
+}
+.picture-crop.round {
+  border-radius: 50%;
+}
+.banner-crop-around {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 .banner-crop-fill {
   position: absolute;

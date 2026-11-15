@@ -4,12 +4,13 @@ import { useState } from "react";
 import { ImagePlus, LoaderCircle, Trash2 } from "lucide-react";
 import { uploadFile } from "./ui";
 import { ImageLinkButton } from "./ImageLink";
-import { BannerCrop } from "./BannerCrop";
+import { PictureCrop } from "./PictureCrop";
 import { useT, useToast } from "@/components/app/AppProvider";
 
 /**
  * Pick a picture: shows it, uploads a new one (or takes one from a link), or takes it away. A banner is
- * placed first (BannerCrop): moved and zoomed in its frame, the band a wide screen shows marked.
+ * placed first (PictureCrop): moved and zoomed in its frame, the band a wide screen shows marked; with
+ * place, a square or round one too.
  */
 export function ImagePick({
   value,
@@ -19,6 +20,7 @@ export function ImagePick({
   label,
   size,
   whole = false,
+  place = false,
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
@@ -29,10 +31,13 @@ export function ImagePick({
   size?: string;
   /** show all of it (a logo) instead of filling the box */
   whole?: boolean;
+  /** place it in its frame first, like a banner (one always is) */
+  place?: boolean;
 }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
-  // a banner being placed: the picture (here, or a copy from a link), and the file it came from
+  // a picture being placed: the picture (here, or a copy from a link), and the file it came from
+  const placed = kind === "banner" || place;
   const [placing, setPlacing] = useState<{ src: string; file?: File } | null>(null);
   const toast = useToast();
   const upload = async (f: File) => {
@@ -61,7 +66,8 @@ export function ImagePick({
             const f = e.target.files?.[0];
             e.target.value = "";
             if (!f) return;
-            if (kind === "banner") setPlacing({ src: URL.createObjectURL(f), file: f });
+            // (a GIF as it is: it may move, which a placed one wouldn't)
+            if (placed && f.type !== "image/gif") setPlacing({ src: URL.createObjectURL(f), file: f });
             else await upload(f);
           }}
         />
@@ -71,8 +77,8 @@ export function ImagePick({
         {size ? <span className="tiny muted">{size}</span> : null}
         {value ? null : <span className="tiny muted">{t("Tap to choose a picture")}</span>}
         <span className="row wrap" style={{ gap: 4 }}>
-          {/* (a banner's: the whole picture, to place) */}
-          <ImageLinkButton kind={kind === "banner" ? "image" : kind} onImage={(url) => (kind === "banner" ? setPlacing({ src: url }) : onChange(url))} className="btn btn-ghost btn-xs" />
+          {/* (one to place: the whole picture, to place) */}
+          <ImageLinkButton kind={placed ? "image" : kind} onImage={(url) => (placed ? setPlacing({ src: url }) : onChange(url))} className="btn btn-ghost btn-xs" />
           {value ? (
             <button type="button" className="btn btn-ghost btn-xs" onClick={() => onChange(null)}>
               <Trash2 size={13} /> {t("Remove")}
@@ -81,8 +87,10 @@ export function ImagePick({
         </span>
       </div>
       {placing ? (
-        <BannerCrop
+        <PictureCrop
           src={placing.src}
+          shape={kind === "banner" ? "banner" : shape === "round" ? "round" : "square"}
+          title={kind === "banner" ? undefined : t("Place the picture")}
           onClose={stopPlacing}
           onDone={async (f) => {
             await upload(f);
