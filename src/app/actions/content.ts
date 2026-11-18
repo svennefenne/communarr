@@ -11,6 +11,7 @@ import { cancelEvent, createEvent, deleteEvent, eventsBetween, getEvent, rsvp, u
 import { createThread, deleteReply, deleteThread, editReply, editThread, findThreads, follow, mergeThread, moderateThread, moveReply, quoteFor, reply } from "@/lib/forum";
 import { feed } from "@/lib/feed";
 import { deleteDraft, getDraft, listDrafts, saveDraft, type DraftInput } from "@/lib/drafts";
+import type { DraftKind } from "@/lib/types";
 import { report, type ReportTarget } from "@/lib/reports";
 import { canSeeTarget } from "@/lib/visibility";
 import { getSettings, type SiteSettings } from "@/lib/settings";
@@ -36,8 +37,8 @@ export async function saveDraftAction(id: number | null, input: DraftInput) {
   return act((u) => saveDraft(u, id, input));
 }
 
-export async function draftsAction() {
-  return act((u) => listDrafts(u.id));
+export async function draftsAction(kind: DraftKind = "post") {
+  return act((u) => listDrafts(u.id, kind));
 }
 
 export async function draftAction(id: number) {
@@ -223,10 +224,13 @@ export async function eventsAction(from: number, to: number, o: { groupId?: numb
 
 // ── forum ──
 
-export async function createThreadAction(input: { categoryId: number; title: string; html: string }) {
+/** A new forum thread; `fromDraft`: the draft it was opened from, which goes once it's started. */
+export async function createThreadAction(input: { categoryId: number; title: string; html: string }, fromDraft?: number) {
   return act((u) => {
     allowed(u, "forum");
-    return createThread(u, input);
+    const id = createThread(u, input);
+    if (fromDraft) deleteDraft(u, fromDraft);
+    return id;
   });
 }
 

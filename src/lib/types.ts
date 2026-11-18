@@ -85,10 +85,11 @@ export interface Reaction {
 }
 
 /** A board game on BoardGameGeek (bgg: in the editor). */
-/** A post saved as a draft, as the composer's list of drafts shows it. */
+/** A post or a forum thread saved as a draft, as the list of drafts shows it. */
 export interface DraftSummary {
   id: number;
-  /** where it was going: "all", "me" or "g:<group id>" */
+  kind: DraftKind;
+  /** where it was going: a post's "all", "me" or "g:<group id>"; a thread's "c:<category id>" */
   target: string;
   news: boolean;
   /** its title, or the start of its text */
@@ -96,7 +97,9 @@ export interface DraftSummary {
   updatedAt: number;
 }
 
-/** A draft whole, to open in the composer. */
+export type DraftKind = "post" | "thread";
+
+/** A draft whole, to open in the composer (or the new thread's form). */
 export interface PostDraft extends DraftSummary {
   title: string;
   html: string;
