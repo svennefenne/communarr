@@ -29,7 +29,7 @@ export default async function GroupLayout({ params, children }: { params: Promis
   return (
     <div className="page">
       <BackPill href="/groups" label={t("Groups")} />
-      <GroupHeader g={g} features={{ calendar: s.features.calendar, polls: s.features.polls, chat: s.features.chat }} games={g.canRead ? groupShelfCount(g.id) : 0} />
+      <GroupHeader g={g} features={{ calendar: s.features.calendar, polls: s.features.polls, chat: s.features.chat }} games={g.canRead && g.gameShelf ? groupShelfCount(g.id) : 0} />
       {g.canRead ? (
         <MentionScope ids={g.members.map((m) => m.id)} label="In the group">
           {children}

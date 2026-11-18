@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Send } from "lucide-react";
 import { PRIVACY } from "./privacy";
-import { useT, useToast } from "@/components/app/AppProvider";
+import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { ImagePick } from "@/components/ui/ImagePick";
 import type { GroupInfo, Privacy } from "@/lib/groups";
@@ -25,10 +25,13 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
   const [avatar, setAvatar] = useState(group?.avatar ?? null);
   const [banner, setBanner] = useState(group?.banner ?? null);
   const [chat, setChat] = useState(true);
+  const [gameShelf, setGameShelf] = useState(group?.gameShelf ?? false);
+  // (game shelves need the site's BoardGameGeek token)
+  const bgg = useApp().site.bgg === "full";
   const [pending, start] = useTransition();
   const submit = () =>
     start(async () => {
-      const input = { name, tagline, descriptionHtml: ed.current?.getHTML() ?? "", privacy, color, avatar, banner, chat };
+      const input = { name, tagline, descriptionHtml: ed.current?.getHTML() ?? "", privacy, color, avatar, banner, chat, ...(bgg ? { gameShelf } : {}) };
       const r = group ? await updateGroupAction(group.id, input) : await createGroupAction(input);
       if (!r.ok) {
         toast(r.error, { kind: "err" });
@@ -94,6 +97,11 @@ export function GroupForm({ group }: { group?: GroupInfo }) {
       {!group ? (
         <label className="check">
           <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} /> {t("Give the group its own chat room (with voice)")}
+        </label>
+      ) : null}
+      {bgg ? (
+        <label className="check">
+          <input type="checkbox" checked={gameShelf} onChange={(e) => setGameShelf(e.target.checked)} /> {t("A game shelf: the board games the members own on BoardGameGeek, and who has which")}
         </label>
       ) : null}
       <div className="row" style={{ justifyContent: "flex-end" }}>

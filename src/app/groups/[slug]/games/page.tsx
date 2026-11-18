@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Dices } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { canReadGroup, groupMembers, groupRole, groupRow } from "@/lib/groups";
@@ -11,12 +12,14 @@ import { requestT } from "@/lib/t";
 
 export const dynamic = "force-dynamic";
 
-/** A group's game shelf: every board game its members own on BoardGameGeek, and who has it (lib/bggShelf.ts). */
+/** A group's game shelf, where it's switched on: every board game its members own on BoardGameGeek, and who has it (lib/bggShelf.ts). */
 export default async function GroupGames({ params }: { params: Promise<{ slug: string }> }) {
   const u = await requireUser();
   const t = await requestT();
   const g = groupRow(decodeURIComponent((await params).slug));
   if (!g || !canReadGroup(u, g)) return null;
+  // (only where the group's admins switched it on, in the group's settings)
+  if (!g.game_shelf) redirect(`/groups/${encodeURIComponent(g.slug)}`);
   const { games, owners } = groupShelf(g.id);
   // the members with games, in the group's own order
   const owning = new Set(Object.values(owners).flat());
