@@ -26,8 +26,12 @@ export function SiteSounds() {
   useEffect(() => {
     since.current = Date.now();
   }, [conn]);
-  useEffect(() => unlockSounds(), []);
-  useEffect(() => setSoundsOn(me?.theme.sounds !== false), [me?.theme.sounds]);
+  useEffect(() => {
+    unlockSounds();
+  }, []);
+  useEffect(() => {
+    setSoundsOn(me?.theme.sounds !== false);
+  }, [me?.theme.sounds]);
 
   const play = (trigger: SoundTrigger, key: string = trigger) => {
     const s = site.sounds;

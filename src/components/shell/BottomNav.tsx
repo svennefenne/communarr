@@ -14,7 +14,9 @@ export function BottomNav() {
   const t = useT();
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
-  useEffect(() => setDrawer(false), [pathname]);
+  useEffect(() => {
+    setDrawer(false);
+  }, [pathname]);
   if (!me || isBare(pathname)) return null;
   const shown = barSections(site.features);
   const moreActive = !shown.some((s) => isActive(s, pathname));

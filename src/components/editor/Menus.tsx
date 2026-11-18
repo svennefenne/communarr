@@ -241,8 +241,13 @@ export function LinkDialog({ editor, onClose }: { editor: Editor; onClose: () =>
   const options = [...places.map((p) => ({ url: p.url, label: p.label })), ...hits.map((h) => ({ url: h.url, label: plainTitle(h.title) }))];
   // typing: the first match is the one Enter takes
   const [active, setActive] = useState(-1);
-  useEffect(() => setActive(term && searching ? 0 : -1), [term, searching]);
-  useEffect(() => document.getElementById(`ld-o${active}`)?.scrollIntoView({ block: "nearest", inline: "nearest" }), [active]);
+  useEffect(() => {
+    setActive(term && searching ? 0 : -1);
+  }, [term, searching]);
+  // (braces: newer browsers' scrollIntoView returns a promise, and an effect may only return its cleanup)
+  useEffect(() => {
+    document.getElementById(`ld-o${active}`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [active]);
 
   const link = (href: string, label: string) => {
     if (needsText) editor.chain().focus().insertContent({ type: "text", text: text.trim() || label, marks: [{ type: "link", attrs: { href } }] }).insertContent(" ").run();

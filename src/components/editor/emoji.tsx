@@ -93,7 +93,9 @@ interface ListHandle {
 
 const EmojiList = forwardRef<ListHandle, SuggestionProps<Item>>(function EmojiList(props, ref) {
   const [sel, setSel] = useState(0);
-  useEffect(() => setSel(0), [props.items]);
+  useEffect(() => {
+    setSel(0);
+  }, [props.items]);
   const pick = (i: number) => {
     const it = props.items[i];
     if (it) props.command(it);

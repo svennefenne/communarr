@@ -31,7 +31,9 @@ export function ThemeSettings({ prefs, site, mine, shared, allowCustom }: { pref
   const [q, setQ] = useState("");
   const [dark, setDark] = useState(prefs.mode !== "light");
   const { confirm, node } = useConfirm();
-  useEffect(() => setDark(prefs.mode === "dark" || (prefs.mode === "system" && systemDark())), [prefs.mode]);
+  useEffect(() => {
+    setDark(prefs.mode === "dark" || (prefs.mode === "system" && systemDark()));
+  }, [prefs.mode]);
 
   const list = useMemo(() => PALETTES.filter((p) => (cat === "all" || p.category === cat) && (!q || p.name.toLowerCase().includes(q.toLowerCase()))), [cat, q]);
   const others = shared.filter((th) => !th.mine);

@@ -114,7 +114,9 @@ export function SeenNotifications() {
     };
   }, [n]);
 
-  useEffect(() => check(), [pathname]);
+  useEffect(() => {
+    check();
+  }, [pathname]);
 
   // back at the window (the desktop app's in front: it says so)
   useEffect(() => {

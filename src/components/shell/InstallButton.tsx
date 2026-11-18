@@ -126,7 +126,9 @@ export function InstallButton() {
   const t = useT();
   const [help, setHelp] = useState(false);
   const [installed, setInstalled] = useState(true);
-  useEffect(() => setInstalled(isStandalone()), []);
+  useEffect(() => {
+    setInstalled(isStandalone());
+  }, []);
   if (installed) return null;
   return (
     <>
