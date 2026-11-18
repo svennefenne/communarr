@@ -3,13 +3,16 @@ import { upcoming } from "@/lib/events";
 import { groupInfo, type GroupRow } from "@/lib/groups";
 import { homeLayout, pageColumn } from "@/lib/homePanels";
 import { getSettings } from "@/lib/settings";
+import { groupShelfCount, groupShelfLatest } from "@/lib/bggShelf";
 import type { User } from "@/lib/users";
 import { MembersWidget, UpcomingWidget } from "@/components/home/Widgets";
+import { ShelfCard } from "@/components/profile/GameShelf";
 
 /**
- * A group's tab beside its side column, as wide as the group's header above: what's coming up, and
- * who's in it (left out on the members tab, which lists them all), in the order and as many as Admin →
- * Front page says. Like a profile, the side column only shows beside the tab on a wide screen.
+ * A group's tab beside its side column, as wide as the group's header above: what's coming up, who's
+ * in it (left out on the members tab, which lists them all), and where the group has one, a few games
+ * off its game shelf (left out on the shelf's own tab), in the order and as many as Admin → Front page
+ * says. Like a profile, the side column only shows beside the tab on a wide screen.
  * Nothing to show: the tab takes the whole width.
  * The side column starts level with the tab's first frame: buttons go in `top`, above both; a feed
  * that starts with its filters says so with `feedHead` (the rows above its first card). `filters` is
@@ -19,6 +22,7 @@ export function GroupColumns({
   u,
   g,
   members = true,
+  games = true,
   top,
   feedHead,
   filters,
@@ -27,6 +31,7 @@ export function GroupColumns({
   u: User;
   g: GroupRow;
   members?: boolean;
+  games?: boolean;
   top?: React.ReactNode;
   feedHead?: number;
   filters?: React.ReactNode;
@@ -45,6 +50,10 @@ export function GroupColumns({
           return s.features.calendar ? <UpcomingWidget key="upcoming" events={upcoming(u, 4, { groupId: g.id })} href={`/groups/${slug}/events`} planHref={`/events/new?group=${g.id}`} /> : null;
         case "members":
           return info ? <MembersWidget key="members" members={info.members} count={info.memberCount} href={`/groups/${slug}/members`} /> : null;
+        case "games": {
+          const total = games && g.game_shelf ? groupShelfCount(g.id) : 0;
+          return total ? <ShelfCard key="games" games={groupShelfLatest(g.id, 9)} total={total} href={`/groups/${slug}/games`} /> : null;
+        }
       }
     })
     .filter(Boolean);

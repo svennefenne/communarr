@@ -29,7 +29,7 @@ export default async function GroupGames({ params }: { params: Promise<{ slug: s
   // in the group, with no shelf of their own yet: how to add theirs
   const yours = !!groupRole(g.id, u.id) && bggMode() === "full" && !shelfAccount(u.id);
   return (
-    <GroupColumns u={u} g={g}>
+    <GroupColumns u={u} g={g} games={false}>
       <div className="stack">
         {yours ? (
           <p className="panel panel-pad small row wrap" style={{ margin: 0, gap: 8 }}>
