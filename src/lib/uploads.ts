@@ -139,6 +139,8 @@ export function cleanOrphans(): { removed: number; bytes: number } {
   const sources = [
     "select body_html h from posts",
     "select cover h from posts where cover is not null",
+    "select body_html h from post_drafts",
+    "select cover h from post_drafts where cover is not null",
     "select body_html h from comments",
     "select body_html h from forum_threads",
     "select body_html h from forum_posts",

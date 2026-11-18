@@ -1,21 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { CalendarPlus, ImagePlus, Lock, Megaphone, MessagesSquare, Send, Type, Users, Vote, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { CalendarPlus, FilePen, FileText, ImagePlus, Lock, Megaphone, MessagesSquare, Send, Trash2, Type, Users, Vote, X } from "lucide-react";
+import type { DraftSummary } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
-import { uploadFile } from "@/components/ui/ui";
+import { uploadFile, useConfirm } from "@/components/ui/ui";
 import { ImageLinkButton } from "@/components/ui/ImageLink";
-import { createPostAction } from "@/app/actions/content";
+import { Time } from "@/components/ui/Time";
+import { createPostAction, deleteDraftAction, draftAction, draftsAction, saveDraftAction } from "@/app/actions/content";
 
 export interface ComposerGroup {
   id: number;
   name: string;
 }
 
-/** "What's on your mind?": write a post (or, for moderators, news) right on the front page. */
+/**
+ * "What's on your mind?": write a post (or, for moderators, news) right on the front page. What's
+ * written can be saved as a draft (lib/drafts.ts) and opened again later, here or on another device:
+ * "Drafts" lists them, to open or delete. In a group, only the drafts meant for it.
+ */
 export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[]; groupId?: number; onPosted?: () => void }) {
   const { me, site } = useApp();
   const t = useT();
@@ -29,6 +35,20 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
   const [cover, setCover] = useState<string | null>(null);
   const [notifyAll, setNotifyAll] = useState(true);
   const [pending, start] = useTransition();
+  // drafts: theirs (null until they're in), the one that's open in the composer, and whether the list shows
+  const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
+  const [draftId, setDraftId] = useState<number | null>(null);
+  const [showDrafts, setShowDrafts] = useState(false);
+  const { confirm, node } = useConfirm();
+  const loadDrafts = useCallback(async () => {
+    const r = await draftsAction();
+    if (r.ok) setDrafts(r.data);
+  }, []);
+  useEffect(() => {
+    void loadDrafts();
+  }, [loadDrafts]);
+  // a draft opened while the editor isn't there yet (the composer was closed) waits for it
+  const waitingHtml = useRef<string | null>(null);
   const expand = () => setOpen(true);
   // pictures picked before the editor is open wait for it
   const waiting = useRef<File[]>([]);
@@ -43,7 +63,19 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
     }, 50);
     return () => clearInterval(timer);
   }, [open]);
+  useEffect(() => {
+    if (!open || waitingHtml.current === null) return;
+    const timer = setInterval(() => {
+      if (ed.current?.editor && waitingHtml.current !== null) {
+        ed.current.setHTML(waitingHtml.current);
+        waitingHtml.current = null;
+        clearInterval(timer);
+      }
+    }, 50);
+    return () => clearInterval(timer);
+  }, [open, draftId]);
   if (!me) return null;
+  const mine = (drafts ?? []).filter((d) => (groupId ? d.target === `g:${groupId}` : !d.news || site.can.news));
   const first = me.name.split(" ")[0];
   const reset = () => {
     ed.current?.clear();
@@ -52,7 +84,96 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
     setNews(false);
     setCover(null);
     setOpen(false);
+    setDraftId(null);
+    setShowDrafts(false);
   };
+  const where = (d: DraftSummary) =>
+    d.news ? t("News item") : d.target === "me" ? t("Only me") : d.target.startsWith("g:") ? (groups.find((g) => `g:${g.id}` === d.target)?.name ?? t("A group")) : t("Everyone");
+  const saveDraft = () => {
+    const html = ed.current?.getHTML() ?? "";
+    if (ed.current?.busy()) {
+      toast(t("Wait for the pictures to finish uploading."));
+      return;
+    }
+    const heading = news || showTitle ? title : "";
+    if (!html && !heading.trim()) {
+      toast(t("Write something first."), { kind: "err" });
+      return;
+    }
+    start(async () => {
+      const r = await saveDraftAction(draftId, { html, title: heading, target: to, news, cover: news ? cover : null, notifyAll });
+      if (!r.ok) {
+        toast(r.error, { kind: "err" });
+        return;
+      }
+      toast(t("Saved as a draft."));
+      reset();
+      void loadDrafts();
+    });
+  };
+  const openDraft = (id: number) => {
+    const go = async () => {
+      const r = await draftAction(id);
+      if (!r.ok || !r.data) {
+        toast(r.ok ? t("That draft is gone.") : r.error, { kind: "err" });
+        void loadDrafts();
+        return;
+      }
+      const d = r.data;
+      const asNews = d.news && site.can.news && !groupId;
+      setNews(asNews);
+      setTitle(d.title);
+      setShowTitle(!!d.title && !asNews);
+      setCover(d.cover);
+      setNotifyAll(d.notifyAll);
+      // (where it was going, if it can still go there from here)
+      const known = d.target === "all" || d.target === "me" ? !groupId : groups.some((g) => `g:${g.id}` === d.target);
+      setTo(known ? d.target : groupId ? `g:${groupId}` : "all");
+      setDraftId(d.id);
+      setShowDrafts(false);
+      if (open && ed.current?.editor) ed.current.setHTML(d.html);
+      else {
+        waitingHtml.current = d.html;
+        setOpen(true);
+      }
+    };
+    if (open && ed.current && !ed.current.isEmpty() && draftId !== id) confirm(t("Replace what you've written with the draft?"), t("Replace"), go);
+    else void go();
+  };
+  const removeDraft = (id: number) =>
+    confirm(t("Delete the draft?"), t("Delete"), async () => {
+      const r = await deleteDraftAction(id);
+      if (!r.ok) {
+        toast(r.error, { kind: "err" });
+        return;
+      }
+      if (id === draftId) setDraftId(null);
+      toast(t("Draft deleted."));
+      void loadDrafts();
+    });
+  const draftList = (
+    <div className="composer-drafts" role="region" aria-label={t("Drafts")}>
+      {mine.length ? (
+        mine.map((d) => (
+          <div key={d.id} className={`composer-draft ${d.id === draftId ? "on" : ""}`}>
+            <button type="button" className="composer-draft-open" onClick={() => openDraft(d.id)} title={t("Open the draft")}>
+              <b className="ellipsis">{d.preview || t("(no text)")}</b>
+              <span className="tiny muted">
+                {where(d)} · <Time t={d.updatedAt} />
+              </span>
+            </button>
+            <button type="button" className="icon-btn sm" onClick={() => removeDraft(d.id)} aria-label={t("Delete the draft")} title={t("Delete the draft")}>
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ))
+      ) : (
+        <p className="small muted" style={{ margin: 0 }}>
+          {t("No drafts.")}
+        </p>
+      )}
+    </div>
+  );
   const submit = () => {
     const html = ed.current?.getHTML() ?? "";
     if (ed.current?.busy()) {
@@ -64,21 +185,26 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
       return;
     }
     start(async () => {
-      const r = await createPostAction({
-        html,
-        title: news || showTitle ? title : "",
-        kind: news ? "news" : "post",
-        groupId: to.startsWith("g:") ? Number(to.slice(2)) : null,
-        visibility: to === "me" ? "private" : "members",
-        cover: news ? cover : null,
-        notifyAll,
-      });
+      const r = await createPostAction(
+        {
+          html,
+          title: news || showTitle ? title : "",
+          kind: news ? "news" : "post",
+          groupId: to.startsWith("g:") ? Number(to.slice(2)) : null,
+          visibility: to === "me" ? "private" : "members",
+          cover: news ? cover : null,
+          notifyAll,
+        },
+        draftId ?? undefined,
+      );
       if (!r.ok) {
         toast(r.error, { kind: "err" });
         return;
       }
       toast(t(news ? "News is out: everyone's been told." : to === "me" ? "Saved for your eyes only (under My stuff)." : "Posted!"));
+      const had = draftId;
       reset();
+      if (had) void loadDrafts();
       onPosted?.();
     });
   };
@@ -120,7 +246,23 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
               <MessagesSquare size={20} />
             </Link>
           ) : null}
+          {mine.length ? (
+            <button
+              type="button"
+              className="icon-btn composer-drafts-btn"
+              title={t("Your drafts")}
+              aria-label={t("Your drafts")}
+              onClick={() => {
+                setShowDrafts(true);
+                expand();
+              }}
+            >
+              <FileText size={20} />
+              <span className="badge">{mine.length}</span>
+            </button>
+          ) : null}
         </div>
+        {node}
       </div>
     );
 
@@ -134,10 +276,16 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
             <Megaphone size={13} /> {t("News")}
           </button>
         ) : null}
-        <button type="button" className="icon-btn sm" aria-label={t("Close")} title={t("Close (your text is kept as a draft)")} onClick={() => setOpen(false)}>
+        {mine.length || showDrafts ? (
+          <button type="button" className={`pill ${showDrafts ? "active" : ""}`} onClick={() => setShowDrafts((x) => !x)} aria-expanded={showDrafts}>
+            <FileText size={13} /> {t("Drafts")} · {mine.length}
+          </button>
+        ) : null}
+        <button type="button" className="icon-btn sm" aria-label={t("Close")} title={t("Close (your text is kept on this device)")} onClick={() => setOpen(false)}>
           <X size={18} />
         </button>
       </div>
+      {showDrafts ? draftList : null}
       {news || showTitle ? (
         <input className="input composer-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t(news ? "Headline" : "Title (optional)")} maxLength={140} autoFocus={news} />
       ) : null}
@@ -196,10 +344,14 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
             </select>
           </label>
         ) : null}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={saveDraft} disabled={pending} title={t("Keep it to post later, on any of your devices")}>
+          <FilePen size={15} /> {draftId ? t("Save the draft") : t("Save draft")}
+        </button>
         <button type="button" className={`btn btn-primary ${pending ? "loading" : ""}`} onClick={submit} title={t("Post (Ctrl+Enter)")}>
           <Send size={16} /> {news ? t("Publish") : t("Post{verb}", { verb: "" })}
         </button>
       </div>
+      {node}
     </div>
   );
 }

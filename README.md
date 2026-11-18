@@ -18,7 +18,7 @@ or in a theme you make yourself.
   dividers, YouTube videos, sub/superscript, emoji, @mentions, links (button, `Ctrl+K`, or just paste a
   link; select words and paste a link over them), and pictures by button, drag-and-drop or paste,
   resized by dragging a corner and set left, centre or right. Select text for a quick formatting bubble.
-  Drafts are kept on the device until you post. Full screen on a phone. Markdown shortcuts work too.
+  Drafts are kept on the device until you post, and a post can be saved as a draft to finish later on any device: Drafts in the composer opens or deletes them. Full screen on a phone. Markdown shortcuts work too.
   Links get preview cards under the text (the page's title, text and picture, or the picture itself),
   and resting the pointer on a link shows a quick look at it with where it really goes.
 - **Board games from BoardGameGeek**: type `bgg:` and a few letters of a game's name to pick it from
