@@ -32,8 +32,10 @@ or in a theme you make yourself.
   Settings → Profile, and the board games they own there (no expansions) show on their profile: a few
   boxes in the side column, and a "Game shelf" tab with all of them, to search and narrow down by how
   many are playing and how long it takes, sorted by name, rating, length, newest or most played. Each
-  game links to its BGG page and shows its card on hover. The site fetches a collection when it's
-  linked and again once a day, one member a minute at most.
+  game links to its BGG page and shows its card on hover. A group gets a game shelf too: every game its
+  members own, with who has it, narrowed down the same ways and by whose games they are, or sorted by
+  how many have it. The site fetches a collection when it's linked and again once a day, one member a
+  minute at most.
 - **The site's own emoji**, Discord style: members add a picture with a name (a GIF stays animated) from
   the emoji picker; write it `:name:` (after `:` and two letters a list suggests them, and the emoji's
   own names like `:thumbs_up:`), use it in anything written and as a reaction. A chat message of only

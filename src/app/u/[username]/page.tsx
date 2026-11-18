@@ -97,7 +97,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
       ) : null}
       {onShelf ? (
         <div style={{ marginTop: 18 }}>
-          <GameShelf games={shelfGames(p.id)} owner={p.name.split(" ")[0]} bggName={shelf?.username ?? ""} fetchedAt={shelf?.fetchedAt ?? null} />
+          <GameShelf games={shelfGames(p.id)} whose={{ kind: "member", owner: p.name.split(" ")[0], bggName: shelf?.username ?? "", fetchedAt: shelf?.fetchedAt ?? null }} />
         </div>
       ) : (
       <FeedScope>

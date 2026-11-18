@@ -1150,6 +1150,24 @@ a.cat-last:hover .cat-last-title {
 .shelf-credit {
   margin: 4px 0 0;
 }
+/* a group's shelf: who has the game, their pictures overlapping a little */
+.shelf-owners {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+.shelf-owners .avatar {
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.shelf-owners .avatar + .avatar {
+  margin-left: -6px;
+}
+.shelf-more {
+  margin-left: 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 .shelf-mini {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

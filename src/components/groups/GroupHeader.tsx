@@ -12,7 +12,7 @@ import { useConfirm } from "@/components/ui/ui";
 import { PRIVACY } from "./privacy";
 import { cancelRequestAction, inviteToGroupAction, joinGroupAction, leaveGroupAction } from "@/app/actions/groups";
 
-export function GroupHeader({ g, features }: { g: GroupInfo; features: { calendar: boolean; polls: boolean; chat: boolean } }) {
+export function GroupHeader({ g, features, games = 0 }: { g: GroupInfo; features: { calendar: boolean; polls: boolean; chat: boolean }; games?: number }) {
   const toast = useToast();
   const t = useT();
   const router = useRouter();
@@ -28,6 +28,8 @@ export function GroupHeader({ g, features }: { g: GroupInfo; features: { calenda
     ...(features.calendar ? [[`${base}/events`, t("Events")]] : []),
     ...(features.polls ? [[`${base}/polls`, t("Polls")]] : []),
     [`${base}/members`, `${t("Members")} · ${g.memberCount}`],
+    // (the games its members own on BoardGameGeek, once any of them has a game shelf)
+    ...(games ? [[`${base}/games`, `${t("Game shelf")} · ${games}`]] : []),
     [`${base}/about`, t("About")],
     ...(g.canManage ? [[`${base}/settings`, t("Settings")]] : []),
   ] as [string, string][];
