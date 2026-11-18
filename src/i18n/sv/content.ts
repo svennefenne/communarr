@@ -411,6 +411,14 @@ const sv: Record<string, string> = {
   "Your games aren't here yet: give your name on BoardGameGeek and they join the group's shelf.": "Dina spel finns inte här än: skriv ditt namn på BoardGameGeek så hamnar de på gruppens hylla.",
   "No games on the shelf yet": "Inga spel på hyllan än",
   "When members link their BoardGameGeek collections, the games they own turn up here.": "När medlemmarna kopplar sina samlingar på BoardGameGeek dyker spelen de äger upp här.",
+  // a game shelf's views
+  View: "Visning",
+  Posters: "Poster",
+  Grid: "Rutnät",
+  "Number {n} on BoardGameGeek": "Nummer {n} på BoardGameGeek",
+  "Rated {n} by {name}": "Betyg {n} av {name}",
+  "{n} play": "{n} parti",
+  "{n} plays": "{n} partier",
 };
 
 export default sv;

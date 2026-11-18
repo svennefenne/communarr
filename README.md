@@ -31,7 +31,8 @@ or in a theme you make yourself.
 - **Game shelves**: with the BGG token in place, members can give their name on BoardGameGeek under
   Settings → Profile, and the board games they own there (no expansions) show on their profile: a few
   boxes in the side column, and a "Game shelf" tab with all of them, to search and narrow down by how
-  many are playing and how long it takes, sorted by name, rating, length, newest or most played. Each
+  many are playing and how long it takes, sorted by name, rating, length, newest or most played, and
+  shown as posters, a grid of small boxes or a list (kept per device). Each
   game links to its BGG page and shows its card on hover. A group gets a game shelf too: every game its
   members own, with who has it, narrowed down the same ways and by whose games they are, or sorted by
   how many have it. The site fetches a collection when it's linked and again once a day, one member a

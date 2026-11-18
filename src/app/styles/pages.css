@@ -1150,6 +1150,101 @@ a.cat-last:hover .cat-last-title {
 .shelf-credit {
   margin: 4px 0 0;
 }
+/* the three views: posters (above), a grid of small boxes with only their names, and a list */
+.shelf-views {
+  margin-left: auto;
+}
+.shelf-views .pill {
+  padding: 0 9px;
+}
+.shelf-grid.small {
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+}
+.shelf-grid.small .shelf-game {
+  gap: 0;
+  padding: 6px 6px 8px;
+  border-radius: var(--radius-sm);
+}
+.shelf-grid.small .shelf-box {
+  border-radius: var(--radius-xs);
+}
+.shelf-grid.small .shelf-name {
+  font-size: 0.75rem;
+}
+.shelf-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shelf-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px 8px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease-out,
+    background-color 0.15s ease-out;
+}
+.shelf-row:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+.shelf-row:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.shelf-row .shelf-box {
+  margin: 0;
+  border-radius: var(--radius-xs);
+}
+.shelf-row-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.shelf-row-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.shelf-row-title .shelf-name {
+  display: block;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.shelf-row .shelf-facts {
+  margin: 0;
+  padding: 0;
+  font-size: 0.8125rem;
+}
+.shelf-row-side {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.shelf-row-side .shelf-owners {
+  margin: 0;
+}
+.shelf-names {
+  margin-left: 8px;
+}
 /* a group's shelf: who has the game, their pictures overlapping a little */
 .shelf-owners {
   display: flex;
@@ -1206,6 +1301,21 @@ a.cat-last:hover .cat-last-title {
   }
   .shelf-select {
     flex: 1 1 140px;
+  }
+  .shelf-grid.small {
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 8px;
+  }
+  .shelf-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 4px 12px;
+    padding-right: 12px;
+  }
+  .shelf-row .shelf-box {
+    grid-row: span 2;
+  }
+  .shelf-row-side {
+    justify-content: flex-start;
   }
 }
 @media (prefers-reduced-motion: reduce) {
