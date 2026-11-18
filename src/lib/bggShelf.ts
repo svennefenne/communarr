@@ -41,40 +41,71 @@ export function shelfAccount(userId: number): ShelfAccount | null {
   return r ? toAccount(r) : null;
 }
 
+interface ShelfRow {
+  game_id: number;
+  name: string;
+  year: number | null;
+  thumb: string | null;
+  min_players: number | null;
+  max_players: number | null;
+  min_time: number | null;
+  max_time: number | null;
+  rating: number | null;
+  rank: number | null;
+  mine: number | null;
+  plays: number;
+  added_at: number | null;
+}
+
+const toGame = (r: ShelfRow): ShelfGame => ({
+  id: r.game_id,
+  name: r.name,
+  year: r.year,
+  thumb: r.thumb,
+  players: r.min_players ? [r.min_players, r.max_players ?? r.min_players] : null,
+  time: r.min_time ? [r.min_time, r.max_time ?? r.min_time] : null,
+  rating: r.rating ? Math.round(r.rating * 10) / 10 : null,
+  rank: r.rank,
+  mine: r.mine,
+  plays: r.plays,
+  added: r.added_at,
+});
+
 /** The games on their shelf, by name; or with `latest`, that many of the newest. */
 export function shelfGames(userId: number, latest?: number): ShelfGame[] {
   const rows = (
     latest
       ? db().prepare("select * from bgg_shelf where user_id = ? order by added_at desc, name collate nocase limit ?").all(userId, latest)
       : db().prepare("select * from bgg_shelf where user_id = ? order by name collate nocase").all(userId)
-  ) as {
-    game_id: number;
-    name: string;
-    year: number | null;
-    thumb: string | null;
-    min_players: number | null;
-    max_players: number | null;
-    min_time: number | null;
-    max_time: number | null;
-    rating: number | null;
-    rank: number | null;
-    mine: number | null;
-    plays: number;
-    added_at: number | null;
-  }[];
-  return rows.map((r) => ({
-    id: r.game_id,
-    name: r.name,
-    year: r.year,
-    thumb: r.thumb,
-    players: r.min_players ? [r.min_players, r.max_players ?? r.min_players] : null,
-    time: r.min_time ? [r.min_time, r.max_time ?? r.min_time] : null,
-    rating: r.rating ? Math.round(r.rating * 10) / 10 : null,
-    rank: r.rank,
-    mine: r.mine,
-    plays: r.plays,
-    added: r.added_at,
-  }));
+  ) as ShelfRow[];
+  return rows.map(toGame);
+}
+
+/** How many games a group's members own between them (each game once). */
+export function groupShelfCount(groupId: number): number {
+  return (db().prepare("select count(distinct s.game_id) n from bgg_shelf s join group_members m on m.user_id = s.user_id where m.group_id = ?").get(groupId) as { n: number }).n;
+}
+
+/**
+ * The group's game shelf: every game its members own, once, and who owns it (in the order they joined).
+ * Their own ratings stay theirs (none here); plays are added up, and "newest" is the latest any of them got it.
+ */
+export function groupShelf(groupId: number): { games: ShelfGame[]; owners: Record<number, number[]> } {
+  const rows = db()
+    .prepare("select s.* from bgg_shelf s join group_members m on m.user_id = s.user_id where m.group_id = ? order by m.joined_at, s.user_id")
+    .all(groupId) as (ShelfRow & { user_id: number })[];
+  const games = new Map<number, ShelfGame>();
+  const owners: Record<number, number[]> = {};
+  for (const r of rows) {
+    const had = games.get(r.game_id);
+    if (!had) games.set(r.game_id, { ...toGame(r), mine: null });
+    else {
+      had.plays += r.plays;
+      had.added = Math.max(had.added ?? 0, r.added_at ?? 0) || null;
+    }
+    (owners[r.game_id] ??= []).push(r.user_id);
+  }
+  return { games: [...games.values()].sort((a, b) => a.name.localeCompare(b.name)), owners };
 }
 
 /** A name on BGG: letters, digits, spaces, _ . - (as BGG allows), at most 50. */

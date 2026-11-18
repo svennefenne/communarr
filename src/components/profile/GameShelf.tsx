@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Clock, Dices, Search, Star, Users } from "lucide-react";
-import type { ShelfGame } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import { Clock, Dices, Grid3x3, LayoutGrid, List, Search, Star, Trophy, Users } from "lucide-react";
+import type { ShelfGame, UserSummary } from "@/lib/types";
 import type { T } from "@/lib/i18n";
 import { useT } from "@/components/app/AppProvider";
 import { Empty } from "@/components/ui/ui";
+import { Avatar } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 
 /**
- * A member's game shelf on their profile: the board games they own on BoardGameGeek (lib/bggShelf.ts).
- * The whole shelf, to look through: by name, how many can play, how long it takes; and a small one for
- * the profile's side column. Each game links to its page on BGG, and resting the pointer on it shows
- * its card there (LinkPeek, through .shelf).
+ * A member's game shelf on their profile: the board games they own on BoardGameGeek (lib/bggShelf.ts);
+ * and a group's, every game its members own with who has it. The whole shelf, to look through: by name,
+ * how many can play, how long it takes (and in a group, whose), as posters, a grid of small boxes or a
+ * list; and a small one for the profile's side column. Each game links to its page on BGG, and resting
+ * the pointer on it shows its card there (LinkPeek, through .shelf).
  */
 
 const bggUrl = (id: number) => `https://boardgamegeek.com/boardgame/${id}`;
@@ -21,7 +23,19 @@ const span = (r: [number, number]) => (r[0] === r[1] ? String(r[0]) : `${r[0]}�
 
 const PLAYERS = [1, 2, 3, 4, 5, 6] as const;
 type Length = "any" | "30" | "60" | "120" | "long";
-type Sort = "name" | "rating" | "mine" | "short" | "added" | "plays";
+type Sort = "name" | "rating" | "mine" | "short" | "added" | "plays" | "owners";
+type Person = Pick<UserSummary, "id" | "name" | "avatar" | "accent">;
+/** big boxes with their facts, small boxes with only their names, or a list with everything */
+type View = "poster" | "grid" | "list";
+const VIEWS: [View, typeof LayoutGrid, string][] = [
+  ["poster", LayoutGrid, "Posters"],
+  ["grid", Grid3x3, "Grid"],
+  ["list", List, "List"],
+];
+// (the view is kept on the device, for every shelf)
+const VIEW_KEY = "shelf-view";
+/** one member's shelf (their first name, their name on BGG), or a group's (its members with games, and who owns which) */
+export type Whose = { kind: "member"; owner: string; bggName: string; fetchedAt: number | null } | { kind: "group"; people: Person[]; owners: Record<number, number[]> };
 
 const fitsPlayers = (g: ShelfGame, n: number | null) => !n || (!!g.players && (n === 6 ? g.players[1] >= 6 : g.players[0] <= n && n <= g.players[1]));
 function fitsLength(g: ShelfGame, l: Length) {
@@ -30,8 +44,10 @@ function fitsLength(g: ShelfGame, l: Length) {
   return l === "long" ? g.time[1] > 120 : g.time[1] <= Number(l);
 }
 
-function Facts({ g, t }: { g: ShelfGame; t: T }) {
-  const one = (n: number) => n.toLocaleString(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const one = (t: T, n: number) => n.toLocaleString(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** players · time · rating (and in the list, its rank on BGG) */
+function Facts({ g, t, rank = false }: { g: ShelfGame; t: T; rank?: boolean }) {
   return (
     <span className="shelf-facts">
       {g.players ? (
@@ -45,8 +61,13 @@ function Facts({ g, t }: { g: ShelfGame; t: T }) {
         </span>
       ) : null}
       {g.rating ? (
-        <span title={t("Rated {n} on BoardGameGeek", { n: one(g.rating) })}>
-          <Star size={12} aria-hidden /> {one(g.rating)}
+        <span title={t("Rated {n} on BoardGameGeek", { n: one(t, g.rating) })}>
+          <Star size={12} aria-hidden /> {one(t, g.rating)}
+        </span>
+      ) : null}
+      {rank && g.rank ? (
+        <span title={t("Number {n} on BoardGameGeek", { n: g.rank })}>
+          <Trophy size={12} aria-hidden /> #{g.rank}
         </span>
       ) : null}
     </span>
@@ -57,19 +78,56 @@ function Box({ g }: { g: ShelfGame }) {
   return <span className="shelf-box">{g.thumb ? <img src={g.thumb} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <Dices size={28} aria-hidden />}</span>;
 }
 
-/** The whole shelf (the profile's "Game shelf" tab). */
-export function GameShelf({ games, owner, bggName, fetchedAt }: { games: ShelfGame[]; owner: string; bggName: string; fetchedAt: number | null }) {
+/** Who in the group has it: their pictures (a few, then how many more), and in the list their names too. */
+function Owners({ ids, people, named = false }: { ids: number[]; people: Map<number, Person>; named?: boolean }) {
+  const who = ids.map((id) => people.get(id)).filter((p): p is Person => !!p);
+  const names = who.map((p) => p.name.split(" ")[0]).join(", ");
+  return (
+    <span className="shelf-owners" title={names}>
+      {who.slice(0, 4).map((p) => (
+        <Avatar key={p.id} user={p} size={22} />
+      ))}
+      {who.length > 4 ? <span className="shelf-more">+{who.length - 4}</span> : null}
+      {named ? <span className="shelf-names">{names}</span> : <span className="sr-only">{names}</span>}
+    </span>
+  );
+}
+
+/** The whole shelf (a profile's or a group's "Game shelf" tab). */
+export function GameShelf({ games, whose }: { games: ShelfGame[]; whose: Whose }) {
   const t = useT();
   const [q, setQ] = useState("");
   const [players, setPlayers] = useState<number | null>(null);
   const [length, setLength] = useState<Length>("any");
   const [sort, setSort] = useState<Sort>("name");
+  // (a group's: whose games, everyone's or one member's)
+  const [who, setWho] = useState<number | null>(null);
+  const [view, setView] = useState<View>("poster");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      if (v === "grid" || v === "list") setView(v);
+    } catch {
+      /* private mode */
+    }
+  }, []);
+  const pickView = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* private mode */
+    }
+  };
+  const group = whose.kind === "group" ? whose : null;
+  const people = useMemo(() => new Map((group?.people ?? []).map((p) => [p.id, p])), [group]);
   const rated = games.some((g) => g.mine);
   const played = games.some((g) => g.plays);
 
   const shown = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase(t.locale);
-    const list = games.filter((g) => (!needle || g.name.toLocaleLowerCase(t.locale).includes(needle)) && fitsPlayers(g, players) && fitsLength(g, length));
+    const owners = group?.owners ?? {};
+    const list = games.filter((g) => (!needle || g.name.toLocaleLowerCase(t.locale).includes(needle)) && fitsPlayers(g, players) && fitsLength(g, length) && (!who || !!owners[g.id]?.includes(who)));
     const byName = (a: ShelfGame, b: ShelfGame) => a.name.localeCompare(b.name, t.locale);
     const by: Record<Sort, (a: ShelfGame, b: ShelfGame) => number> = {
       name: byName,
@@ -78,10 +136,11 @@ export function GameShelf({ games, owner, bggName, fetchedAt }: { games: ShelfGa
       short: (a, b) => (a.time?.[1] ?? Infinity) - (b.time?.[1] ?? Infinity) || byName(a, b),
       added: (a, b) => (b.added ?? 0) - (a.added ?? 0) || byName(a, b),
       plays: (a, b) => b.plays - a.plays || byName(a, b),
+      owners: (a, b) => (owners[b.id]?.length ?? 0) - (owners[a.id]?.length ?? 0) || byName(a, b),
     };
     return list.sort(by[sort]);
-  }, [games, q, players, length, sort, t.locale]);
-  const filtered = !!q.trim() || players !== null || length !== "any";
+  }, [games, q, players, length, sort, who, group, t.locale]);
+  const filtered = !!q.trim() || players !== null || length !== "any" || who !== null;
 
   return (
     <section className="shelf stack">
@@ -110,32 +169,83 @@ export function GameShelf({ games, owner, bggName, fetchedAt }: { games: ShelfGa
           <option value="120">{t("Up to two hours")}</option>
           <option value="long">{t("Longer than two hours")}</option>
         </select>
+        {group && group.people.length > 1 ? (
+          <select className="select shelf-select" value={who ?? ""} onChange={(e) => setWho(e.target.value ? Number(e.target.value) : null)} aria-label={t("Whose games")}>
+            <option value="">{t("Everyone's games")}</option>
+            {group.people.map((p) => (
+              <option key={p.id} value={p.id}>
+                {t("Games {name} has", { name: p.name.split(" ")[0] })}
+              </option>
+            ))}
+          </select>
+        ) : null}
         <select className="select shelf-select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label={t("Order")}>
           <option value="name">{t("By name")}</option>
           <option value="rating">{t("Best rated on BGG")}</option>
-          {rated ? <option value="mine">{t("Rated highest by {name}", { name: owner })}</option> : null}
+          {rated && whose.kind === "member" ? <option value="mine">{t("Rated highest by {name}", { name: whose.owner })}</option> : null}
+          {group ? <option value="owners">{t("Most of us have it")}</option> : null}
           <option value="short">{t("Shortest first")}</option>
           <option value="added">{t("Newest on the shelf")}</option>
           {played ? <option value="plays">{t("Most played")}</option> : null}
         </select>
+        <div className="pills shelf-views" role="group" aria-label={t("View")}>
+          {VIEWS.map(([v, Icon, label]) => (
+            <button key={v} type="button" className={`pill ${view === v ? "active" : ""}`} aria-pressed={view === v} onClick={() => pickView(v)} title={t(label)} aria-label={t(label)}>
+              <Icon size={15} aria-hidden />
+            </button>
+          ))}
+        </div>
       </div>
       <p className="small muted" style={{ margin: 0 }} aria-live="polite">
         {filtered ? t("{n} of {total} games", { n: shown.length, total: games.length }) : t.n(games.length, "{n} game", "{n} games")}
       </p>
-      {shown.length ? (
-        <ul className="shelf-grid">
+      {!shown.length ? null : view === "list" ? (
+        <ul className="shelf-list">
           {shown.map((g) => (
             <li key={g.id}>
-              <a className="shelf-game" href={bggUrl(g.id)} target="_blank" rel="noopener noreferrer">
+              <a className="shelf-row" href={bggUrl(g.id)} target="_blank" rel="noopener noreferrer">
                 <Box g={g} />
-                <b className="shelf-name">{g.name}</b>
-                {g.year ? <span className="shelf-year">{g.year}</span> : null}
-                <Facts g={g} t={t} />
+                <span className="shelf-row-main">
+                  <span className="shelf-row-title">
+                    <b className="shelf-name">{g.name}</b>
+                    {g.year ? <span className="shelf-year">{g.year}</span> : null}
+                  </span>
+                  <Facts g={g} t={t} rank />
+                </span>
+                <span className="shelf-row-side">
+                  {group ? (
+                    <Owners ids={group.owners[g.id] ?? []} people={people} named />
+                  ) : (
+                    <>
+                      {g.mine && whose.kind === "member" ? <span>{t("Rated {n} by {name}", { n: g.mine, name: whose.owner })}</span> : null}
+                      {g.plays ? <span>{t.n(g.plays, "{n} play", "{n} plays")}</span> : null}
+                    </>
+                  )}
+                </span>
               </a>
             </li>
           ))}
         </ul>
       ) : (
+        <ul className={`shelf-grid ${view === "grid" ? "small" : ""}`}>
+          {shown.map((g) => (
+            <li key={g.id}>
+              <a className="shelf-game" href={bggUrl(g.id)} target="_blank" rel="noopener noreferrer">
+                <Box g={g} />
+                <b className="shelf-name">{g.name}</b>
+                {view === "poster" ? (
+                  <>
+                    {g.year ? <span className="shelf-year">{g.year}</span> : null}
+                    <Facts g={g} t={t} />
+                    {group ? <Owners ids={group.owners[g.id] ?? []} people={people} /> : null}
+                  </>
+                ) : null}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {shown.length ? null : (
         <Empty icon={<Dices size={28} />} title={t("No game fits")}>
           <button
             type="button"
@@ -144,6 +254,7 @@ export function GameShelf({ games, owner, bggName, fetchedAt }: { games: ShelfGa
               setQ("");
               setPlayers(null);
               setLength("any");
+              setWho(null);
             }}
           >
             {t("Show them all")}
@@ -151,15 +262,21 @@ export function GameShelf({ games, owner, bggName, fetchedAt }: { games: ShelfGa
         </Empty>
       )}
       <p className="tiny muted shelf-credit">
-        <a href={`https://boardgamegeek.com/collection/user/${encodeURIComponent(bggName)}?own=1&subtype=boardgame`} target="_blank" rel="noopener noreferrer" className="link">
-          {t("The collection on BoardGameGeek")}
-        </a>
-        {fetchedAt ? (
+        {whose.kind === "member" ? (
           <>
-            {", "}
-            {t("fetched")} <Time t={fetchedAt} />
+            <a href={`https://boardgamegeek.com/collection/user/${encodeURIComponent(whose.bggName)}?own=1&subtype=boardgame`} target="_blank" rel="noopener noreferrer" className="link">
+              {t("The collection on BoardGameGeek")}
+            </a>
+            {whose.fetchedAt ? (
+              <>
+                {", "}
+                {t("fetched")} <Time t={whose.fetchedAt} />
+              </>
+            ) : null}
           </>
-        ) : null}
+        ) : (
+          t.n(whose.people.length, "From {n} member's collection on BoardGameGeek", "From {n} members' collections on BoardGameGeek")
+        )}
         {" · "}
         <a href="https://boardgamegeek.com" target="_blank" rel="noopener noreferrer" className="bgg-powered">
           {t("Powered by BGG")}

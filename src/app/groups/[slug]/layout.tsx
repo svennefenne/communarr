@@ -3,6 +3,7 @@ import { Lock } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { canSeeGroup, groupInfo, groupRow } from "@/lib/groups";
 import { getSettings } from "@/lib/settings";
+import { groupShelfCount } from "@/lib/bggShelf";
 import { GroupHeader } from "@/components/groups/GroupHeader";
 import { BackPill } from "@/components/ui/BackPill";
 import { MentionScope } from "@/components/editor/mentionScope";
@@ -28,7 +29,7 @@ export default async function GroupLayout({ params, children }: { params: Promis
   return (
     <div className="page">
       <BackPill href="/groups" label={t("Groups")} />
-      <GroupHeader g={g} features={{ calendar: s.features.calendar, polls: s.features.polls, chat: s.features.chat }} />
+      <GroupHeader g={g} features={{ calendar: s.features.calendar, polls: s.features.polls, chat: s.features.chat }} games={g.canRead ? groupShelfCount(g.id) : 0} />
       {g.canRead ? (
         <MentionScope ids={g.members.map((m) => m.id)} label="In the group">
           {children}
