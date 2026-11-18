@@ -85,6 +85,32 @@ export interface Reaction {
 }
 
 /** A board game on BoardGameGeek (bgg: in the editor). */
+/** A board game someone owns on BoardGameGeek, on their game shelf (as their collection there gives it). */
+export interface ShelfGame {
+  id: number;
+  name: string;
+  year: number | null;
+  thumb: string | null;
+  players: [number, number] | null;
+  time: [number, number] | null;
+  /** the average rating on BGG, 1–10, and the game's rank there */
+  rating: number | null;
+  rank: number | null;
+  /** their own rating, 1–10 */
+  mine: number | null;
+  plays: number;
+  /** when they last changed it in their collection (about when they got it) */
+  added: number | null;
+}
+
+/** A member's game shelf: their name on BGG, and how fetching their collection went (pending: not in yet; unknown: no such user on BGG) */
+export interface ShelfAccount {
+  username: string;
+  status: "pending" | "ok" | "unknown" | "error";
+  games: number;
+  fetchedAt: number | null;
+}
+
 export interface BggGame {
   id: number;
   name: string;
