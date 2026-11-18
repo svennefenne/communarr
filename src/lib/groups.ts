@@ -34,6 +34,8 @@ export interface GroupRow {
   owner_id: number | null;
   room_id: number | null;
   created_at: number;
+  /** 1: the group has a game shelf (the board games its members own on BoardGameGeek) */
+  game_shelf: number;
 }
 
 export interface GroupInfo {
@@ -55,6 +57,8 @@ export interface GroupInfo {
   canRead: boolean;
   canManage: boolean;
   members: UserSummary[];
+  /** a "Game shelf" tab: the board games its members own on BoardGameGeek */
+  gameShelf: boolean;
 }
 
 export class GroupError extends UserError {}
@@ -143,6 +147,7 @@ export function groupInfo(u: User, g: GroupRow, withMembers = false): GroupInfo 
     canRead: canReadGroup(u, g),
     canManage: canManageGroup(u, g),
     members,
+    gameShelf: !!g.game_shelf,
   };
 }
 
@@ -183,7 +188,7 @@ function scopeFor(g: Pick<GroupRow, "id" | "privacy">) {
   return g.privacy === "open" ? "members" : `g:${g.id}`;
 }
 
-export function createGroup(u: User, o: { name: string; tagline?: string; descriptionHtml?: string; privacy: Privacy; color?: string; avatar?: string | null; banner?: string | null; chat?: boolean }): GroupRow {
+export function createGroup(u: User, o: { name: string; tagline?: string; descriptionHtml?: string; privacy: Privacy; color?: string; avatar?: string | null; banner?: string | null; chat?: boolean; gameShelf?: boolean }): GroupRow {
   const name = cleanLine(o.name, 50);
   if (!name) throw new GroupError("Give the group a name.");
   const desc = cleanHtml(o.descriptionHtml || "");
@@ -192,8 +197,8 @@ export function createGroup(u: User, o: { name: string; tagline?: string; descri
     const t = now();
     const id = Number(
       db()
-        .prepare("insert into groups (slug, name, tagline, description_html, avatar, banner, color, privacy, owner_id, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        .run(slugify(name), name, cleanLine(o.tagline, 120), desc.html, safeMedia(o.avatar), safeMedia(o.banner), /^#[0-9a-f]{6}$/i.test(o.color || "") ? o.color : null, privacy, u.id, t).lastInsertRowid,
+        .prepare("insert into groups (slug, name, tagline, description_html, avatar, banner, color, privacy, owner_id, created_at, game_shelf) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .run(slugify(name), name, cleanLine(o.tagline, 120), desc.html, safeMedia(o.avatar), safeMedia(o.banner), /^#[0-9a-f]{6}$/i.test(o.color || "") ? o.color : null, privacy, u.id, t, o.gameShelf ? 1 : 0).lastInsertRowid,
     );
     db().prepare("insert into group_members (group_id, user_id, role, joined_at) values (?, ?, 'owner', ?)").run(id, u.id, t);
     if (o.chat !== false) {
@@ -209,14 +214,14 @@ export function createGroup(u: User, o: { name: string; tagline?: string; descri
 
 const safeMedia = (s?: string | null) => (s && /^\/media\/[\w./-]+$/.test(s) ? s : null);
 
-export function updateGroup(u: User, id: number, o: { name?: string; tagline?: string; descriptionHtml?: string; privacy?: Privacy; color?: string; avatar?: string | null; banner?: string | null }) {
+export function updateGroup(u: User, id: number, o: { name?: string; tagline?: string; descriptionHtml?: string; privacy?: Privacy; color?: string; avatar?: string | null; banner?: string | null; gameShelf?: boolean }) {
   const g = groupRow(id);
   if (!g || !canManageGroup(u, g)) throw new GroupError("Only the group's admins can change it.");
   const name = o.name !== undefined ? cleanLine(o.name, 50) || g.name : g.name;
   const desc = o.descriptionHtml !== undefined ? cleanHtml(o.descriptionHtml) : null;
   const privacy = o.privacy && ["open", "closed", "secret"].includes(o.privacy) ? o.privacy : g.privacy;
   db()
-    .prepare("update groups set name = ?, tagline = ?, description_html = ?, privacy = ?, color = ?, avatar = ?, banner = ? where id = ?")
+    .prepare("update groups set name = ?, tagline = ?, description_html = ?, privacy = ?, color = ?, avatar = ?, banner = ?, game_shelf = ? where id = ?")
     .run(
       name,
       o.tagline !== undefined ? cleanLine(o.tagline, 120) : g.tagline,
@@ -225,6 +230,7 @@ export function updateGroup(u: User, id: number, o: { name?: string; tagline?: s
       o.color !== undefined ? (/^#[0-9a-f]{6}$/i.test(o.color) ? o.color : null) : g.color,
       o.avatar !== undefined ? safeMedia(o.avatar) : g.avatar,
       o.banner !== undefined ? safeMedia(o.banner) : g.banner,
+      o.gameShelf !== undefined ? (o.gameShelf ? 1 : 0) : g.game_shelf,
       id,
     );
   if (g.room_id && name !== g.name) db().prepare("update rooms set name = ? where id = ?").run(name, g.room_id);

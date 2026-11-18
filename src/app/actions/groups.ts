@@ -15,6 +15,8 @@ interface GroupInput {
   avatar?: string | null;
   banner?: string | null;
   chat?: boolean;
+  /** a "Game shelf" tab with the board games the members own on BoardGameGeek */
+  gameShelf?: boolean;
 }
 
 export async function createGroupAction(input: GroupInput) {

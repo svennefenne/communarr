@@ -593,6 +593,9 @@ const MIGRATIONS: string[] = [
   );
   create index bgg_shelf_game on bgg_shelf(game_id);
   `,
+  /* 20: a group's game shelf (the games its members own on BoardGameGeek) only where its admins switch it on */ `
+  alter table groups add column game_shelf integer not null default 0;
+  `,
 ];
 
 function open(): Database.Database {

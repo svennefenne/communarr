@@ -28,7 +28,7 @@ export function GroupHeader({ g, features, games = 0 }: { g: GroupInfo; features
     ...(features.calendar ? [[`${base}/events`, t("Events")]] : []),
     ...(features.polls ? [[`${base}/polls`, t("Polls")]] : []),
     [`${base}/members`, `${t("Members")} · ${g.memberCount}`],
-    // (the games its members own on BoardGameGeek, once any of them has a game shelf)
+    // (the games its members own on BoardGameGeek: where the group has a game shelf and any of them has linked theirs)
     ...(games ? [[`${base}/games`, `${t("Game shelf")} · ${games}`]] : []),
     [`${base}/about`, t("About")],
     ...(g.canManage ? [[`${base}/settings`, t("Settings")]] : []),

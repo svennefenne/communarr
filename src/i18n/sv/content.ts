@@ -419,6 +419,7 @@ const sv: Record<string, string> = {
   "Rated {n} by {name}": "Betyg {n} av {name}",
   "{n} play": "{n} parti",
   "{n} plays": "{n} partier",
+  "A game shelf: the board games the members own on BoardGameGeek, and who has which": "En spelhylla: brädspelen som medlemmarna äger på BoardGameGeek, och vem som har vilket",
 };
 
 export default sv;
