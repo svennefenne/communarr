@@ -11,11 +11,11 @@ export async function generateMetadata() {
   return { title: (await requestT())("New thread") };
 }
 
-export default async function NewThreadPage({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
+export default async function NewThreadPage({ searchParams }: { searchParams: Promise<{ cat?: string; drafts?: string }> }) {
   const u = await requireUser();
   const t = await requestT();
   if (!getSettings().features.forum) notFound();
-  const { cat } = await searchParams;
+  const { cat, drafts } = await searchParams;
   const cats = categories(u).filter((c) => (!c.locked || u.isMod) && (!c.group || canPostInGroup(u, groupRow(c.group.id)!)));
   return (
     <div className="page mid">
@@ -27,7 +27,7 @@ export default async function NewThreadPage({ searchParams }: { searchParams: Pr
         </div>
       </div>
       <div className="panel panel-pad">
-        <NewThreadForm cats={cats.map((c) => ({ id: c.id, name: c.name, icon: c.icon, locked: c.locked }))} initialCat={cat ? Number(cat) : undefined} />
+        <NewThreadForm cats={cats.map((c) => ({ id: c.id, name: c.name, icon: c.icon, locked: c.locked }))} initialCat={cat ? Number(cat) : undefined} showDrafts={drafts === "1"} />
       </div>
     </div>
   );

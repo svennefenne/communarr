@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MessagesSquare, Plus } from "lucide-react";
+import { FileText, MessagesSquare, Plus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { categories, threads } from "@/lib/forum";
 import { getSettings } from "@/lib/settings";
+import { listDrafts } from "@/lib/drafts";
 import { ThreadList } from "@/components/forum/ThreadList";
 import { ForumCategories, ForumView, ForumViewToggle } from "@/components/forum/ForumIndex";
 import { Empty } from "@/components/ui/ui";
@@ -20,6 +21,8 @@ export default async function ForumPage() {
   if (!getSettings().features.forum) notFound();
   const cats = categories(u);
   const latest = threads(u, { sort: "active", limit: 12 }).list;
+  // threads they saved as drafts: a way back to them
+  const drafts = listDrafts(u.id, "thread").length;
   return (
     <div className="page">
       <ForumView initial={u.theme.forumView}>
@@ -30,6 +33,11 @@ export default async function ForumPage() {
           </div>
           <div className="page-actions">
             <ForumViewToggle />
+            {drafts ? (
+              <Link href="/forum/new?drafts=1" className="btn btn-ghost" title={t("Your drafts")}>
+                <FileText size={16} /> {t("Drafts")} · {drafts}
+              </Link>
+            ) : null}
             <Link href="/forum/new" className="btn btn-primary">
               <Plus size={16} /> {t("New thread")}
             </Link>

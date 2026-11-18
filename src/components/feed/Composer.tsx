@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { CalendarPlus, FilePen, FileText, ImagePlus, Lock, Megaphone, MessagesSquare, Send, Trash2, Type, Users, Vote, X } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { CalendarPlus, FilePen, FileText, ImagePlus, Lock, Megaphone, MessagesSquare, Send, Type, Users, Vote, X } from "lucide-react";
 import type { DraftSummary } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile, useConfirm } from "@/components/ui/ui";
 import { ImageLinkButton } from "@/components/ui/ImageLink";
-import { Time } from "@/components/ui/Time";
-import { createPostAction, deleteDraftAction, draftAction, draftsAction, saveDraftAction } from "@/app/actions/content";
+import { createPostAction, deleteDraftAction, draftAction, saveDraftAction } from "@/app/actions/content";
+import { DraftList, useDrafts } from "./Drafts";
 
 export interface ComposerGroup {
   id: number;
@@ -36,17 +36,10 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
   const [notifyAll, setNotifyAll] = useState(true);
   const [pending, start] = useTransition();
   // drafts: theirs (null until they're in), the one that's open in the composer, and whether the list shows
-  const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
+  const { drafts, reload: loadDrafts } = useDrafts("post");
   const [draftId, setDraftId] = useState<number | null>(null);
   const [showDrafts, setShowDrafts] = useState(false);
   const { confirm, node } = useConfirm();
-  const loadDrafts = useCallback(async () => {
-    const r = await draftsAction();
-    if (r.ok) setDrafts(r.data);
-  }, []);
-  useEffect(() => {
-    void loadDrafts();
-  }, [loadDrafts]);
   // a draft opened while the editor isn't there yet (the composer was closed) waits for it
   const waitingHtml = useRef<string | null>(null);
   const expand = () => setOpen(true);
@@ -151,29 +144,8 @@ export function Composer({ groups, groupId, onPosted }: { groups: ComposerGroup[
       toast(t("Draft deleted."));
       void loadDrafts();
     });
-  const draftList = (
-    <div className="composer-drafts" role="region" aria-label={t("Drafts")}>
-      {mine.length ? (
-        mine.map((d) => (
-          <div key={d.id} className={`composer-draft ${d.id === draftId ? "on" : ""}`}>
-            <button type="button" className="composer-draft-open" onClick={() => openDraft(d.id)} title={t("Open the draft")}>
-              <b className="ellipsis">{d.preview || t("(no text)")}</b>
-              <span className="tiny muted">
-                {where(d)} · <Time t={d.updatedAt} />
-              </span>
-            </button>
-            <button type="button" className="icon-btn sm" onClick={() => removeDraft(d.id)} aria-label={t("Delete the draft")} title={t("Delete the draft")}>
-              <Trash2 size={16} />
-            </button>
-          </div>
-        ))
-      ) : (
-        <p className="small muted" style={{ margin: 0 }}>
-          {t("No drafts.")}
-        </p>
-      )}
-    </div>
-  );
+  const draftList = <DraftList drafts={mine} current={draftId} where={where} onOpen={openDraft} onDelete={removeDraft} />;
+
   const submit = () => {
     const html = ed.current?.getHTML() ?? "";
     if (ed.current?.busy()) {

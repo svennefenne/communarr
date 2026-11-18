@@ -613,6 +613,9 @@ const MIGRATIONS: string[] = [
   );
   create index post_drafts_user on post_drafts(user_id, updated_at);
   `,
+  /* 22: forum threads saved as drafts too: kind 'post' or 'thread' (a thread's target is "c:<category>") */ `
+  alter table post_drafts add column kind text not null default 'post';
+  `,
 ];
 
 function open(): Database.Database {
