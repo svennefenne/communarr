@@ -52,7 +52,7 @@ export function GroupColumns({
           return info ? <MembersWidget key="members" members={info.members} count={info.memberCount} href={`/groups/${slug}/members`} /> : null;
         case "games": {
           const total = games && g.game_shelf ? groupShelfCount(g.id) : 0;
-          return total ? <ShelfCard key="games" games={groupShelfLatest(g.id, 9)} total={total} href={`/groups/${slug}/games`} /> : null;
+          return total ? <ShelfCard key="games" games={groupShelfLatest(g.id, 9)} total={total} href={`/groups/${slug}/games`} groupId={g.id} /> : null;
         }
       }
     })

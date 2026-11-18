@@ -616,6 +616,17 @@ const MIGRATIONS: string[] = [
   /* 22: forum threads saved as drafts too: kind 'post' or 'thread' (a thread's target is "c:<category>") */ `
   alter table post_drafts add column kind text not null default 'post';
   `,
+  /* 23: what members make of the games on the shelves (gameMarks.ts): their own rating, wanting to play it */ `
+  create table game_marks (
+    user_id integer not null references users(id) on delete cascade,
+    game_id integer not null,
+    rating integer,
+    want integer not null default 0,
+    updated_at integer not null,
+    primary key (user_id, game_id)
+  );
+  create index game_marks_game on game_marks(game_id);
+  `,
 ];
 
 function open(): Database.Database {

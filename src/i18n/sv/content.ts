@@ -439,6 +439,27 @@ const sv: Record<string, string> = {
   "Keep it to post later, on any of your devices": "Spara det för att publicera senare, från vilken av dina enheter som helst",
   "Save the draft": "Spara utkastet",
   "Save draft": "Spara utkast",
+  // what members make of the games on the shelves
+  "That game isn't there.": "Det spelet finns inte.",
+  "A rating is a whole number from 1 to 10.": "Ett betyg är ett heltal från 1 till 10.",
+  "That group isn't there.": "Den gruppen finns inte.",
+  "Rated {avg} by {n} of us": "Betyg {avg} av {n} av oss",
+  "Rated {avg} on average by {n} of us": "Snittbetyg {avg} från {n} av oss",
+  "{n} wants to play it": "{n} vill spela det",
+  "{n} want to play it": "{n} vill spela det",
+  "Best rated by us": "Högst betyg hos oss",
+  "Most wanted": "Flest vill spela",
+  "Complexity on BoardGameGeek, 1–5": "Svårighetsgrad på BoardGameGeek, 1–5",
+  "Open on BoardGameGeek": "Öppna på BoardGameGeek",
+  "Your rating": "Ditt betyg",
+  "Your rating, 1 to 10": "Ditt betyg, 1 till 10",
+  "You gave it {n} on BoardGameGeek: that counts until you rate it here.": "Du gav det {n} på BoardGameGeek: det räknas tills du sätter ett betyg här.",
+  "You want to play it": "Du vill spela det",
+  "Want to play": "Vill spela",
+  "Rated by the group": "Betyg i gruppen",
+  "Rated here": "Betyg här",
+  "In the group, it's on the shelf of": "I gruppen står det på hyllan hos",
+  "On the shelf of": "Står på hyllan hos",
 };
 
 export default sv;
