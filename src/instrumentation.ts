@@ -1,6 +1,7 @@
 /**
  * Runs once when the server starts: the database is opened (and migrated) straight away, and a
- * minute-by-minute clock sends event reminders, closes polls whose time is up and tidies old sessions.
+ * minute-by-minute clock sends event reminders, closes polls whose time is up, fetches game shelves from
+ * BoardGameGeek and tidies old sessions.
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
@@ -11,6 +12,7 @@ export async function register() {
   const { sendReminders } = await import("./lib/events");
   const { closeDuePolls } = await import("./lib/polls");
   const { birthdayPings } = await import("./lib/birthdays");
+  const { shelfTick } = await import("./lib/bggShelf");
   db();
   let ticks = 0;
   const tick = () => {
@@ -18,6 +20,8 @@ export async function register() {
       sendReminders();
       closeDuePolls();
       birthdayPings();
+      // a game shelf due a fetch from BoardGameGeek (one a minute at most)
+      shelfTick();
       // once an hour: sessions that ran out, old read notifications (keep 90 days)
       if (ticks++ % 60 === 0) {
         const now = Date.now();

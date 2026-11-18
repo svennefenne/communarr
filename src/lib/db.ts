@@ -562,6 +562,37 @@ const MIGRATIONS: string[] = [
          starts, 0 the whole time; null, none */ `
   alter table events add column countdown integer;
   `,
+  /* 19: a member's game shelf: the board games they own on BoardGameGeek, by their name there, fetched
+         now and then (bggShelf.ts); status: pending (not in yet), ok, unknown (no such user), error */ `
+  create table bgg_accounts (
+    user_id integer primary key references users(id) on delete cascade,
+    username text not null,
+    status text not null default 'pending',
+    games integer not null default 0,
+    fetched_at integer,
+    next_at integer not null,
+    tries integer not null default 0
+  );
+  create index bgg_accounts_next on bgg_accounts(next_at);
+  create table bgg_shelf (
+    user_id integer not null references users(id) on delete cascade,
+    game_id integer not null,
+    name text not null,
+    year integer,
+    thumb text,
+    min_players integer,
+    max_players integer,
+    min_time integer,
+    max_time integer,
+    rating real,
+    rank integer,
+    mine real,
+    plays integer not null default 0,
+    added_at integer,
+    primary key (user_id, game_id)
+  );
+  create index bgg_shelf_game on bgg_shelf(game_id);
+  `,
 ];
 
 function open(): Database.Database {

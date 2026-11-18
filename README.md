@@ -28,6 +28,12 @@ or in a theme you make yourself.
   (free when it isn't commercial) and paste it in Admin → Features & permissions. Without one, `bgg:`
   links to a search on BGG instead. The site keeps what it learns from BGG a while, so BGG is asked
   little.
+- **Game shelves**: with the BGG token in place, members can give their name on BoardGameGeek under
+  Settings → Profile, and the board games they own there (no expansions) show on their profile: a few
+  boxes in the side column, and a "Game shelf" tab with all of them, to search and narrow down by how
+  many are playing and how long it takes, sorted by name, rating, length, newest or most played. Each
+  game links to its BGG page and shows its card on hover. The site fetches a collection when it's
+  linked and again once a day, one member a minute at most.
 - **The site's own emoji**, Discord style: members add a picture with a name (a GIF stays animated) from
   the emoji picker; write it `:name:` (after `:` and two letters a list suggests them, and the emoji's
   own names like `:thumbs_up:`), use it in anything written and as a reaction. A chat message of only
@@ -66,7 +72,7 @@ or in a theme you make yourself.
 - **Groups**: open, closed (ask to join) or secret (invitation only), with their own posts, events,
   polls, forum categories and chat room, members with owner and admin roles, requests and invitations.
 - **Members**: profiles with picture, banner, pronouns, bio, status (emoji, words and when it clears),
-  online/away/busy/invisible, birthday (everyone gets a reminder), activity and groups; a members
+  online/away/busy/invisible, birthday (everyone gets a reminder), activity, groups and game shelf; a members
   directory; "My stuff" with everything you made (also your "only me" posts) and your saved things.
 - **Themes**: 98 colour schemes (Communarr's own plus the 97 Muzix uses), each in light and dark, or follow
   the device; and your own themes: every colour, the display and text fonts, corners, glass, the frame,

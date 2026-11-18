@@ -28,9 +28,9 @@ interface Peek {
   bgg?: { id: number; name: string; game: BggGame | null | undefined };
 }
 
-/** a link someone wrote that leaves the site (not a mention, not in an editor) */
+/** a link someone wrote that leaves the site (not a mention, not in an editor), or a game on a game shelf */
 function linkOf(target: EventTarget | null): HTMLAnchorElement | null {
-  const a = target instanceof Element ? target.closest<HTMLAnchorElement>(".prose a[href]") : null;
+  const a = target instanceof Element ? target.closest<HTMLAnchorElement>(".prose a[href], .shelf a[href]") : null;
   if (!a || a.closest(".ed-content") || a.classList.contains("mention")) return null;
   const href = a.getAttribute("href") || "";
   if (!/^https?:\/\//i.test(href)) return null;

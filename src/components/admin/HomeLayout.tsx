@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { CalendarDays, Info, ListChecks, ListFilter, MessageCircle, MessagesSquare, Newspaper, Users, UsersRound, Vote } from "lucide-react";
+import { CalendarDays, Dices, Info, ListChecks, ListFilter, MessageCircle, MessagesSquare, Newspaper, Users, UsersRound, Vote } from "lucide-react";
 import type { SiteSettings } from "@/lib/settings";
 import { FEED_FEATURE, FEED_KINDS, homeLayout, type FeedKind, type GroupPart, type HomePanel, type HomePanelSlot, type PageSlot, type ProfilePart } from "@/lib/homePanels";
 import { useT, useToast } from "@/components/app/AppProvider";
@@ -33,6 +33,7 @@ const PROFILE_PARTS: Record<ProfilePart, ArrangePart> = {
   filters: FILTERS,
   about: { label: "About", icon: Info },
   groups: { label: "Groups", icon: UsersRound, feature: "groups" },
+  games: { label: "Game shelf", icon: Dices },
 };
 
 const ABOVE: ArrangePlace = { id: "middle", label: "Middle", moveLabel: "Move {name} above the feed", moveTitle: "Above the feed", feed: true };

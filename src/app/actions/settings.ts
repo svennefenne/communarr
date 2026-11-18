@@ -12,6 +12,7 @@ import { getSettings } from "@/lib/settings";
 import { db } from "@/lib/db";
 import { resetFeedToken } from "@/lib/events";
 import { removeEmail, startConfirmation } from "@/lib/accountMail";
+import { refreshShelf, setShelfName, shelfAccount } from "@/lib/bggShelf";
 import type { NotifyKind } from "@/lib/types";
 
 export async function updateProfileAction(input: ProfileInput) {
@@ -121,4 +122,18 @@ export async function setAliasAction(alias: string) {
     revalidatePath("/", "layout");
     return a;
   });
+}
+
+/** The game shelf on their profile: their name on BoardGameGeek (empty: no shelf), fetched straight away. */
+export async function setShelfNameAction(name: string) {
+  return act((u) => setShelfName(u.id, name));
+}
+
+export async function refreshShelfAction() {
+  return act((u) => refreshShelf(u.id));
+}
+
+/** How fetching their games is going (while it's pending). */
+export async function shelfStatusAction() {
+  return act((u) => shelfAccount(u.id));
 }
