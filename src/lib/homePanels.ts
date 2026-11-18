@@ -38,7 +38,7 @@ export interface HomeLayout {
  * A group's page and a profile (Admin → Front page too): the parts of the side column beside them, in
  * order, each on or off; and the feed's filters, above the feed (the middle) or among those parts.
  */
-export const GROUP_PARTS = ["filters", "upcoming", "members", "games"] as const;
+export const GROUP_PARTS = ["filters", "upcoming", "members"] as const;
 export const PROFILE_PARTS = ["filters", "about", "groups", "games"] as const;
 export type GroupPart = (typeof GROUP_PARTS)[number];
 export type ProfilePart = (typeof PROFILE_PARTS)[number];
@@ -74,7 +74,6 @@ export const DEFAULT_HOME: HomeLayout = {
     { id: "filters", side: "middle", on: true },
     { id: "upcoming", side: "side", on: true },
     { id: "members", side: "side", on: true },
-    { id: "games", side: "side", on: true },
   ],
   profile: [
     { id: "filters", side: "middle", on: true },
