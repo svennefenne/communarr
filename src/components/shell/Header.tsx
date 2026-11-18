@@ -52,7 +52,9 @@ function SiteHeader({ pathname }: { pathname: string }) {
   const [drawer, setDrawer] = useState(false);
   const sections = visibleSections(site.features);
   const activeIdx = sections.findIndex((s) => isActive(s, pathname));
-  useEffect(() => setDrawer(false), [pathname]);
+  useEffect(() => {
+    setDrawer(false);
+  }, [pathname]);
 
   // the header's height, for things that stick under it
   useEffect(() => {

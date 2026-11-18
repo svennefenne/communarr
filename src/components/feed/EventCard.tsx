@@ -20,7 +20,9 @@ export function DateTile({ t, color, small = false }: { t: number; color?: strin
   const tr = useT();
   // drawn again once in the browser, in the reader's own time zone
   const [, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const date = new Date(t);
   return (
     <span className={`date-tile ${small ? "small" : ""}`} style={color ? ({ ["--dt" as string]: color } as React.CSSProperties) : undefined} suppressHydrationWarning>

@@ -54,10 +54,15 @@ const MentionList = forwardRef<ListHandle, SuggestionProps<Item>>(function Menti
   );
   const flat = sections.flatMap((s) => s.items);
   const [sel, setSel] = useState(0);
-  useEffect(() => setSel(0), [props.items, props.query]);
+  useEffect(() => {
+    setSel(0);
+  }, [props.items, props.query]);
   const box = useRef<HTMLDivElement>(null);
   // the chosen one stays in view as the arrows go down a long list
-  useEffect(() => box.current?.querySelector<HTMLElement>(".menu-item.sel")?.scrollIntoView({ block: "nearest" }), [sel]);
+  // (braces: newer browsers' scrollIntoView returns a promise, and an effect may only return its cleanup)
+  useEffect(() => {
+    box.current?.querySelector<HTMLElement>(".menu-item.sel")?.scrollIntoView({ block: "nearest" });
+  }, [sel]);
   const pick = (i: number) => {
     const u = flat[i];
     if (u) props.command({ id: u.username, label: u.name });

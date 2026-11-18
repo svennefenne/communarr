@@ -30,7 +30,9 @@ function Section({ title, children, hint }: { title: string; children: React.Rea
 function ColorRow({ k, value, onChange }: { k: ColorKey; value: string; onChange: (v: string) => void }) {
   const t = useT();
   const [text, setText] = useState(value);
-  useEffect(() => setText(value), [value]);
+  useEffect(() => {
+    setText(value);
+  }, [value]);
   return (
     <label className="color-row">
       <input type="color" className="swatch-input" value={value} onChange={(e) => onChange(e.target.value)} />

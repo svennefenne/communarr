@@ -137,7 +137,9 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     setPrefsState(p);
   }, []);
 
-  useEffect(() => setSupported(typeof window !== "undefined" && window.isSecureContext && !!navigator.mediaDevices?.getUserMedia && typeof RTCPeerConnection !== "undefined"), []);
+  useEffect(() => {
+    setSupported(typeof window !== "undefined" && window.isSecureContext && !!navigator.mediaDevices?.getUserMedia && typeof RTCPeerConnection !== "undefined");
+  }, []);
   useEffect(() => {
     connRef.current = conn;
   }, [conn]);

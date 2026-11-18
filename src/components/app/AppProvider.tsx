@@ -72,7 +72,9 @@ export function useLive(type: string, fn: Handler) {
   const { on } = useApp();
   const ref = useRef(fn);
   ref.current = fn;
-  useEffect(() => on(type, (d) => ref.current(d)), [on, type]);
+  useEffect(() => {
+    return on(type, (d) => ref.current(d));
+  }, [on, type]);
 }
 
 export function usePresence(userId: number): LiveState {
@@ -98,7 +100,9 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
   const idleRef = useRef(false);
 
   // the server's fresh counts after a navigation
-  useEffect(() => setCounts(boot.counts), [boot.counts]);
+  useEffect(() => {
+    setCounts(boot.counts);
+  }, [boot.counts]);
 
   // this device keeps the look it has (once a page load: the cookie lasts another while)
   const look = useRef(boot.me?.theme);
@@ -283,7 +287,9 @@ export function AppProvider({ boot, children }: { boot: Boot; children: React.Re
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  useEffect(() => setSearch((s) => (s.open ? { ...s, open: false } : s)), [pathname]);
+  useEffect(() => {
+    setSearch((s) => (s.open ? { ...s, open: false } : s));
+  }, [pathname]);
 
   const value = useMemo<Ctx>(
     () => ({
