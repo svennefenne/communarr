@@ -1,14 +1,17 @@
 import { Fragment } from "react";
 import { upcoming } from "@/lib/events";
+import { groupShelfCount, groupShelfLatest } from "@/lib/bggShelf";
 import { groupInfo, type GroupRow } from "@/lib/groups";
 import { homeLayout, pageColumn } from "@/lib/homePanels";
 import { getSettings } from "@/lib/settings";
 import type { User } from "@/lib/users";
 import { MembersWidget, UpcomingWidget } from "@/components/home/Widgets";
+import { ShelfCard } from "@/components/profile/GameShelf";
 
 /**
- * A group's tab beside its side column, as wide as the group's header above: what's coming up, and
- * who's in it (left out on the members tab, which lists them all), in the order and as many as Admin →
+ * A group's tab beside its side column, as wide as the group's header above: what's coming up, who's
+ * in it (left out on the members tab, which lists them all), and a few of its games (where its game
+ * shelf is on and has any; left out on the shelf's own tab), in the order and as many as Admin →
  * Front page says. Like a profile, the side column only shows beside the tab on a wide screen.
  * Nothing to show: the tab takes the whole width.
  * The side column starts level with the tab's first frame: buttons go in `top`, above both; a feed
@@ -19,6 +22,7 @@ export function GroupColumns({
   u,
   g,
   members = true,
+  games = true,
   top,
   feedHead,
   filters,
@@ -27,6 +31,7 @@ export function GroupColumns({
   u: User;
   g: GroupRow;
   members?: boolean;
+  games?: boolean;
   top?: React.ReactNode;
   feedHead?: number;
   filters?: React.ReactNode;
@@ -36,6 +41,7 @@ export function GroupColumns({
   const s = getSettings();
   const { side } = pageColumn(homeLayout(s.home).group);
   const info = members && side.includes("members") ? groupInfo(u, g, true) : null;
+  const shelved = games && g.game_shelf && side.includes("games") ? groupShelfCount(g.id) : 0;
   const parts = side
     .map((id) => {
       switch (id) {
@@ -45,6 +51,8 @@ export function GroupColumns({
           return s.features.calendar ? <UpcomingWidget key="upcoming" events={upcoming(u, 4, { groupId: g.id })} href={`/groups/${slug}/events`} planHref={`/events/new?group=${g.id}`} /> : null;
         case "members":
           return info ? <MembersWidget key="members" members={info.members} count={info.memberCount} href={`/groups/${slug}/members`} /> : null;
+        case "games":
+          return shelved ? <ShelfCard key="games" games={groupShelfLatest(g.id, 9)} total={shelved} href={`/groups/${slug}/games`} /> : null;
       }
     })
     .filter(Boolean);
