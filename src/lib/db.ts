@@ -627,6 +627,15 @@ const MIGRATIONS: string[] = [
   );
   create index game_marks_game on game_marks(game_id);
   `,
+  /* 24: games brought to an event, off the bringer's game shelf (eventGames.ts) */ `
+  create table event_games (
+    event_id integer not null references events(id) on delete cascade,
+    user_id integer not null references users(id) on delete cascade,
+    game_id integer not null,
+    created_at integer not null,
+    primary key (event_id, user_id, game_id)
+  );
+  `,
 ];
 
 function open(): Database.Database {

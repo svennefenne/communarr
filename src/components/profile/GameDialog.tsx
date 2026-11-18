@@ -2,18 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Clock, ExternalLink, Heart, Scale, Star, Trophy, Users } from "lucide-react";
-import type { BggGame, GameTalk, ShelfGame } from "@/lib/types";
+import { CalendarDays, Check, Clock, ExternalLink, Heart, Scale, Star, Trophy, Users } from "lucide-react";
+import type { BggGame, BringOption, GameTalk, ShelfGame } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Modal } from "@/components/ui/ui";
 import { Avatar } from "@/components/ui/Avatar";
+import { Time } from "@/components/ui/Time";
 import { loadGame } from "@/components/content/bggCards";
-import { gameTalkAction, rateGameAction, wantGameAction } from "@/app/actions/games";
+import { bringGameAction, bringOptionsAction, gameTalkAction, rateGameAction, wantGameAction } from "@/app/actions/games";
 
 /**
  * A game's box opened on a game shelf: its facts (from BGG), your own rating (1–10) and whether you
  * want to play it, what the others make of it, and who has it. In a group, "the others" are its
- * members; elsewhere, everyone (lib/gameMarks.ts).
+ * members; elsewhere, everyone (lib/gameMarks.ts). Your own game can be brought to an event you're
+ * coming to (lib/eventGames.ts).
  */
 
 const span = (r: [number, number]) => (r[0] === r[1] ? String(r[0]) : `${r[0]}–${r[1]}`);
@@ -27,12 +29,18 @@ export function GameDialog({ game, groupId, onClose }: { game: ShelfGame; groupI
   const [talk, setTalk] = useState<GameTalk | null>(null);
   const [card, setCard] = useState<BggGame | null>(null);
   const [busy, setBusy] = useState(false);
+  // your own game: the coming events you could bring it to (null until they're in)
+  const [bring, setBring] = useState<BringOption[] | null>(null);
   const one = (n: number) => n.toLocaleString(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
   const load = async () => {
     const r = await gameTalkAction(game.id, groupId);
-    if (r.ok) setTalk(r.data);
-    else toast(r.error, { kind: "err" });
+    if (!r.ok) return toast(r.error, { kind: "err" });
+    setTalk(r.data);
+    if (me && r.data.owners.some((p) => p.id === me.id)) {
+      const b = await bringOptionsAction(game.id);
+      if (b.ok) setBring(b.data);
+    }
   };
   useEffect(() => {
     void load();
@@ -129,6 +137,42 @@ export function GameDialog({ game, groupId, onClose }: { game: ShelfGame; groupI
             </span>
           ) : null}
         </section>
+
+        {bring ? (
+          <section className="game-dialog-part">
+            <h3 className="game-dialog-h">{t("Bring it to")}</h3>
+            {bring.length ? (
+              <ul className="game-bring">
+                {bring.map((o) => (
+                  <li key={o.id}>
+                    <CalendarDays size={15} className="muted" aria-hidden />
+                    <span className="grow" style={{ minWidth: 0 }}>
+                      <a href={`/events/${o.id}`} className="ellipsis" style={{ display: "block" }}>
+                        {o.title}
+                      </a>
+                      <span className="tiny muted">
+                        <Time t={o.startAt} mode={o.allDay ? "day" : "datetime"} />
+                      </span>
+                    </span>
+                    <button type="button" className={`btn btn-sm ${o.bringing ? "btn-primary" : ""}`} aria-pressed={o.bringing} disabled={busy} onClick={() => change(() => bringGameAction(o.id, game.id, !o.bringing))}>
+                      {o.bringing ? (
+                        <>
+                          <Check size={14} /> {t("Bringing it")}
+                        </>
+                      ) : (
+                        t("Bring it")
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="tiny muted" style={{ margin: 0 }}>
+                {t("No coming events you're going to. Say you're coming to one, and you can bring games there.")}
+              </p>
+            )}
+          </section>
+        ) : null}
 
         {talk?.ratings.length ? (
           <section className="game-dialog-part">

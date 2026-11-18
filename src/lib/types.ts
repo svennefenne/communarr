@@ -141,6 +141,23 @@ export interface GameTalk {
   mine: { rating: number | null; bggRating: number | null; want: boolean };
 }
 
+/** A game brought to an event: the game (off the bringer's shelf), who brings it, how many of those coming want to play it, and whether it's the viewer's. */
+export interface BroughtGame {
+  game: ShelfGame;
+  by: UserSummary;
+  wants: number;
+  mine: boolean;
+}
+
+/** A coming event a game could be brought to (from its box), and whether it's on its way there. */
+export interface BringOption {
+  id: number;
+  title: string;
+  startAt: number;
+  allDay: boolean;
+  bringing: boolean;
+}
+
 /** A member's game shelf: their name on BGG, and how fetching their collection went (pending: not in yet; unknown: no such user on BGG) */
 export interface ShelfAccount {
   username: string;

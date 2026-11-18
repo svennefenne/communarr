@@ -37,7 +37,7 @@ function People({ title, list }: { title: string; list: EventView["going"] }) {
   );
 }
 
-export function EventDetail({ event, previews }: { event: EventView; previews?: Record<string, LinkPreview | null> }) {
+export function EventDetail({ event, previews, games }: { event: EventView; previews?: Record<string, LinkPreview | null>; games?: React.ReactNode }) {
   const me = useMe();
   const toast = useToast();
   const t = useT();
@@ -154,6 +154,8 @@ export function EventDetail({ event, previews }: { event: EventView; previews?: 
             </div>
           </div>
         </article>
+        {/* (the games coming along: events/[id]/page.tsx) */}
+        {games}
         <section className="panel panel-pad">
           <span className="eyebrow">{t("Talk about it")}</span>
           <Comments type="event" id={e.id} people={[e.author.id, ...e.going.map((x) => x.id), ...e.maybe.map((x) => x.id)]} />
