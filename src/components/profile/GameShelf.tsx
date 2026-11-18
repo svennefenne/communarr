@@ -14,8 +14,8 @@ import { Time } from "@/components/ui/Time";
  * A member's game shelf on their profile: the board games they own on BoardGameGeek (lib/bggShelf.ts);
  * and a group's, every game its members own with who has it. The whole shelf, to look through: by name,
  * how many can play, how long it takes (and in a group, whose), as posters, a grid of small boxes or a
- * list; and a small one for the profile's side column. Each game links to its page on BGG, and resting
- * the pointer on it shows its card there (LinkPeek, through .shelf).
+ * list; and a small one for a profile's or a group's side column. Each game links to its page on BGG,
+ * and resting the pointer on it shows its card there (LinkPeek, through .shelf).
  */
 
 const bggUrl = (id: number) => `https://boardgamegeek.com/boardgame/${id}`;
@@ -286,7 +286,7 @@ export function GameShelf({ games, whose }: { games: ShelfGame[]; whose: Whose }
   );
 }
 
-/** The profile's side column: a few of their games, and the way to the whole shelf. */
+/** A profile's or a group's side column: a few of the newest games, and the way to the whole shelf. */
 export function ShelfCard({ games, total, href }: { games: ShelfGame[]; total: number; href: string }) {
   const t = useT();
   return (

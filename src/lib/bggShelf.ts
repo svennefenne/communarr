@@ -86,6 +86,16 @@ export function groupShelfCount(groupId: number): number {
   return (db().prepare("select count(distinct s.game_id) n from bgg_shelf s join group_members m on m.user_id = s.user_id where m.group_id = ?").get(groupId) as { n: number }).n;
 }
 
+/** The group's newest games (the latest any member got each, each game once): for the small shelf in its side column. */
+export function groupShelfLatest(groupId: number, latest: number): ShelfGame[] {
+  const rows = db()
+    .prepare(
+      "select s.*, max(s.added_at) latest from bgg_shelf s join group_members m on m.user_id = s.user_id where m.group_id = ? group by s.game_id order by latest desc, s.name collate nocase limit ?",
+    )
+    .all(groupId, latest) as ShelfRow[];
+  return rows.map((r) => ({ ...toGame(r), mine: null }));
+}
+
 /**
  * The group's game shelf: every game its members own, once, and who owns it (in the order they joined).
  * Their own ratings stay theirs (none here); plays are added up, and "newest" is the latest any of them got it.
