@@ -57,6 +57,7 @@ export const NOTIFY_KINDS = {
   listNew: "New lists",
   listRow: "Someone changes your row in a list",
   listEdit: "Changes to lists you're on",
+  loan: "Borrowing and lending games",
 } as const;
 export type NotifyKind = keyof typeof NOTIFY_KINDS;
 /** for each kind: in the bell, as a push notification on your devices, and by mail while you're away */
@@ -156,6 +157,21 @@ export interface BringOption {
   startAt: number;
   allDay: boolean;
   bringing: boolean;
+}
+
+export type LoanStatus = "asked" | "lent" | "declined" | "returned" | "cancelled";
+
+/** A game lent (or asked for) off someone's shelf. */
+export interface GameLoan {
+  id: number;
+  gameId: number;
+  game: string;
+  owner: UserSummary;
+  borrower: UserSummary;
+  status: LoanStatus;
+  askedAt: number;
+  /** when it was lent (or answered) */
+  since: number | null;
 }
 
 /** A member's game shelf: their name on BGG, and how fetching their collection went (pending: not in yet; unknown: no such user on BGG) */

@@ -39,7 +39,9 @@ or in a theme you make yourself.
   counts until you do) and whether you want to play it, who rated it what and who has it; a group's
   shelf shows its average rating and how many want each game, and sorts by them. Games can be brought
   to an event (from a game's box, or "Bring a game" on the event): the event lists what's coming along,
-  who brings it, whether it fits the number coming and how many of them want to play it. The site fetches a
+  who brings it, whether it fits the number coming and how many of them want to play it. A game
+  someone else owns can be asked to borrow: the owner gets a notification and lends it (or not), it
+  shows as lent until either of them says it's back, and your own shelf lists the loans going on. The site fetches a
   collection when it's linked and again once a day, one member a minute at most.
 - **The site's own emoji**, Discord style: members add a picture with a name (a GIF stays animated) from
   the emoji picker; write it `:name:` (after `:` and two letters a list suggests them, and the emoji's

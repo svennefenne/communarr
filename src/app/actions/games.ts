@@ -7,6 +7,7 @@ import { canReadGroup, groupRow } from "@/lib/groups";
 import { gameTalk, rateGame, wantGame } from "@/lib/gameMarks";
 import { bringGame, bringOptions, leaveGame } from "@/lib/eventGames";
 import { shelfGames } from "@/lib/bggShelf";
+import { answerLoan, askLoan, cancelLoan, gameLoans, myLoans, returnLoan } from "@/lib/gameLoans";
 
 /** A game's box on a shelf (a group's: its members' ratings and wishes; else everyone's). */
 export async function gameTalkAction(gameId: number, groupId?: number) {
@@ -51,4 +52,24 @@ export async function bringOptionsAction(gameId: number) {
 /** Their own shelf (to pick games to bring). */
 export async function myShelfAction() {
   return act((u) => shelfGames(u.id));
+}
+
+/** A game's loans (where it's lent; who asked, for those two). */
+export async function gameLoansAction(gameId: number) {
+  return act((u) => gameLoans(u, Number(gameId)));
+}
+
+export async function myLoansAction() {
+  return act((u) => myLoans(u));
+}
+
+/** Lending: ask to borrow, answer (lend or not), given back, or take the asking back. */
+export async function loanAction(input: { ask: { ownerId: number; gameId: number } } | { answer: number; yes: boolean } | { returned: number } | { cancel: number }) {
+  return act((u) => {
+    if ("ask" in input) askLoan(u, Number(input.ask.ownerId), Number(input.ask.gameId));
+    else if ("answer" in input) answerLoan(u, Number(input.answer), !!input.yes);
+    else if ("returned" in input) returnLoan(u, Number(input.returned));
+    else cancelLoan(u, Number(input.cancel));
+    return true;
+  });
 }

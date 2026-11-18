@@ -1311,6 +1311,32 @@ a.cat-last:hover .cat-last-title {
   font-size: 0.875rem;
 }
 
+/* lending (GameDialog's Lending, MyLoans.tsx): one loan a row, its buttons at the end */
+.game-loans {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+.game-loans li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.shelf-lent {
+  justify-self: start;
+  align-self: start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-dim);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
 /* the games coming along to an event (EventGames.tsx) */
 .event-game-list {
   display: grid;

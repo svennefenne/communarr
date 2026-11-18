@@ -2,20 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, Clock, ExternalLink, Heart, Scale, Star, Trophy, Users } from "lucide-react";
-import type { BggGame, BringOption, GameTalk, ShelfGame } from "@/lib/types";
+import { CalendarDays, Check, Clock, ExternalLink, Handshake, Heart, Scale, Star, Trophy, Users } from "lucide-react";
+import type { BggGame, BringOption, GameLoan, GameTalk, ShelfGame } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { Modal } from "@/components/ui/ui";
 import { Avatar } from "@/components/ui/Avatar";
 import { Time } from "@/components/ui/Time";
 import { loadGame } from "@/components/content/bggCards";
-import { bringGameAction, bringOptionsAction, gameTalkAction, rateGameAction, wantGameAction } from "@/app/actions/games";
+import { bringGameAction, bringOptionsAction, gameLoansAction, gameTalkAction, loanAction, rateGameAction, wantGameAction } from "@/app/actions/games";
 
 /**
  * A game's box opened on a game shelf: its facts (from BGG), your own rating (1–10) and whether you
  * want to play it, what the others make of it, and who has it. In a group, "the others" are its
  * members; elsewhere, everyone (lib/gameMarks.ts). Your own game can be brought to an event you're
- * coming to (lib/eventGames.ts).
+ * coming to (lib/eventGames.ts); someone else's can be asked to borrow, and the owner answers here
+ * (lib/gameLoans.ts).
  */
 
 const span = (r: [number, number]) => (r[0] === r[1] ? String(r[0]) : `${r[0]}–${r[1]}`);
@@ -31,12 +32,16 @@ export function GameDialog({ game, groupId, onClose }: { game: ShelfGame; groupI
   const [busy, setBusy] = useState(false);
   // your own game: the coming events you could bring it to (null until they're in)
   const [bring, setBring] = useState<BringOption[] | null>(null);
+  // its loans: where it's lent, and the askings you're part of
+  const [loans, setLoans] = useState<GameLoan[]>([]);
   const one = (n: number) => n.toLocaleString(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
   const load = async () => {
     const r = await gameTalkAction(game.id, groupId);
     if (!r.ok) return toast(r.error, { kind: "err" });
     setTalk(r.data);
+    const l = await gameLoansAction(game.id);
+    if (l.ok) setLoans(l.data);
     if (me && r.data.owners.some((p) => p.id === me.id)) {
       const b = await bringOptionsAction(game.id);
       if (b.ok) setBring(b.data);
@@ -174,6 +179,8 @@ export function GameDialog({ game, groupId, onClose }: { game: ShelfGame; groupI
           </section>
         ) : null}
 
+        {talk && me ? <Lending talk={talk} loans={loans} meId={me.id} gameId={game.id} busy={busy} change={change} /> : null}
+
         {talk?.ratings.length ? (
           <section className="game-dialog-part">
             <h3 className="game-dialog-h">
@@ -206,5 +213,93 @@ export function GameDialog({ game, groupId, onClose }: { game: ShelfGame; groupI
         ) : null}
       </div>
     </Modal>
+  );
+}
+
+/** Borrowing: for each other owner, ask to borrow it (or where it's lent); for your own copy, the askings to answer and where it's lent. */
+function Lending({ talk, loans, meId, gameId, busy, change }: { talk: GameTalk; loans: GameLoan[]; meId: number; gameId: number; busy: boolean; change: (run: () => Promise<{ ok: boolean; error?: string }>) => Promise<unknown> }) {
+  const t = useT();
+  const others = talk.owners.filter((p) => p.id !== meId);
+  const mineOwned = talk.owners.some((p) => p.id === meId);
+  const toMe = loans.filter((l) => l.owner.id === meId);
+  if (!others.length && !toMe.length) return null;
+  return (
+    <section className="game-dialog-part">
+      <h3 className="game-dialog-h row" style={{ gap: 6 }}>
+        <Handshake size={15} aria-hidden /> {t("Borrowing")}
+      </h3>
+      <ul className="game-loans">
+        {mineOwned
+          ? toMe.map((l) => (
+              <li key={l.id}>
+                <Avatar user={l.borrower} size={22} />
+                {l.status === "asked" ? (
+                  <>
+                    <span className="grow">{t("{name} would like to borrow your copy", { name: first(l.borrower.name) })}</span>
+                    <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => change(() => loanAction({ answer: l.id, yes: true }))}>
+                      {t("Lend it")}
+                    </button>
+                    <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => change(() => loanAction({ answer: l.id, yes: false }))}>
+                      {t("Not now")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="grow">
+                      {t("Lent to {name}", { name: first(l.borrower.name) })}
+                      {l.since ? (
+                        <>
+                          {" · "}
+                          <Time t={l.since} />
+                        </>
+                      ) : null}
+                    </span>
+                    <button type="button" className="btn btn-sm" disabled={busy} onClick={() => change(() => loanAction({ returned: l.id }))}>
+                      {t("It's back")}
+                    </button>
+                  </>
+                )}
+              </li>
+            ))
+          : null}
+        {others.map((o) => {
+          const lent = loans.find((l) => l.owner.id === o.id && l.status === "lent");
+          const asked = loans.find((l) => l.owner.id === o.id && l.status === "asked" && l.borrower.id === meId);
+          return (
+            <li key={o.id}>
+              <Avatar user={o} size={22} />
+              {lent ? (
+                lent.borrower.id === meId ? (
+                  <>
+                    <span className="grow">{t("You're borrowing it from {name}", { name: first(o.name) })}</span>
+                    <button type="button" className="btn btn-sm" disabled={busy} onClick={() => change(() => loanAction({ returned: lent.id }))}>
+                      {t("I've given it back")}
+                    </button>
+                  </>
+                ) : (
+                  <span className="grow muted">
+                    {first(o.name)}: {t("lent to {name}", { name: first(lent.borrower.name) })}
+                  </span>
+                )
+              ) : asked ? (
+                <>
+                  <span className="grow">{t("You've asked {name}", { name: first(o.name) })}</span>
+                  <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => change(() => loanAction({ cancel: asked.id }))}>
+                    {t("Take it back")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="grow">{first(o.name)}</span>
+                  <button type="button" className="btn btn-sm" disabled={busy} onClick={() => change(() => loanAction({ ask: { ownerId: o.id, gameId } }))}>
+                    {t("Ask to borrow")}
+                  </button>
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
