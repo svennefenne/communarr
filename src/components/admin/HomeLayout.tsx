@@ -28,6 +28,7 @@ const GROUP_PARTS: Record<GroupPart, ArrangePart> = {
   filters: FILTERS,
   upcoming: { label: "Coming up", icon: CalendarDays, feature: "calendar" },
   members: { label: "Members", icon: Users },
+  games: { label: "Game shelf", icon: Dices },
 };
 const PROFILE_PARTS: Record<ProfilePart, ArrangePart> = {
   filters: FILTERS,
