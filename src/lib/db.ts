@@ -596,6 +596,23 @@ const MIGRATIONS: string[] = [
   /* 20: a group's game shelf (the games its members own on BoardGameGeek) only where its admins switch it on */ `
   alter table groups add column game_shelf integer not null default 0;
   `,
+  /* 21: posts saved as drafts (drafts.ts): where it was going ("all", "me", "g:<group>"), news or not,
+         and what the composer had; `preview` is what the list of drafts shows */ `
+  create table post_drafts (
+    id integer primary key,
+    user_id integer not null references users(id) on delete cascade,
+    target text not null default 'all',
+    news integer not null default 0,
+    title text not null default '',
+    body_html text not null default '',
+    preview text not null default '',
+    cover text,
+    notify_all integer not null default 1,
+    created_at integer not null,
+    updated_at integer not null
+  );
+  create index post_drafts_user on post_drafts(user_id, updated_at);
+  `,
 ];
 
 function open(): Database.Database {

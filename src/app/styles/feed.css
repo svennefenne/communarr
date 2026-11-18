@@ -561,6 +561,66 @@
     padding-top: 8px;
   }
 }
+/* drafts: how many there are (on the closed composer), and the list of them to open or delete (Composer.tsx) */
+.composer-drafts-btn {
+  position: relative;
+}
+.composer-drafts-btn .badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 0.625rem;
+  background: var(--surface-3);
+}
+.composer-drafts {
+  display: grid;
+  gap: 2px;
+  max-height: 264px;
+  margin: 0 0 12px;
+  padding: 6px;
+  overflow-y: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.composer-drafts > p {
+  padding: 6px 8px;
+}
+.composer-draft {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radius-xs);
+}
+.composer-draft.on {
+  background: var(--hover);
+}
+.composer-draft-open {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.composer-draft-open:hover {
+  background: var(--hover);
+}
+.composer-draft-open:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 1px;
+}
+.composer-draft-open b {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
 .composer-top {
   display: flex;
   align-items: center;

@@ -85,6 +85,25 @@ export interface Reaction {
 }
 
 /** A board game on BoardGameGeek (bgg: in the editor). */
+/** A post saved as a draft, as the composer's list of drafts shows it. */
+export interface DraftSummary {
+  id: number;
+  /** where it was going: "all", "me" or "g:<group id>" */
+  target: string;
+  news: boolean;
+  /** its title, or the start of its text */
+  preview: string;
+  updatedAt: number;
+}
+
+/** A draft whole, to open in the composer. */
+export interface PostDraft extends DraftSummary {
+  title: string;
+  html: string;
+  cover: string | null;
+  notifyAll: boolean;
+}
+
 /** A board game someone owns on BoardGameGeek, on their game shelf (as their collection there gives it). */
 export interface ShelfGame {
   id: number;

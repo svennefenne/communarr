@@ -10,6 +10,7 @@ import { addOption, closePoll, createPoll, deletePoll, getPoll, updatePoll, vote
 import { cancelEvent, createEvent, deleteEvent, eventsBetween, getEvent, rsvp, updateEvent, type EventInput } from "@/lib/events";
 import { createThread, deleteReply, deleteThread, editReply, editThread, findThreads, follow, mergeThread, moderateThread, moveReply, quoteFor, reply } from "@/lib/forum";
 import { feed } from "@/lib/feed";
+import { deleteDraft, getDraft, listDrafts, saveDraft, type DraftInput } from "@/lib/drafts";
 import { report, type ReportTarget } from "@/lib/reports";
 import { canSeeTarget } from "@/lib/visibility";
 import { getSettings, type SiteSettings } from "@/lib/settings";
@@ -19,12 +20,34 @@ import { FEED_KINDS, type FeedKind } from "@/lib/homePanels";
 
 // ── posts ──
 
-export async function createPostAction(input: PostInput) {
+/** A new post; `fromDraft`: the draft it was opened from, which goes once it's posted. */
+export async function createPostAction(input: PostInput, fromDraft?: number) {
   return act((u) => {
     if (input.kind === "news") allowed(u, "news");
     const id = createPost(u, input);
+    if (fromDraft) deleteDraft(u, fromDraft);
     revalidatePath("/");
     return id;
+  });
+}
+
+/** Save what's in the composer as a draft (a new one, or `id`, the one it was opened from). */
+export async function saveDraftAction(id: number | null, input: DraftInput) {
+  return act((u) => saveDraft(u, id, input));
+}
+
+export async function draftsAction() {
+  return act((u) => listDrafts(u.id));
+}
+
+export async function draftAction(id: number) {
+  return act((u) => getDraft(u, id));
+}
+
+export async function deleteDraftAction(id: number) {
+  return act((u) => {
+    deleteDraft(u, id);
+    return true;
   });
 }
 
