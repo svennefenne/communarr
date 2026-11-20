@@ -37,7 +37,7 @@ const VIEWS: [View, typeof LayoutGrid, string][] = [
 const VIEW_KEY = "shelf-view";
 /** one member's shelf (their first name, their name on BGG), or a group's (its members with games, and who owns which) */
 export type Whose =
-  | { kind: "member"; owner: string; bggName: string; fetchedAt: number | null }
+  | { kind: "member"; owner: string; bggName: string; fetchedAt: number | null; lent?: Record<number, string> }
   | { kind: "group"; groupId: number; people: Person[]; owners: Record<number, number[]>; stats: Record<number, GameStats> };
 
 const fitsPlayers = (g: ShelfGame, n: number | null) => !n || (!!g.players && (n === 6 ? g.players[1] >= 6 : g.players[0] <= n && n <= g.players[1]));
@@ -116,7 +116,7 @@ function Owners({ ids, people, named = false }: { ids: number[]; people: Map<num
 }
 
 /** The whole shelf (a profile's or a group's "Game shelf" tab). */
-export function GameShelf({ games, whose }: { games: ShelfGame[]; whose: Whose }) {
+export function GameShelf({ games, whose, openId }: { games: ShelfGame[]; whose: Whose; openId?: number }) {
   const t = useT();
   const [q, setQ] = useState("");
   const [players, setPlayers] = useState<number | null>(null);
@@ -126,7 +126,9 @@ export function GameShelf({ games, whose }: { games: ShelfGame[]; whose: Whose }
   const [who, setWho] = useState<number | null>(null);
   const [view, setView] = useState<View>("poster");
   // the game whose box is open
-  const [open, setOpen] = useState<ShelfGame | null>(null);
+  // (a link straight to a game's box: ?game=…)
+  const [open, setOpen] = useState<ShelfGame | null>(() => (openId ? (games.find((g) => g.id === openId) ?? null) : null));
+  const lent = whose.kind === "member" ? (whose.lent ?? {}) : {};
   useEffect(() => {
     try {
       const v = localStorage.getItem(VIEW_KEY);
@@ -241,6 +243,7 @@ export function GameShelf({ games, whose }: { games: ShelfGame[]; whose: Whose }
                   </span>
                   <Facts g={g} t={t} rank />
                   {group ? <Ours s={group.stats[g.id]} t={t} /> : null}
+                  {lent[g.id] ? <span className="shelf-lent">{t("lent to {name}", { name: lent[g.id] })}</span> : null}
                 </span>
                 <span className="shelf-row-side">
                   {group ? (
@@ -268,6 +271,7 @@ export function GameShelf({ games, whose }: { games: ShelfGame[]; whose: Whose }
                     {g.year ? <span className="shelf-year">{g.year}</span> : null}
                     <Facts g={g} t={t} />
                     {group ? <Ours s={group.stats[g.id]} t={t} /> : null}
+                    {lent[g.id] ? <span className="shelf-lent">{t("lent to {name}", { name: lent[g.id] })}</span> : null}
                     {group ? <Owners ids={group.owners[g.id] ?? []} people={people} /> : null}
                   </>
                 ) : null}

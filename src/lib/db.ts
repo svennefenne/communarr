@@ -636,6 +636,20 @@ const MIGRATIONS: string[] = [
     primary key (event_id, user_id, game_id)
   );
   `,
+  /* 25: games lent off the shelves (gameLoans.ts): asked, lent, then returned (or declined, cancelled) */ `
+  create table game_loans (
+    id integer primary key,
+    game_id integer not null,
+    owner_id integer not null references users(id) on delete cascade,
+    borrower_id integer not null references users(id) on delete cascade,
+    status text not null,
+    asked_at integer not null,
+    answered_at integer,
+    returned_at integer
+  );
+  create index game_loans_owner on game_loans(owner_id, status);
+  create index game_loans_borrower on game_loans(borrower_id, status);
+  `,
 ];
 
 function open(): Database.Database {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { summary, userByName } from "@/lib/users";
+import { summaries, summary, userByName } from "@/lib/users";
 import { stats } from "@/lib/profile";
 import { feed } from "@/lib/feed";
 import { listGroups } from "@/lib/groups";
@@ -17,6 +17,8 @@ import { requestT } from "@/lib/t";
 import { bggMode } from "@/lib/bgg";
 import { shelfAccount, shelfGames } from "@/lib/bggShelf";
 import { GameShelf, ShelfCard, ShelfInvite } from "@/components/profile/GameShelf";
+import { MyLoans } from "@/components/profile/MyLoans";
+import { lentOut, myLoans } from "@/lib/gameLoans";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,15 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   return { title: p ? p.name : (await requestT())("Member") };
 }
 
-export default async function ProfilePage({ params, searchParams }: { params: Promise<{ username: string }>; searchParams: Promise<{ tab?: string }> }) {
+/** Their games lent out just now: game → the borrower's first name. */
+function lentNames(ownerId: number): Record<number, string> {
+  const lent = lentOut([ownerId]);
+  const ids = Object.values(lent);
+  const people = summaries(ids);
+  return Object.fromEntries(Object.entries(lent).map(([k, b]) => [Number(k.split(":")[1]), (people.get(b)?.name ?? "").split(" ")[0]]));
+}
+
+export default async function ProfilePage({ params, searchParams }: { params: Promise<{ username: string }>; searchParams: Promise<{ tab?: string; game?: string }> }) {
   const u = await requireUser();
   const t = await requestT();
   const p = userByName(decodeURIComponent((await params).username));
@@ -34,7 +44,8 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   const shelf = shelfAccount(p.id);
   const shelved = shelf?.status === "ok" ? shelf.games : 0;
   const home = `/u/${encodeURIComponent(p.username)}`;
-  const onShelf = shelved > 0 && (await searchParams).tab === "games";
+  const sp = await searchParams;
+  const onShelf = shelved > 0 && sp.tab === "games";
   // the groups they're in that you can see
   const theirs = new Set((db().prepare("select group_id from group_members where user_id = ?").all(p.id) as { group_id: number }[]).map((r) => r.group_id));
   const { mine, others } = listGroups(u);
@@ -96,8 +107,14 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
         </nav>
       ) : null}
       {onShelf ? (
-        <div style={{ marginTop: 18 }}>
-          <GameShelf games={shelfGames(p.id)} whose={{ kind: "member", owner: p.name.split(" ")[0], bggName: shelf?.username ?? "", fetchedAt: shelf?.fetchedAt ?? null }} />
+        <div className="stack" style={{ marginTop: 18 }}>
+          {/* (your own shelf: the loans going on) */}
+          {p.id === u.id ? <MyLoans loans={myLoans(u)} meId={u.id} /> : null}
+          <GameShelf
+            games={shelfGames(p.id)}
+            whose={{ kind: "member", owner: p.name.split(" ")[0], bggName: shelf?.username ?? "", fetchedAt: shelf?.fetchedAt ?? null, lent: lentNames(p.id) }}
+            openId={Number(sp.game) || undefined}
+          />
         </div>
       ) : (
       <FeedScope>
