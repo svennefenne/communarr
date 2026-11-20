@@ -1069,7 +1069,8 @@ a.cat-last:hover .cat-last-title {
 }
 .shelf-select {
   width: auto;
-  padding: 8px 12px;
+  /* (room for the arrow on the right) */
+  padding: 8px 36px 8px 12px;
 }
 .shelf-grid {
   display: grid;
@@ -1094,6 +1095,45 @@ a.cat-last:hover .cat-last-title {
     border-color 0.15s ease-out,
     transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.2s ease-out;
+}
+/* (a game is a button: it opens its box) */
+.shelf-game,
+.shelf-row {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.shelf-mini button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}
+.shelf-mini button:hover .shelf-box {
+  box-shadow: 0 0 0 2px var(--line-strong);
+}
+.shelf-mini button:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+/* a group's take on a game: our average rating, and how many want to play it */
+.shelf-ours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  font-variant-numeric: tabular-nums;
+}
+.shelf-ours span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 .shelf-game:hover {
   border-color: var(--line-strong);
@@ -1150,6 +1190,113 @@ a.cat-last:hover .cat-last-title {
 .shelf-credit {
   margin: 4px 0 0;
 }
+/* a game's box opened on a shelf (GameDialog.tsx): its facts, your rating and wish, what the others make of it */
+.game-dialog-top {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+.game-dialog-box {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.game-dialog-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.game-dialog-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.game-dialog-facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.game-dialog-part {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.game-dialog-h {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.game-rate {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.game-rate-n {
+  height: 34px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease-out,
+    color 0.12s ease-out;
+}
+.game-rate-n:hover:not(:disabled) {
+  border-color: var(--accent-2);
+  color: var(--text);
+}
+.game-rate-n.lit {
+  background: rgb(var(--accent-2-rgb) / 0.22);
+  color: var(--text);
+}
+.game-rate-n.on {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: var(--on-accent-2);
+}
+.game-rate-n:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.game-dialog-people {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+.game-dialog-people li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.game-dialog-people b {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 520px) {
+  .game-dialog-top {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .game-rate-n {
+    height: 30px;
+    font-size: 0.8125rem;
+  }
+}
+
 /* the three views: posters (above), a grid of small boxes with only their names, and a list */
 .shelf-views {
   margin-left: auto;

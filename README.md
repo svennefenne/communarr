@@ -35,8 +35,10 @@ or in a theme you make yourself.
   shown as posters, a grid of small boxes or a list (kept per device). Each
   game links to its BGG page and shows its card on hover. A group can have a game shelf too (switched on
   in its settings): every game its members own, with who has it, narrowed down the same ways and by whose games they are, or sorted by
-  how many have it. The site fetches a collection when it's linked and again once a day, one member a
-  minute at most.
+  how many have it. A game opens its box: its facts, your own rating (1–10; the one you gave it on BGG
+  counts until you do) and whether you want to play it, who rated it what and who has it; a group's
+  shelf shows its average rating and how many want each game, and sorts by them. The site fetches a
+  collection when it's linked and again once a day, one member a minute at most.
 - **The site's own emoji**, Discord style: members add a picture with a name (a GIF stays animated) from
   the emoji picker; write it `:name:` (after `:` and two letters a list suggests them, and the emoji's
   own names like `:thumbs_up:`), use it in anything written and as a reaction. A chat message of only

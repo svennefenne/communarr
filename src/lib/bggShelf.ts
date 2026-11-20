@@ -76,7 +76,8 @@ export function shelfGames(userId: number, latest?: number): ShelfGame[] {
   const rows = (
     latest
       ? db().prepare("select * from bgg_shelf where user_id = ? order by added_at desc, name collate nocase limit ?").all(userId, latest)
-      : db().prepare("select * from bgg_shelf where user_id = ? order by name collate nocase").all(userId)
+      : // (their rating: the one they gave it here, else on BGG)
+        db().prepare("select s.*, coalesce(m.rating, s.mine) mine from bgg_shelf s left join game_marks m on m.user_id = s.user_id and m.game_id = s.game_id where s.user_id = ? order by s.name collate nocase").all(userId)
   ) as ShelfRow[];
   return rows.map(toGame);
 }

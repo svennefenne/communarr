@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { canReadGroup, groupMembers, groupRole, groupRow } from "@/lib/groups";
 import { bggMode } from "@/lib/bgg";
 import { groupShelf, shelfAccount } from "@/lib/bggShelf";
+import { groupGameStats } from "@/lib/gameMarks";
 import { GameShelf } from "@/components/profile/GameShelf";
 import { GroupColumns } from "@/components/groups/GroupColumns";
 import { Empty } from "@/components/ui/ui";
@@ -41,7 +42,7 @@ export default async function GroupGames({ params }: { params: Promise<{ slug: s
           </p>
         ) : null}
         {games.length ? (
-          <GameShelf games={games} whose={{ kind: "group", people, owners }} />
+          <GameShelf games={games} whose={{ kind: "group", groupId: g.id, people, owners, stats: groupGameStats(g.id) }} />
         ) : (
           <Empty icon={<Dices size={28} />} title={t("No games on the shelf yet")}>
             {t("When members link their BoardGameGeek collections, the games they own turn up here.")}

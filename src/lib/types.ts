@@ -125,6 +125,22 @@ export interface ShelfGame {
   added: number | null;
 }
 
+/** A game on a group's shelf as the group sees it: its average rating among us, how many rated it, how many want to play it. */
+export interface GameStats {
+  avg: number | null;
+  rated: number;
+  wants: number;
+}
+
+/** A game's box opened on a shelf: who owns it, who rated it what (on BGG, for those who haven't here), who wants to play it, and the viewer's own. */
+export interface GameTalk {
+  owners: UserSummary[];
+  ratings: { user: UserSummary; rating: number; fromBgg: boolean }[];
+  avg: number | null;
+  wants: UserSummary[];
+  mine: { rating: number | null; bggRating: number | null; want: boolean };
+}
+
 /** A member's game shelf: their name on BGG, and how fetching their collection went (pending: not in yet; unknown: no such user on BGG) */
 export interface ShelfAccount {
   username: string;
