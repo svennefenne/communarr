@@ -281,6 +281,7 @@ html[data-width="wide"] .chat-shell {
 .chat-voice {
   display: flex;
   align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 .chat-scroll {
@@ -1127,9 +1128,19 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
   box-shadow: 0 0 0 2px var(--surface);
 }
 .chat-side-head .dm-toggle {
-  width: 34px;
   height: 34px;
   border-radius: 10px;
+}
+/* the envelope and "DM": not to be taken for the chat's own sign */
+.dm-toggle.dm-labelled {
+  width: auto;
+  display: inline-flex;
+  gap: 6px;
+  padding: 0 11px 0 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
 }
 .dm-toggle.on,
 .rail-item.dm-toggle.on {
@@ -1528,4 +1539,8 @@ button.live-tag:hover,
 .rail-talk.muted {
   background: var(--err);
   color: var(--on-err);
+}
+.dm-toggle.dm-labelled .count-badge {
+  top: -7px;
+  right: -9px;
 }
