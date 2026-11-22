@@ -688,30 +688,67 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
 
 /* phones: the list, or the room full screen */
 @media (max-width: 699px) {
+  /* the chats, the room and its members: panes a screen wide, side by side, to swipe between
+     (ChatShell); it opens on the room */
   .chat-shell {
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
     width: 100%;
     margin: 0;
     gap: 0;
-    height: calc(100dvh - var(--header-h) - var(--bottom-h) - env(safe-area-inset-bottom));
+    height: calc(100dvh - var(--header-h));
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
   }
-  html.in-room .bottom-nav {
+  .chat-shell::-webkit-scrollbar {
     display: none;
   }
-  html.in-room body {
-    padding-bottom: 0;
+  .chat-shell > * {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
-  html.in-room .chat-shell {
-    height: calc(100dvh - var(--header-h));
+  .chat-shell > .chat-people {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* (the panes' lists keep their up-and-down to themselves, but a sideways swipe on them goes on to
+     the row of panes) */
+  .chat-scroll,
+  .chat-side-scroll,
+  .people-scroll {
+    overscroll-behavior-x: auto;
+  }
+  /* (before the page's script runs, the chats are out of the row: it shows the room straight away) */
+  .chat-shell.unplaced:has(> .chat-room:not(.chat-empty), > .chat-room.opening) > .chat-side {
+    position: absolute;
+    visibility: hidden;
   }
   .chat-shell .panel {
     border-radius: 0;
     border: 0;
     box-shadow: none;
   }
-  .chat-shell.has-room .chat-side,
-  .chat-shell:not(.has-room) .chat-room {
-    display: none;
+  /* the bar at the bottom comes with the chats, and goes with the room (it slides away) */
+  html:has(.chat-shell) body {
+    padding-bottom: 0;
+  }
+  .chat-shell > .chat-side {
+    padding-bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom));
+  }
+  html:has(.chat-shell) .bottom-nav {
+    transition:
+      transform 220ms ease,
+      visibility 220ms;
+  }
+  html:has(.chat-shell):not([data-chat-pane="rooms"]) .bottom-nav {
+    transform: translateY(100%);
+    visibility: hidden;
   }
   .chat-back {
     display: inline-grid;
