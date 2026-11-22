@@ -38,10 +38,14 @@ export function visibleSections(features: Features) {
   return SECTIONS.filter((s) => !s.feature || features[s.feature]);
 }
 
-/** The phone's bottom bar: the first four that are on, groups after the rest (they're under More), then More. */
+/** the phone's bottom bar, in its order (one that's switched off makes room for the next in the header's order) */
+const BAR = ["/", "/groups", "/chat", "/calendar"];
+
+/** The phone's bottom bar: Home, Groups, Chat, Calendar (the rest, the forum too, are under More), then More. */
 export function barSections(features: Features) {
   const on = visibleSections(features);
-  return [...on.filter((s) => s.href !== "/groups"), ...on.filter((s) => s.href === "/groups")].slice(0, 4);
+  const first = BAR.map((href) => on.find((s) => s.href === href)).filter((s): s is Section => !!s);
+  return [...first, ...on.filter((s) => !BAR.includes(s.href))].slice(0, 4);
 }
 
 /** Every place in the menus that's switched on (the editor's Link offers them). */
