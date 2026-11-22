@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowUpDown, Hash, Headphones, Lock, MessageCircle, PanelLeftClose, PanelLeftOpen, Plus, Search, UsersRound, Volume2 } from "lucide-react";
+import { ArrowUpDown, Hash, Headphones, Lock, Mail, PanelLeftClose, PanelLeftOpen, Plus, Search, UsersRound, Volume2 } from "lucide-react";
 import { byPlace, type RoomInfo } from "@/lib/chatTypes";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
@@ -201,16 +201,18 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
     setQ("");
     setDmView(dm);
   };
-  const dmButton = (cls: string, size: number) => (
+  // (an envelope, as direct messages have in the notifications: the chat's own sign is a speech bubble)
+  const dmButton = (cls: string, size: number, label = false) => (
     <button
       type="button"
-      className={`${cls} dm-toggle ${dmView ? "on" : ""}`}
+      className={`${cls} dm-toggle ${label ? "dm-labelled" : ""} ${dmView ? "on" : ""}`}
       onClick={() => switchTo(!dmView)}
       aria-pressed={dmView}
       title={dmView ? t("Back to the rooms") : t("Direct messages")}
       aria-label={t("Direct messages")}
     >
-      <MessageCircle size={size} />
+      <Mail size={size} />
+      {label ? <span>{t("DM")}</span> : null}
       {dmCount && !dmView ? <span className="count-badge">{dmCount > 99 ? "99+" : dmCount}</span> : null}
     </button>
   );
@@ -275,7 +277,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   return (
     <aside className="panel chat-side">
       <div className="chat-side-head">
-        {dmButton("icon-btn framed", 18)}
+        {dmButton("icon-btn framed", 16, true)}
         <h1 className="h2">{dmView ? t("Messages") : t("Chat")}</h1>
         <span className="spacer" />
         {dmView ? (
@@ -331,7 +333,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
                 </div>
               ) : (
                 <button type="button" className="btn btn-ghost btn-xs" style={{ margin: "2px 10px 10px" }} onClick={() => setCreating("dm")}>
-                  <MessageCircle size={13} /> {t("Message someone")}
+                  <Mail size={13} /> {t("Message someone")}
                 </button>
               )
             ) : null}

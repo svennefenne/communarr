@@ -194,7 +194,8 @@ export function VoiceButton({ room, name, compact = false }: { room: number; nam
       </span>
     );
   return (
-    <div className="row" style={{ gap: 6 }}>
+    // (in a room's header: as far apart as the header's other buttons)
+    <div className="row" style={{ gap: compact ? 8 : 6 }}>
       {peers.length && !compact ? (
         <span className="avatar-stack" title={peers.map((p) => people.get(p.userId)?.name ?? t("Someone")).join(", ")}>
           {peers.slice(0, 4).map((p) => {
