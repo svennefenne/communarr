@@ -4,6 +4,7 @@ import type { NotifyKind, NotifyPrefs, Presence, Role, ThemePrefs, UserSummary }
 import { NOTIFY_KINDS } from "./types";
 import { getSetting, getSettings } from "./settings";
 import { makeT } from "./i18n";
+import { isRing } from "./rings";
 
 export interface UserRow {
   id: number;
@@ -21,6 +22,8 @@ export interface UserRow {
   website: string;
   birthday: string | null;
   accent: string | null;
+  /** a ring around the picture (rings.ts), or null */
+  avatar_ring: string | null;
   status_text: string;
   status_emoji: string;
   status_until: number | null;
@@ -51,6 +54,8 @@ export interface User {
   avatar: string | null;
   banner: string | null;
   accent: string;
+  /** a ring around the picture (rings.ts), or null */
+  ring: string | null;
   bioHtml: string;
   pronouns: string;
   location: string;
@@ -124,6 +129,7 @@ export function toUser(r: UserRow): User {
     avatar: r.avatar,
     banner: r.banner,
     accent: accentFor(r.username, r.accent),
+    ring: isRing(r.avatar_ring) ? r.avatar_ring : null,
     bioHtml: r.bio_html,
     pronouns: r.pronouns,
     location: r.location,
@@ -144,7 +150,7 @@ export function toUser(r: UserRow): User {
 
 export function summary(u: User | UserRow): UserSummary {
   if ("password_hash" in u) u = toUser(u);
-  return { id: u.id, username: u.username, name: u.name, avatar: u.avatar, accent: u.accent, role: u.role, statusText: u.statusText, statusEmoji: u.statusEmoji };
+  return { id: u.id, username: u.username, name: u.name, avatar: u.avatar, accent: u.accent, ring: u.ring, role: u.role, statusText: u.statusText, statusEmoji: u.statusEmoji };
 }
 
 export function userById(id: number): User | null {
@@ -186,6 +192,7 @@ export const GHOST: UserSummary = {
   },
   avatar: null,
   accent: "#6b7280",
+  ring: null,
   role: "member",
   statusText: "",
   statusEmoji: "",

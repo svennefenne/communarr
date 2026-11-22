@@ -1166,6 +1166,26 @@ input[type="radio"] {
   object-fit: cover;
   display: block;
 }
+/* a ring they chose (Avatar): inside the edge, a hair of space, then the picture; the edge's outside
+   is kept for the green ring of someone talking */
+.avatar.ringed {
+  padding: calc(var(--rw) + var(--rg));
+  background-clip: content-box;
+}
+.avatar.ringed::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: var(--rw);
+  background: var(--ring);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
 .avatar .presence {
   position: absolute;
   right: -1px;

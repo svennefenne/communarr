@@ -658,6 +658,9 @@ const MIGRATIONS: string[] = [
     created_at integer not null
   );
   `,
+  /* 27: a ring around a member's picture (Settings → Profile; rings.ts has the list) */ `
+  alter table users add column avatar_ring text;
+  `,
 ];
 
 function open(): Database.Database {
