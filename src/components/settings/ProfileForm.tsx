@@ -8,6 +8,8 @@ import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { ImagePick } from "@/components/ui/ImagePick";
 import { Avatar } from "@/components/ui/Avatar";
+import { AvatarChooser } from "./AvatarChooser";
+import type { AvatarPreset } from "@/lib/avatarPresets";
 import { StatusDialog } from "@/components/shell/StatusDialog";
 import { updateProfileAction } from "@/app/actions/settings";
 
@@ -26,7 +28,7 @@ export interface ProfileData {
   banner: string | null;
 }
 
-export function ProfileForm({ p }: { p: ProfileData }) {
+export function ProfileForm({ p, presets = [] }: { p: ProfileData; presets?: AvatarPreset[] }) {
   const { me } = useApp();
   const t = useT();
   const router = useRouter();
@@ -71,7 +73,7 @@ export function ProfileForm({ p }: { p: ProfileData }) {
       </div>
       <div className="panel panel-pad stack loose">
         <div className="grid-2">
-          <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="round" label={t("Profile picture")} />
+          <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="round" label={t("Profile picture")} extra={<AvatarChooser presets={presets} value={avatar} onPick={setAvatar} />} />
           <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label={t("Banner on your profile")} size={t("Any picture: you place it when you've chosen it, and see what a computer and a phone show.")} />
         </div>
         {/* (the name everyone sees is the alias, under Settings → Account) */}

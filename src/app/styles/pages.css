@@ -2513,3 +2513,121 @@ html:has(.list-big) .bottom-nav {
   padding-top: 0;
   border-top: 0;
 }
+
+/* ── avatars to choose from (Admin → Avatars, Settings → Profile): round, as they'll show ── */
+.avatar-drop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--field);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 140ms,
+    background 140ms;
+}
+.avatar-drop b {
+  color: var(--text);
+}
+.avatar-drop:hover,
+.avatar-drop.over {
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.08);
+  color: var(--accent);
+}
+.avatar-drop.busy {
+  cursor: progress;
+}
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 12px;
+}
+.avatar-grid.pick {
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 14px;
+  max-height: min(60dvh, 520px);
+  overflow-y: auto;
+  padding: 6px;
+  margin: -6px;
+}
+.avatar-tile {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+}
+.avatar-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+button.avatar-tile {
+  cursor: pointer;
+  transition:
+    box-shadow 120ms,
+    transform 120ms;
+}
+button.avatar-tile:hover,
+button.avatar-tile:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--line-strong);
+}
+button.avatar-tile.on {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--accent);
+}
+.avatar-on {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.avatar-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: 0 0 0 2px var(--surface);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.avatar-tile:hover .avatar-remove,
+.avatar-remove:focus-visible {
+  opacity: 1;
+}
+.avatar-remove:hover {
+  background: var(--err);
+  color: var(--on-err);
+}
+@media (pointer: coarse) {
+  .avatar-remove {
+    opacity: 1;
+  }
+}

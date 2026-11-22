@@ -160,6 +160,7 @@ export function cleanOrphans(): { removed: number; bytes: number } {
     "select image h from link_previews where image is not null",
     "select images h from feedback",
     "select url h from emojis",
+    "select url h from avatar_presets",
   ];
   // (the sounds in Admin → Sounds are in the settings: kept like a picture in a post)
   for (const sql of sources) for (const r of db().prepare(sql).all() as { h: string }[]) for (const m of (r.h || "").matchAll(/\/media\/[\w/-]+\/([\w-]+)(\.t)?\.(?:webp|mp3|ogg|oga|wav|m4a|webm|flac)/g)) used.add(m[1]);
