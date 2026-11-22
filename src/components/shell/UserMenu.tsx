@@ -21,13 +21,8 @@ import { cleanFeedWidth, FEED_WIDTH } from "@/lib/look";
 /** The middle at a width (live, before it's kept): 0 as it comes. */
 export function showFeedWidth(px: number) {
   const r = document.documentElement;
-  if (px) {
-    r.dataset.feed = "set";
-    r.style.setProperty("--feed-w", `${px}px`);
-  } else {
-    delete r.dataset.feed;
-    r.style.removeProperty("--feed-w");
-  }
+  r.dataset.feed = "set";
+  r.style.setProperty("--feed-w", `${px || FEED_WIDTH.standard}px`);
 }
 /**
  * The page's middle, the part the slider sets (data-middle): the front page's feed, the chat's room,

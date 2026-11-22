@@ -12,8 +12,8 @@ import type { ThemePrefs } from "./types";
  */
 export type Look = Pick<ThemePrefs, "scheme" | "mode" | "custom" | "density" | "textSize" | "wide" | "feedWidth" | "navIcons">;
 
-/** the front page's middle, when someone sets its width: 0 is as it comes */
-export const FEED_WIDTH = { min: 480, max: 1200, step: 20 };
+/** the middle (the front page's feed, the chat's room, a forum, polls, lists): 0 is the standard */
+export const FEED_WIDTH = { min: 480, max: 1600, step: 20, standard: 1200 };
 export const cleanFeedWidth = (n: unknown) => (typeof n === "number" && n > 0 ? Math.max(FEED_WIDTH.min, Math.min(FEED_WIDTH.max, Math.round(n / 10) * 10)) : 0);
 
 export const LOOK_DAYS = 400;
