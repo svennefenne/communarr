@@ -3,16 +3,20 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowUpDown, Hash, Headphones, Lock, Mail, PanelLeftClose, PanelLeftOpen, Plus, Search, UsersRound } from "lucide-react";
+import { ArrowUpDown, Hash, Headphones, Lock, MessageCircle, PanelLeftClose, PanelLeftOpen, Plus, Search, UsersRound, Volume2 } from "lucide-react";
 import { byPlace, type RoomInfo } from "@/lib/chatTypes";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { useVoice } from "@/components/voice/VoiceProvider";
+import { VoicePanel } from "@/components/voice/VoiceDock";
 import { Avatar } from "@/components/ui/Avatar";
 import { relative } from "@/components/ui/Time";
+import { menuProps, type MenuLook } from "@/components/ui/ContextMenu";
 import { NewChat } from "./NewChat";
 import { ArrangeRooms } from "./ArrangeRooms";
 import { useChatUi } from "./ChatShell";
+import { useRoomMenu, useVoiceLook } from "./chatMenus";
+import { VoiceList } from "./VoicePresence";
 import { TypingDots, TypingLine, useTyping, type Typer } from "./useTyping";
 import { declineInviteAction, joinRoomAction, roomsAction } from "@/app/actions/chat";
 
@@ -28,63 +32,91 @@ export function RoomIcon({ r, size = 38 }: { r: Pick<RoomInfo, "kind" | "emoji" 
 /** "5 min ago" without the "ago" (and "för 5 min sedan" without "för … sedan"): the list is tight. */
 const short = (s: string) => s.replace(/ ago$/, "").replace(/^för (.+) sedan$/, "$1");
 
-function Row({ r, active, unread, talking, typers = [] }: { r: RoomInfo; active: boolean; unread: number; talking: number; typers?: Typer[] }) {
+type RoomMenu = ReturnType<typeof useRoomMenu>;
+
+/**
+ * A chat in the list. Who's in its voice: under it, one by one (`look` "list", as on Discord), or a
+ * count beside it (they're shown in the room instead). A right click (a long press) opens its menu.
+ */
+function Row({ r, active, unread, typers = [], look, roomMenu, onChanged }: { r: RoomInfo; active: boolean; unread: number; typers?: Typer[]; look: MenuLook; roomMenu: RoomMenu; onChanged: () => void }) {
   const t = useT();
-  const live = useVoice().channels[r.id]?.some((p) => p.live);
+  const v = useVoice();
+  const peers = v.channels[r.id] ?? [];
+  const live = peers.some((p) => p.live);
+  const mine = v.room === r.id;
+  const nested = look === "list" && peers.length > 0 && r.kind !== "dm";
   return (
-    <Link href={`/chat/${r.id}`} className={`chat-row ${active ? "active" : ""} ${unread ? "unread" : ""}`}>
-      <RoomIcon r={r} />
-      <span className="grow" style={{ minWidth: 0 }}>
-        <span className="row" style={{ gap: 6 }}>
-          <b className="ellipsis grow">{r.name}</b>
-          {r.lastMessageAt ? (
-            <span className="tiny faint" suppressHydrationWarning>
-              {short(relative(r.lastMessageAt))}
-            </span>
-          ) : null}
+    <>
+      <Link href={`/chat/${r.id}`} className={`chat-row ${active ? "active" : ""} ${unread ? "unread" : ""}`} {...menuProps(() => roomMenu(r, { active, onChanged }), look)}>
+        <RoomIcon r={r} />
+        <span className="grow" style={{ minWidth: 0 }}>
+          <span className="row" style={{ gap: 6 }}>
+            <b className="ellipsis">{r.name}</b>
+            {nested ? (
+              <span className={`row-voice ${mine ? "mine" : ""}`} title={t("{n} talking", { n: peers.length })}>
+                <Volume2 size={14} />
+              </span>
+            ) : null}
+            <span className="grow" />
+            {r.lastMessageAt ? (
+              <span className="tiny faint" suppressHydrationWarning>
+                {short(relative(r.lastMessageAt))}
+              </span>
+            ) : null}
+          </span>
+          <span className="row" style={{ gap: 6 }}>
+            {/* someone typing there: that, in place of the last message (in a DM, just that they are) */}
+            {typers.length ? (
+              <span className="tiny ellipsis grow chat-row-typing">
+                {r.kind === "dm" ? (
+                  <>
+                    <TypingDots /> {t("typing…")}
+                  </>
+                ) : (
+                  <TypingLine typers={typers} />
+                )}
+              </span>
+            ) : (
+              <span className="tiny muted ellipsis grow">{r.lastMessage ? `${r.lastMessage.author ? `${r.lastMessage.author.split(" ")[0]}: ` : ""}${r.lastMessage.text}` : r.topic || " "}</span>
+            )}
+            {!nested && live ? (
+              <span className="live-tag" title={t("Someone is sharing their screen")}>
+                {t("LIVE")}
+              </span>
+            ) : null}
+            {!nested && peers.length ? (
+              <span className={`badge teal ${mine ? "voice-mine" : ""}`} title={t("{n} talking", { n: peers.length })}>
+                <Headphones size={11} /> {peers.length}
+              </span>
+            ) : null}
+            {unread ? <span className="count-badge" style={{ position: "static", boxShadow: "none" }}>{unread > 99 ? "99+" : unread}</span> : null}
+          </span>
         </span>
-        <span className="row" style={{ gap: 6 }}>
-          {/* someone typing there: that, in place of the last message (in a DM, just that they are) */}
-          {typers.length ? (
-            <span className="tiny ellipsis grow chat-row-typing">
-              {r.kind === "dm" ? (
-                <>
-                  <TypingDots /> {t("typing…")}
-                </>
-              ) : (
-                <TypingLine typers={typers} />
-              )}
-            </span>
-          ) : (
-            <span className="tiny muted ellipsis grow">{r.lastMessage ? `${r.lastMessage.author ? `${r.lastMessage.author.split(" ")[0]}: ` : ""}${r.lastMessage.text}` : r.topic || " "}</span>
-          )}
-          {live ? (
-            <span className="live-tag" title={t("Someone is sharing their screen")}>
-              {t("LIVE")}
-            </span>
-          ) : null}
-          {talking ? (
-            <span className="badge teal" title={t("{n} talking", { n: talking })}>
-              <Headphones size={11} /> {talking}
-            </span>
-          ) : null}
-          {unread ? <span className="count-badge" style={{ position: "static", boxShadow: "none" }}>{unread > 99 ? "99+" : unread}</span> : null}
-        </span>
-      </span>
-    </Link>
+      </Link>
+      {nested ? <VoiceList r={r} look={look} /> : null}
+    </>
   );
 }
 
 /** A chat as only its icon (the list made narrow): its name when pointed at, a count of what's new, a sign if people are talking (red: someone's sharing their screen). */
-function RailItem({ r, active, unread, talking, join = false }: { r: RoomInfo; active: boolean; unread: number; talking: number; join?: boolean }) {
+function RailItem({ r, active, unread, join = false, look, roomMenu, onChanged }: { r: RoomInfo; active: boolean; unread: number; join?: boolean; look: MenuLook; roomMenu: RoomMenu; onChanged: () => void }) {
   const t = useT();
-  const live = useVoice().channels[r.id]?.some((p) => p.live);
+  const v = useVoice();
+  const peers = v.channels[r.id] ?? [];
+  const live = peers.some((p) => p.live);
   return (
-    <Link href={`/chat/${r.id}`} className={`rail-item ${active ? "active" : ""} ${join ? "join" : ""}`} title={r.name} aria-label={r.name} aria-current={active ? "page" : undefined}>
+    <Link
+      href={`/chat/${r.id}`}
+      className={`rail-item ${active ? "active" : ""} ${join ? "join" : ""}`}
+      title={r.name}
+      aria-label={r.name}
+      aria-current={active ? "page" : undefined}
+      {...menuProps(() => roomMenu(r, { active, onChanged }), look)}
+    >
       <RoomIcon r={r} size={40} />
       {unread ? <span className="count-badge">{unread > 99 ? "99+" : unread}</span> : null}
-      {talking ? (
-        <span className={`rail-talk ${live ? "live" : ""}`} title={live ? t("Someone is sharing their screen") : t("{n} talking", { n: talking })}>
+      {peers.length ? (
+        <span className={`rail-talk ${live ? "live" : ""}`} title={live ? t("Someone is sharing their screen") : t("{n} talking", { n: peers.length })}>
           <Headphones size={10} />
         </span>
       ) : null}
@@ -93,22 +125,26 @@ function RailItem({ r, active, unread, talking, join = false }: { r: RoomInfo; a
 }
 
 /**
- * The list of chats: invitations, your rooms and messages, and open rooms you could join. On a
- * computer it can be made narrow, only the chats' icons (as on Discord), and back.
+ * The list of chats: invitations, your rooms, and open rooms you could join; your direct messages are
+ * behind their own button at the top (as on Discord), and the ones with something new wait beside it.
+ * On a computer it can be made narrow, only the chats' icons, and back.
  */
 export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: RoomInfo[]; invites: RoomInfo[] } }) {
   const { counts, site, me } = useApp();
   const t = useT();
-  const voice = useVoice();
+  const v = useVoice();
   const typing = useTyping();
   const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
+  const look = useVoiceLook();
+  const roomMenu = useRoomMenu();
   const [data, setData] = useState(initial);
   const [q, setQ] = useState("");
   const [creating, setCreating] = useState<null | "dm" | "room">(null);
   const [arranging, setArranging] = useState(false);
   const activeId = Number(pathname.split("/")[2]) || 0;
+  const inRoom = activeId > 0;
   // (only the icons: a computer's or a tablet's; a phone shows the whole list or the room)
   const ui = useChatUi();
   const [roomy, setRoomy] = useState(true);
@@ -119,6 +155,13 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
     mq.addEventListener("change", f);
     return () => mq.removeEventListener("change", f);
   }, []);
+
+  // the rooms or your direct messages: those you're in, opening one
+  const activeKind = data.mine.find((r) => r.id === activeId)?.kind;
+  const [dmView, setDmView] = useState(activeKind === "dm");
+  useEffect(() => {
+    if (activeKind) setDmView(activeKind === "dm");
+  }, [activeId, activeKind]);
 
   const refresh = useCallback(async () => {
     const r = await roomsAction();
@@ -137,12 +180,40 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
       return { ...x, mine: [r, ...x.mine.filter((_, j) => j !== i)] };
     });
   });
+  // (the room's members and menus elsewhere know the rooms' names)
+  const { setRooms } = ui;
+  useEffect(() => {
+    setRooms([...data.mine, ...data.open]);
+  }, [data, setRooms]);
 
   const match = (r: RoomInfo) => !q || r.name.toLowerCase().includes(q.toLowerCase()) || r.topic.toLowerCase().includes(q.toLowerCase());
   // rooms in the order an admin gave them (a new message doesn't move them); DMs newest first
   const rooms = data.mine.filter((r) => r.kind !== "dm" && match(r)).sort(byPlace);
-  const dms = data.mine.filter((r) => r.kind === "dm" && match(r));
+  const allDms = data.mine.filter((r) => r.kind === "dm");
+  const dms = allDms.filter(match);
   const open = data.open.filter(match).sort(byPlace);
+  const unreadDms = allDms.filter((r) => (counts.rooms[r.id] ?? 0) > 0);
+  const dmCount = unreadDms.reduce((n, r) => n + (counts.rooms[r.id] ?? 0), 0);
+  const panel = look === "list" && v.room != null && (roomy ? !ui.rail : !inRoom);
+  const row = (r: RoomInfo, unread = counts.rooms[r.id] ?? 0) => <Row key={r.id} r={r} typers={typing.get(r.id)} active={r.id === activeId} unread={unread} look={look} roomMenu={roomMenu} onChanged={refresh} />;
+  const railItem = (r: RoomInfo, join = false) => <RailItem key={r.id} r={r} active={r.id === activeId} unread={join ? 0 : counts.rooms[r.id] ?? 0} join={join} look={look} roomMenu={roomMenu} onChanged={refresh} />;
+  const switchTo = (dm: boolean) => {
+    setQ("");
+    setDmView(dm);
+  };
+  const dmButton = (cls: string, size: number) => (
+    <button
+      type="button"
+      className={`${cls} dm-toggle ${dmView ? "on" : ""}`}
+      onClick={() => switchTo(!dmView)}
+      aria-pressed={dmView}
+      title={dmView ? t("Back to the rooms") : t("Direct messages")}
+      aria-label={t("Direct messages")}
+    >
+      <MessageCircle size={size} />
+      {dmCount && !dmView ? <span className="count-badge">{dmCount > 99 ? "99+" : dmCount}</span> : null}
+    </button>
+  );
 
   if (arranging)
     return (
@@ -164,31 +235,34 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
           <button type="button" className="icon-btn framed sm" onClick={() => ui.setRail(false)} title={t("Show the names")} aria-label={t("Show the names")}>
             <PanelLeftOpen size={16} />
           </button>
+          {dmButton("rail-item", 22)}
         </div>
         <div className="rail-list">
-          {data.invites.map((r) => (
-            <button key={r.id} type="button" className="rail-item invite" onClick={() => ui.setRail(false)} title={t("Invitation: {name}", { name: r.name })} aria-label={t("Invitation: {name}", { name: r.name })}>
-              <RoomIcon r={r} size={40} />
-            </button>
-          ))}
-          {data.invites.length ? <span className="rail-sep" /> : null}
-          {rooms.map((r) => (
-            <RailItem key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
-          ))}
-          {dms.length ? <span className="rail-sep" /> : null}
-          {dms.map((r) => (
-            <RailItem key={r.id} r={r} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
-          ))}
-          {open.length ? <span className="rail-sep" /> : null}
-          {open.map((r) => (
-            <RailItem key={r.id} r={r} active={r.id === activeId} unread={0} talking={voice.channels[r.id]?.length ?? 0} join />
-          ))}
+          {dmView ? (
+            allDms.map((r) => railItem(r))
+          ) : (
+            <>
+              {/* (new in a direct message: its face waits at the top, as on Discord) */}
+              {unreadDms.map((r) => railItem(r))}
+              {unreadDms.length ? <span className="rail-sep" /> : null}
+              {data.invites.map((r) => (
+                <button key={r.id} type="button" className="rail-item invite" onClick={() => ui.setRail(false)} title={t("Invitation: {name}", { name: r.name })} aria-label={t("Invitation: {name}", { name: r.name })}>
+                  <RoomIcon r={r} size={40} />
+                </button>
+              ))}
+              {data.invites.length ? <span className="rail-sep" /> : null}
+              {rooms.map((r) => railItem(r))}
+              {open.length ? <span className="rail-sep" /> : null}
+              {open.map((r) => railItem(r, true))}
+            </>
+          )}
         </div>
         <div className="rail-foot">
-          <button type="button" className="icon-btn framed sm" onClick={() => setCreating("dm")} title={t("Message someone")} aria-label={t("Message someone")}>
-            <Mail size={16} />
-          </button>
-          {site.can.rooms ? (
+          {dmView ? (
+            <button type="button" className="icon-btn framed sm" onClick={() => setCreating("dm")} title={t("Message someone")} aria-label={t("Message someone")}>
+              <Plus size={17} />
+            </button>
+          ) : site.can.rooms ? (
             <button type="button" className="icon-btn framed sm" onClick={() => setCreating("room")} title={t("New room")} aria-label={t("New room")}>
               <Plus size={17} />
             </button>
@@ -201,17 +275,19 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   return (
     <aside className="panel chat-side">
       <div className="chat-side-head">
-        <h1 className="h2">{t("Chat")}</h1>
+        {dmButton("icon-btn framed", 18)}
+        <h1 className="h2">{dmView ? t("Messages") : t("Chat")}</h1>
         <span className="spacer" />
-        <button type="button" className="icon-btn framed sm" onClick={() => setCreating("dm")} title={t("Message someone")} aria-label={t("Message someone")}>
-          <Mail size={16} />
-        </button>
-        {site.can.rooms ? (
+        {dmView ? (
+          <button type="button" className="icon-btn framed sm" onClick={() => setCreating("dm")} title={t("Message someone")} aria-label={t("Message someone")}>
+            <Plus size={17} />
+          </button>
+        ) : site.can.rooms ? (
           <button type="button" className="icon-btn framed sm" onClick={() => setCreating("room")} title={t("New room")} aria-label={t("New room")}>
             <Plus size={17} />
           </button>
         ) : null}
-        {me?.isAdmin ? (
+        {me?.isAdmin && !dmView ? (
           <button type="button" className="icon-btn framed sm" onClick={() => setArranging(true)} title={t("Arrange the rooms")} aria-label={t("Arrange the rooms")}>
             <ArrowUpDown size={16} />
           </button>
@@ -231,72 +307,90 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
       </div>
       <div className="chat-search">
         <Search size={15} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Find a chat")} aria-label={t("Find a chat")} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={dmView ? t("Find a conversation") : t("Find a chat")} aria-label={dmView ? t("Find a conversation") : t("Find a chat")} />
       </div>
+      {!dmView && unreadDms.length ? (
+        <div className="dm-waiting" aria-label={t("New direct messages")}>
+          {unreadDms.slice(0, 8).map((r) => (
+            <Link key={r.id} href={`/chat/${r.id}`} className="dm-face" title={r.name} aria-label={t("{name}: {n} new", { name: r.name, n: counts.rooms[r.id] ?? 0 })} {...menuProps(() => roomMenu(r, { onChanged: refresh }), look)}>
+              <RoomIcon r={r} size={34} />
+              <span className="count-badge">{(counts.rooms[r.id] ?? 0) > 99 ? "99+" : counts.rooms[r.id]}</span>
+            </Link>
+          ))}
+        </div>
+      ) : null}
       <div className="chat-side-scroll">
-        {data.invites.length ? (
+        {dmView ? (
           <>
-            <div className="menu-label">{t("Invitations")}</div>
-            {data.invites.map((r) => (
-              <div key={r.id} className="chat-row invite">
-                <RoomIcon r={r} />
-                <span className="grow" style={{ minWidth: 0 }}>
-                  <b className="ellipsis" style={{ display: "block" }}>
-                    {r.name}
-                  </b>
-                  <span className="row" style={{ gap: 6, marginTop: 4 }}>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-xs"
-                      onClick={async () => {
-                        const res = await joinRoomAction(r.id);
-                        if (res.ok) {
-                          await refresh();
-                          router.push(`/chat/${r.id}`);
-                        } else toast(res.error, { kind: "err" });
-                      }}
-                    >
-                      {t("Join")}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-xs"
-                      onClick={async () => {
-                        await declineInviteAction(r.id);
-                        await refresh();
-                      }}
-                    >
-                      {t("No thanks")}
-                    </button>
-                  </span>
-                </span>
-              </div>
-            ))}
+            <div className="menu-label">{t("Direct messages")}</div>
+            {dms.map((r) => row(r))}
+            {!dms.length ? (
+              q ? (
+                <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>
+                  {t("No one found.")}
+                </div>
+              ) : (
+                <button type="button" className="btn btn-ghost btn-xs" style={{ margin: "2px 10px 10px" }} onClick={() => setCreating("dm")}>
+                  <MessageCircle size={13} /> {t("Message someone")}
+                </button>
+              )
+            ) : null}
           </>
-        ) : null}
-        <div className="menu-label">{t("Rooms")}</div>
-        {rooms.map((r) => (
-          <Row key={r.id} r={r} typers={typing.get(r.id)} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
-        ))}
-        {!rooms.length ? <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>{q ? t("No rooms found.") : t("No rooms yet.")}</div> : null}
-        <div className="menu-label">{t("Direct messages")}</div>
-        {dms.map((r) => (
-          <Row key={r.id} r={r} typers={typing.get(r.id)} active={r.id === activeId} unread={counts.rooms[r.id] ?? 0} talking={voice.channels[r.id]?.length ?? 0} />
-        ))}
-        {!dms.length ? (
-          <button type="button" className="btn btn-ghost btn-xs" style={{ margin: "2px 10px 10px" }} onClick={() => setCreating("dm")}>
-            <Mail size={13} /> {t("Message someone")}
-          </button>
-        ) : null}
-        {open.length ? (
+        ) : (
           <>
-            <div className="menu-label">{t("Open rooms to join")}</div>
-            {open.map((r) => (
-              <Row key={r.id} r={r} typers={typing.get(r.id)} active={r.id === activeId} unread={0} talking={voice.channels[r.id]?.length ?? 0} />
-            ))}
+            {data.invites.length ? (
+              <>
+                <div className="menu-label">{t("Invitations")}</div>
+                {data.invites.map((r) => (
+                  <div key={r.id} className="chat-row invite">
+                    <RoomIcon r={r} />
+                    <span className="grow" style={{ minWidth: 0 }}>
+                      <b className="ellipsis" style={{ display: "block" }}>
+                        {r.name}
+                      </b>
+                      <span className="row" style={{ gap: 6, marginTop: 4 }}>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-xs"
+                          onClick={async () => {
+                            const res = await joinRoomAction(r.id);
+                            if (res.ok) {
+                              await refresh();
+                              router.push(`/chat/${r.id}`);
+                            } else toast(res.error, { kind: "err" });
+                          }}
+                        >
+                          {t("Join")}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={async () => {
+                            await declineInviteAction(r.id);
+                            await refresh();
+                          }}
+                        >
+                          {t("No thanks")}
+                        </button>
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </>
+            ) : null}
+            <div className="menu-label">{t("Rooms")}</div>
+            {rooms.map((r) => row(r))}
+            {!rooms.length ? <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>{q ? t("No rooms found.") : t("No rooms yet.")}</div> : null}
+            {open.length ? (
+              <>
+                <div className="menu-label">{t("Open rooms to join")}</div>
+                {open.map((r) => row(r, 0))}
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </div>
+      {panel ? <VoicePanel /> : null}
       {creating ? <NewChat initial={creating} onClose={() => setCreating(null)} /> : null}
     </aside>
   );

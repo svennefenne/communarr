@@ -846,3 +846,658 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
 .vc-ptt.on {
   color: var(--ok);
 }
+
+/* ── right-click menus (ContextMenu): by the pointer, over the page (dialogs a menu opens go above) ── */
+.ctx-menu {
+  position: fixed;
+  z-index: 265;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  outline: none;
+  animation: ctx-in 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+}
+@keyframes ctx-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctx-menu,
+  .ctx-menu.ctx-sheet {
+    animation: none;
+  }
+}
+.ctx-menu .menu-item {
+  padding: 8px 10px;
+}
+.ctx-menu .menu-item[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+.ctx-menu .menu-item[disabled]:hover {
+  background: none;
+}
+.ctx-menu .menu-item.sub-open {
+  background: var(--hover);
+}
+.ctx-menu .menu-item.live svg {
+  color: var(--err);
+}
+.ctx-menu .menu-item.mod svg {
+  color: var(--accent-2);
+}
+.ctx-menu .ctx-chev {
+  margin-left: 2px;
+  transition: transform 160ms;
+}
+.ctx-menu .ctx-chev.open {
+  transform: rotate(180deg);
+}
+.ctx-kbd {
+  margin-left: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--faint);
+}
+.ctx-check,
+.ctx-radio {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--line-strong);
+}
+.ctx-check {
+  margin-left: 10px;
+  border-radius: 5px;
+}
+.ctx-check.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ctx-check.on::after {
+  content: "";
+  width: 8px;
+  height: 4.5px;
+  border: solid var(--on-accent);
+  border-width: 0 0 2px 2px;
+  transform: translateY(-1px) rotate(-45deg);
+}
+.ctx-radio {
+  border-radius: 50%;
+}
+.ctx-radio.on {
+  border-color: var(--accent);
+}
+.ctx-radio.on::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+/* under the rooms ("list"): dense, the one you're on lit in the accent (as on Discord) */
+.ctx-list .menu-item {
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 0.84375rem;
+}
+.ctx-list .menu-item:not([disabled]):hover,
+.ctx-list .menu-item:not([disabled]):focus-visible,
+.ctx-list .menu-item.sub-open {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.ctx-list .menu-item:not([disabled]):hover svg,
+.ctx-list .menu-item:not([disabled]):focus-visible svg,
+.ctx-list .menu-item.sub-open svg,
+.ctx-list .menu-item:not([disabled]):hover .ctx-kbd,
+.ctx-list .menu-item:not([disabled]):focus-visible .ctx-kbd {
+  color: var(--on-accent);
+}
+.ctx-list .menu-item.danger:not([disabled]):hover,
+.ctx-list .menu-item.danger:not([disabled]):focus-visible {
+  background: var(--err);
+  color: var(--on-err);
+}
+.ctx-list .menu-item.danger:not([disabled]):hover svg,
+.ctx-list .menu-item.danger:not([disabled]):focus-visible svg {
+  color: var(--on-err);
+}
+/* in the room ("room"): compact, keys on the right, keeping order in its own colour */
+.ctx-room {
+  min-width: 210px;
+  padding: 5px;
+}
+.ctx-room .menu-item {
+  gap: 9px;
+  padding: 6px 8px;
+  font-weight: 500;
+  font-size: 0.84375rem;
+}
+.ctx-room .menu-item.mod,
+.ctx-room .menu-item.mod svg {
+  color: var(--accent-2);
+}
+.ctx-room .menu-item.mod.danger,
+.ctx-room .menu-item.mod.danger svg {
+  color: var(--err);
+}
+.ctx-room .menu-label {
+  display: none;
+}
+/* a phone: from the bottom, a submenu opening under its entry */
+.ctx-sheet-back {
+  position: fixed;
+  inset: 0;
+  z-index: 265;
+  display: flex;
+  align-items: flex-end;
+  background: var(--overlay);
+}
+.ctx-menu.ctx-sheet {
+  position: static;
+  width: 100%;
+  max-width: none;
+  max-height: 78dvh;
+  border-radius: 18px 18px 0 0;
+  padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
+  animation: ctx-up 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes ctx-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+.ctx-sheet .menu-item {
+  padding: 12px;
+  font-size: 1rem;
+}
+.ctx-inline-list {
+  display: flex;
+  flex-direction: column;
+  padding-left: 28px;
+}
+/* someone's volume, the reactions */
+.ctx-volume {
+  display: grid;
+  gap: 6px;
+  padding: 6px 10px 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.ctx-volume output {
+  font-size: 0.75rem;
+  color: var(--text);
+}
+.ctx-volume input {
+  --p: 100%;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.ctx-volume input::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--accent) var(--p), var(--surface-3) var(--p));
+}
+.ctx-volume input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--text-strong);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+}
+.ctx-volume input::-moz-range-track {
+  height: 5px;
+  border-radius: 5px;
+  background: var(--surface-3);
+}
+.ctx-volume input::-moz-range-progress {
+  height: 5px;
+  border-radius: 5px;
+  background: var(--accent);
+}
+.ctx-volume input::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text-strong);
+}
+.ctx-reacts {
+  display: flex;
+  gap: 4px;
+  padding: 2px 2px 6px;
+}
+.ctx-reacts button {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--surface-2);
+  font-size: 1.15rem;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.ctx-reacts button:hover,
+.ctx-reacts button:focus-visible {
+  background: var(--surface-3);
+  outline: none;
+}
+/* (a long press opens a menu: not the phone's own, nor a selection) */
+.chat-row,
+.rail-item,
+.dm-face,
+.voice-person,
+.vb-person,
+.people-row {
+  -webkit-touch-callout: none;
+}
+@media (pointer: coarse) {
+  .chat-row,
+  .voice-person,
+  .vb-person,
+  .people-row {
+    user-select: none;
+  }
+}
+
+/* ── direct messages behind their button (as on Discord), the new ones waiting beside it ── */
+.dm-toggle .count-badge {
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.chat-side-head .dm-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+.dm-toggle.on,
+.rail-item.dm-toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.rail-item.dm-toggle {
+  color: var(--text-dim);
+}
+.dm-waiting {
+  display: flex;
+  gap: 8px;
+  padding: 2px 12px 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dm-face {
+  position: relative;
+  flex: none;
+  border-radius: 50%;
+}
+.dm-face .count-badge {
+  top: -4px;
+  right: -6px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* ── who's in a voice (VoicePresence): talking (green, in your call), muted, silenced, webcam, LIVE ── */
+.vp-ico {
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+}
+.vp-ico.err,
+.vp-act.err {
+  color: var(--err);
+}
+.vp-ico.teal,
+.vp-act.teal {
+  color: color-mix(in oklab, var(--accent-3) 55%, var(--text));
+}
+.vp-ico.faint {
+  color: var(--faint);
+}
+button.live-tag {
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+button.live-tag:hover,
+.live-tag.on {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--err) 40%, transparent);
+}
+.voice-person .avatar,
+.vb-person .avatar,
+.people-row .avatar {
+  transition: box-shadow 120ms;
+}
+.voice-person.talking .avatar,
+.vb-person.talking .avatar,
+.people-row.talking .avatar {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--ok);
+}
+/* under the room in the list */
+.row-voice {
+  flex: none;
+  display: inline-flex;
+  color: var(--muted);
+}
+.row-voice.mine {
+  color: var(--ok);
+}
+.badge.teal.voice-mine {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--bg);
+}
+.voice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 0 6px 27px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line-strong);
+}
+.voice-person {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 30px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: default;
+  outline-offset: -2px;
+}
+.voice-person:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.voice-person.talking {
+  color: var(--text-strong);
+}
+.vp-icons {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+/* your call's buttons at the foot of the list */
+.voice-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--field);
+  border: 1px solid color-mix(in srgb, var(--ok) 28%, transparent);
+}
+.voice-panel .vp-status {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.voice-panel .vp-status b {
+  font-size: 0.875rem;
+  color: var(--ok);
+}
+.voice-panel .vc-btns {
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+/* at the top of the room */
+.voice-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 7%, transparent), transparent);
+}
+.vb-stream {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 132px;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--err) 50%, transparent);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  cursor: pointer;
+  overflow: hidden;
+}
+.vb-stream:hover:not(:disabled),
+.vb-stream.on {
+  border-color: var(--err);
+  box-shadow: 0 0 0 1px var(--err);
+}
+.vb-stream:disabled {
+  cursor: default;
+}
+.vb-stream .live-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+}
+.vb-cap {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: left;
+  color: var(--text);
+}
+.vb-watch {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--err);
+  color: var(--on-err);
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+.vb-people {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  margin: -4px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.vb-person {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  width: 60px;
+  padding: 6px 2px 4px;
+  border-radius: 10px;
+  cursor: default;
+  outline-offset: -2px;
+}
+.vb-person:hover {
+  background: var(--hover);
+}
+.vb-face {
+  position: relative;
+  display: inline-flex;
+}
+.vb-name {
+  max-width: 100%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.vb-person.talking .vb-name {
+  color: var(--ok);
+}
+.vb-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.vb-badge.err {
+  background: var(--err);
+}
+.vb-badge.teal {
+  background: var(--accent-3);
+}
+.live-tag.vb-live {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  height: 13px;
+  padding: 0 3px;
+  font-size: 0.5rem;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.vb-ctrl {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vb-sum b {
+  font-size: 0.8125rem;
+  color: var(--ok);
+  white-space: nowrap;
+}
+.btn.btn-go {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--bg);
+}
+.btn.btn-go:hover {
+  filter: brightness(1.08);
+}
+.icon-btn.danger-on {
+  background: color-mix(in srgb, var(--err) 14%, transparent);
+  border-color: color-mix(in srgb, var(--err) 40%, transparent);
+  color: var(--err);
+}
+@media (max-width: 699px) {
+  .voice-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .vb-stream {
+    width: 112px;
+  }
+}
+/* the members beside the room */
+.people-voice {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.vp-act {
+  color: var(--muted);
+}
+.people-link .grow > .vp-act {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.vp-act .live-tag {
+  height: 14px;
+  font-size: 0.5rem;
+}
+.vp-act.ok-text {
+  color: var(--ok);
+  font-weight: 700;
+}
+.people-voice-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ok);
+  cursor: pointer;
+}
+.link-btn:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.people-more {
+  opacity: 0;
+  margin-right: 4px;
+}
+.people-row:hover .people-more,
+.people-row:focus-within .people-more {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .people-more {
+    opacity: 1;
+  }
+}
+.msg-face {
+  display: inline-flex;
+}
+.vp-act.err {
+  color: var(--err);
+}
+.vp-act.teal {
+  color: color-mix(in oklab, var(--accent-3) 55%, var(--text));
+}

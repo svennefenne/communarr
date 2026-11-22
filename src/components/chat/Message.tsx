@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Copy, CornerUpLeft, Ellipsis, Flag, Pencil, Pin, PinOff, SmilePlus, Trash2 } from "lucide-react";
+import { Copy, CornerUpLeft, Ellipsis, Flag, Link2, Pencil, Pin, PinOff, SmilePlus, Trash2 } from "lucide-react";
 import type { ChatMessage } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
 import { useT } from "@/components/app/AppProvider";
@@ -13,6 +13,7 @@ import { RichText } from "@/components/content/RichText";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { Emoji, onlyEmoji } from "@/components/emoji/Emojis";
 import { useSeen } from "@/components/app/Seen";
+import { closeMenu, menuProps, openMenu, type MenuEntry, type MenuLook } from "@/components/ui/ContextMenu";
 
 /** the reactions chat suggests: the usual ones without 😂 (the picker still has every emoji) */
 const CHAT_REACTIONS = QUICK_REACTIONS.filter((e) => e !== "😂");
@@ -25,6 +26,9 @@ export interface MessageHandlers {
   onPin: (m: ChatMessage) => void;
   onReport: (m: ChatMessage) => void;
   onJump: (id: number) => void;
+  /** someone's menu (a right click on a name or a face) */
+  personMenu: (u: UserSummary) => MenuEntry[];
+  look: MenuLook;
 }
 
 export function Message({ m, me, compact, canModerate, readers, seen, highlight, h }: { m: ChatMessage; me: UserSummary; compact: boolean; canModerate: boolean; readers: UserSummary[]; seen: boolean; highlight: boolean; h: MessageHandlers }) {
@@ -62,6 +66,56 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
     }, 450);
   };
   const endPress = () => clearTimeout(press.current);
+  // a right click with a mouse: the message's menu by the pointer (a long press on a phone: the sheet below)
+  const rightClick = (e: React.MouseEvent) => {
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      e.preventDefault();
+      return;
+    }
+    const n = e.nativeEvent as { __menu?: boolean };
+    // (a name, a face, a link, a picture: theirs, or the browser's)
+    if (n.__menu || m.deleted || editing || (e.target as HTMLElement).closest("a,img,video,input,textarea,[contenteditable=true]")) return;
+    if (window.getSelection()?.toString()) return;
+    e.preventDefault();
+    const items: MenuEntry[] = [
+      {
+        key: "react",
+        node: (
+          <div className="ctx-reacts">
+            {CHAT_REACTIONS.map((x) => (
+              <button
+                key={x}
+                type="button"
+                onClick={() => {
+                  closeMenu();
+                  h.onReact(m, x);
+                }}
+                aria-label={t("React {emoji}", { emoji: x })}
+              >
+                {x}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                closeMenu();
+                setPicker(true);
+              }}
+              aria-label={t("More reactions")}
+              title={t("More reactions")}
+            >
+              <SmilePlus size={18} />
+            </button>
+          </div>
+        ),
+      },
+      ...actions.filter((a) => !a.danger && a.icon !== Flag).map((a) => ({ label: a.label, icon: a.icon, run: a.run, kbd: a.icon === CornerUpLeft ? "R" : undefined })),
+      { label: t("Copy the message's link"), icon: Link2, run: () => void navigator.clipboard?.writeText(`${location.origin}/chat/${m.room}?m=${m.id}`).catch(() => {}) },
+      ...actions.filter((a) => a.danger || a.icon === Flag).flatMap((a, i) => [...(i === 0 ? ["sep" as const] : []), { label: a.label, icon: a.icon, run: a.run, danger: a.danger }]),
+    ];
+    openMenu({ x: e.clientX, y: e.clientY, items, look: h.look });
+  };
+  const personMenu = m.author ? menuProps(() => h.personMenu(m.author!), h.look).onContextMenu : undefined;
 
   return (
     <div
@@ -71,15 +125,21 @@ export function Message({ m, me, compact, canModerate, readers, seen, highlight,
       onTouchStart={startPress}
       onTouchEnd={endPress}
       onTouchMove={endPress}
-      onContextMenu={(e) => {
-        if (window.matchMedia("(pointer: coarse)").matches) e.preventDefault();
-      }}
+      onContextMenu={rightClick}
     >
-      <div className="msg-gutter">{compact ? <span className="msg-time-hover">{timeLabel(m.createdAt)}</span> : m.author ? <Avatar user={m.author} size={38} presence /> : null}</div>
+      <div className="msg-gutter">
+        {compact ? (
+          <span className="msg-time-hover">{timeLabel(m.createdAt)}</span>
+        ) : m.author ? (
+          <span className="msg-face" onContextMenu={personMenu}>
+            <Avatar user={m.author} size={38} presence />
+          </span>
+        ) : null}
+      </div>
       <div className="msg-main">
         {!compact && m.author ? (
           <div className="msg-head">
-            <b className="msg-name" style={{ color: m.author.accent }}>
+            <b className="msg-name" style={{ color: m.author.accent }} onContextMenu={personMenu}>
               {m.author.name}
             </b>
             {ROLE_LABEL[m.author.role] ? <span className="role-tag">{t(ROLE_LABEL[m.author.role])}</span> : null}

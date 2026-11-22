@@ -158,6 +158,24 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
         <LanguageSetting own={language.own} site={language.site} />
         <div className="setting-row">
           <div className="grow">
+            <b>{t("Voice in the chat")}</b>
+            <span className="small muted">{p.chatVoice === "room" ? t("In the room: a bar at its top with who's in the voice and what they're doing, and the members beside it in groups by voice.") : t("Under the rooms: who's in each room's voice, under it in the list of chats (as on Discord), and your call's buttons at the list's foot.")}</span>
+          </div>
+          <div className="pills" role="radiogroup" aria-label={t("Voice in the chat")}>
+            {(
+              [
+                ["list", "Under the rooms"],
+                ["room", "In the room"],
+              ] as const
+            ).map(([v, label]) => (
+              <button key={v} type="button" role="radio" aria-checked={p.chatVoice === v} className={`pill ${p.chatVoice === v ? "active" : ""}`} onClick={() => void save({ chatVoice: v })}>
+                {t(label)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="setting-row">
+          <div className="grow">
             <b>{t("Animations")}</b>
             <span className="small muted">{t("Things lift and glide, and pages change with a wipe. Off: nothing moves.")}</span>
           </div>

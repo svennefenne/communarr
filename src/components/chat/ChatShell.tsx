@@ -2,10 +2,20 @@
 
 import { createContext, useCallback, useContext, useState } from "react";
 import { usePathname } from "next/navigation";
-import { CHAT_UI_COOKIE, type ChatUi } from "@/lib/chatTypes";
+import { CHAT_UI_COOKIE, type ChatUi, type RoomInfo } from "@/lib/chatTypes";
+import { ContextMenuHost } from "@/components/ui/ContextMenu";
+import { useConfirm } from "@/components/ui/ui";
 
-
-const Ctx = createContext<ChatUi & { setRail: (on: boolean) => void; setPeople: (on: boolean) => void }>({ rail: false, people: true, setRail: () => {}, setPeople: () => {} });
+interface ChatCtx extends ChatUi {
+  setRail: (on: boolean) => void;
+  setPeople: (on: boolean) => void;
+  /** the chats in the list (yours and the open ones), for names and menus elsewhere */
+  rooms: RoomInfo[];
+  setRooms: (r: RoomInfo[]) => void;
+  /** ask before something that can't be undone (from a menu) */
+  confirm: (text: string, yes: string, run: () => void | Promise<unknown>) => void;
+}
+const Ctx = createContext<ChatCtx>({ rail: false, people: true, setRail: () => {}, setPeople: () => {}, rooms: [], setRooms: () => {}, confirm: () => {} });
 export const useChatUi = () => useContext(Ctx);
 
 /**
@@ -23,9 +33,13 @@ export function ChatShell({ initial, children }: { initial: ChatUi; children: Re
   }, []);
   const setRail = useCallback((rail: boolean) => save({ ...ui, rail }), [save, ui]);
   const setPeople = useCallback((people: boolean) => save({ ...ui, people }), [save, ui]);
+  const [rooms, setRooms] = useState<RoomInfo[]>([]);
+  const { confirm, node } = useConfirm();
   return (
-    <Ctx.Provider value={{ ...ui, setRail, setPeople }}>
+    <Ctx.Provider value={{ ...ui, setRail, setPeople, rooms, setRooms, confirm }}>
       <div className={`chat-shell ${inRoom ? "has-room" : ""}`}>{children}</div>
+      <ContextMenuHost />
+      {node}
     </Ctx.Provider>
   );
 }
