@@ -11,6 +11,8 @@ export interface UserSummary {
   name: string;
   avatar: string | null;
   accent: string;
+  /** a ring around the picture (rings.ts: its name), or null */
+  ring: string | null;
   role: Role;
   statusText: string;
   statusEmoji: string;

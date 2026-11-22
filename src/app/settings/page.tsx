@@ -11,8 +11,8 @@ export default async function ProfileSettings() {
   return (
     <div className="stack loose">
       <ProfileForm
-        p={{ name: u.name, username: u.username, pronouns: u.pronouns, bioHtml: u.bioHtml, location: u.location, website: u.website, birthday: u.birthday, accent: u.accent, avatar: u.avatar, banner: u.banner }}
-        presets={avatarPresets()}
+        p={{ name: u.name, username: u.username, pronouns: u.pronouns, bioHtml: u.bioHtml, location: u.location, website: u.website, birthday: u.birthday, accent: u.accent, ring: u.ring, avatar: u.avatar, banner: u.banner }}
+        presets={avatarPresets(u.id)}
       />
       <ShelfSettings account={shelfAccount(u.id)} username={u.username} />
     </div>
