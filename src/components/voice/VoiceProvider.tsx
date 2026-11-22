@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { clientT } from "@/lib/i18n";
-import { DEFAULT_VOICE_PREFS, loadVoicePrefs, openPipeline, saveVoicePrefs, type CameraQuality, type MicLevel, type NoiseMode, type Pipeline, type VoicePrefs } from "./pipeline";
+import { DEFAULT_VOICE_PREFS, canPickSpeaker, loadVoicePrefs, openPipeline, saveVoicePrefs, type CameraQuality, type MicLevel, type NoiseMode, type Pipeline, type VoicePrefs } from "./pipeline";
 import { encodeAs, relayed, type Quality } from "./rtc";
 import { inAndroidApp, inDesktopApp } from "@/components/app/androidApp";
 
@@ -226,6 +226,10 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       const mine = p ? peopleRef.current[p.userId] : undefined;
       a.muted = deafRef.current || !!mine?.off || !!p?.held;
       a.volume = Math.max(0, Math.min(1, mine?.vol ?? 1));
+      // (the speakers you picked, where the browser can)
+      const out = prefsRef.current.speaker;
+      const el = a as HTMLAudioElement & { sinkId?: string; setSinkId?: (id: string) => Promise<void> };
+      if (canPickSpeaker() && el.sinkId !== out) void el.setSinkId?.(out).catch(() => {});
     }
   }, []);
   useEffect(() => {
@@ -667,7 +671,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       }
       const p = pipe.current;
       if (!p) return;
-      if (next.noise !== before.noise) {
+      if (next.speaker !== before.speaker) applyAudio();
+      if (next.noise !== before.noise || next.mic !== before.mic) {
         const wasOn = local.current?.getAudioTracks()[0]?.enabled ?? true;
         const fresh = await openPipeline(next).catch(() => null);
         if (!fresh) return;
@@ -685,7 +690,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       cur.setThreshold(next.threshold);
       cur.setForce(next.mode === "ptt" ? (talkRef.current ? 1 : -1) : 0);
     },
-    [meter, openCamera, cameraOff, sendCamera],
+    [meter, openCamera, cameraOff, sendCamera, applyAudio],
   );
 
   // push to talk: while in a call, the key held down opens the microphone (not while typing in a field)

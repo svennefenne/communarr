@@ -8,6 +8,7 @@ import { useMembers } from "@/components/app/useMembers";
 import { useVoice, type VoicePeer } from "@/components/voice/VoiceProvider";
 import { useStream } from "@/components/voice/StreamProvider";
 import { useCallControlsHere } from "@/components/voice/dockSlot";
+import { VoiceSettingsButton } from "@/components/voice/VoiceDock";
 import { Avatar } from "@/components/ui/Avatar";
 import { menuProps, type MenuLook } from "@/components/ui/ContextMenu";
 import { usePersonMenu, type PersonWhere } from "./chatMenus";
@@ -245,6 +246,7 @@ export function VoiceBar({ info, look, where }: { info: RoomInfo; look: MenuLook
             <button type="button" className={`icon-btn framed ${v.deafened ? "danger-on" : ""}`} onClick={v.toggleDeafen} aria-pressed={v.deafened} aria-label={v.deafened ? t("Hear again") : t("Deafen")} title={v.deafened ? t("Hear again") : t("Deafen (hear nothing)")}>
               {v.deafened ? <HeadphoneOff size={17} /> : <Headphones size={17} />}
             </button>
+            <VoiceSettingsButton className="icon-btn framed" />
             <button type="button" className="icon-btn framed vc-leave" onClick={v.leave} aria-label={t("Leave the call")} title={t("Leave the call")}>
               <PhoneOff size={17} />
             </button>
