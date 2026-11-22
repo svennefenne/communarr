@@ -4,7 +4,7 @@ import { act } from "@/lib/act";
 import { addAvatarPresets, avatarPresets, removeAvatarPreset } from "@/lib/avatarPresets";
 
 export async function avatarPresetsAction() {
-  return act(() => avatarPresets());
+  return act((u) => avatarPresets(u.id));
 }
 
 export async function addAvatarPresetsAction(urls: string[]) {

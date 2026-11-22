@@ -9,6 +9,7 @@ import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { ImagePick } from "@/components/ui/ImagePick";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarChooser } from "./AvatarChooser";
+import { RingPicker } from "./RingPicker";
 import type { AvatarPreset } from "@/lib/avatarPresets";
 import { StatusDialog } from "@/components/shell/StatusDialog";
 import { updateProfileAction } from "@/app/actions/settings";
@@ -24,6 +25,7 @@ export interface ProfileData {
   website: string;
   birthday: string | null;
   accent: string;
+  ring: string | null;
   avatar: string | null;
   banner: string | null;
 }
@@ -40,15 +42,19 @@ export function ProfileForm({ p, presets = [] }: { p: ProfileData; presets?: Ava
   const [website, setWebsite] = useState(p.website);
   const [bday, setBday] = useState(p.birthday ?? "");
   const [accent, setAccent] = useState(p.accent);
+  const [ring, setRing] = useState(p.ring);
   const [avatar, setAvatar] = useState(p.avatar);
   const [banner, setBanner] = useState(p.banner);
   const [status, setStatus] = useState(false);
   const [pending, start] = useTransition();
   const save = () =>
     start(async () => {
-      const r = await updateProfileAction({ pronouns, location, website, birthday: bday || null, accent, avatar, banner, bioHtml: ed.current?.getHTML() ?? "" });
-      if (!r.ok) toast(r.error, { kind: "err" });
-      else {
+      const r = await updateProfileAction({ pronouns, location, website, birthday: bday || null, accent, ring, avatar, banner, bioHtml: ed.current?.getHTML() ?? "" });
+      if (!r.ok) {
+        toast(r.error, { kind: "err" });
+        // (someone may have taken the avatar first: the chooser learns who)
+        router.refresh();
+      } else {
         toast(t("Profile saved."));
         router.refresh();
       }
@@ -57,7 +63,7 @@ export function ProfileForm({ p, presets = [] }: { p: ProfileData; presets?: Ava
   return (
     <div className="stack loose">
       <div className="panel panel-pad row wrap" style={{ gap: 16 }}>
-        <Avatar user={{ id: me?.id ?? 0, name, avatar, accent }} size={64} />
+        <Avatar user={{ id: me?.id ?? 0, name, avatar, accent, ring }} size={64} />
         <div className="grow" style={{ minWidth: 0 }}>
           <b className="h3">{name}</b>
           <div className="small muted">
@@ -73,7 +79,7 @@ export function ProfileForm({ p, presets = [] }: { p: ProfileData; presets?: Ava
       </div>
       <div className="panel panel-pad stack loose">
         <div className="grid-2">
-          <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="round" label={t("Profile picture")} extra={<AvatarChooser presets={presets} value={avatar} onPick={setAvatar} />} />
+          <ImagePick value={avatar} onChange={setAvatar} kind="avatar" shape="round" label={t("Profile picture")} extra={<AvatarChooser presets={presets} value={avatar} onPick={setAvatar} me={{ id: me?.id ?? 0, name, accent, ring }} />} />
           <ImagePick value={banner} onChange={setBanner} kind="banner" shape="wide" label={t("Banner on your profile")} size={t("Any picture: you place it when you've chosen it, and see what a computer and a phone show.")} />
         </div>
         {/* (the name everyone sees is the alias, under Settings → Account) */}
@@ -133,6 +139,11 @@ export function ProfileForm({ p, presets = [] }: { p: ProfileData; presets?: Ava
               <input type="color" className="swatch-input" value={accent} onChange={(e) => setAccent(e.target.value)} aria-label={t("Any colour")} />
             </div>
           </div>
+        </div>
+        <div className="field">
+          <span className="label">{t("Ring around your picture")}</span>
+          <RingPicker user={{ id: me?.id ?? 0, name, avatar, accent }} value={ring} onChange={setRing} />
+          <span className="hint">{t("Shown wherever your picture is. None of them is green: a green ring outside a picture means that person is talking in a voice chat.")}</span>
         </div>
         <div className="field">
           <span className="label">{t("About you")}</span>
