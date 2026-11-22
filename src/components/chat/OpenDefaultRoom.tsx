@@ -4,13 +4,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * /chat on a computer: straight into the default room (Admin → Groups & chat rooms). On a phone the
- * list of chats is the page (a room's back button comes here), so it stays.
+ * /chat: straight into the default room (Admin → Groups & chat rooms), on a phone too, where the
+ * room is the pane the chat opens on (the chats are a swipe to the left).
  */
 export function OpenDefaultRoom({ id }: { id: number }) {
   const router = useRouter();
   useEffect(() => {
-    if (window.matchMedia("(min-width: 700px)").matches) router.replace(`/chat/${id}`);
+    router.replace(`/chat/${id}`);
   }, [id, router]);
   return null;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, Bell, BellOff, ChevronLeft, CornerUpLeft, Ellipsis, Hash, LogOut, Pin, Send, Settings, Trash2, UserPlus, Users, X, Archive, AtSign } from "lucide-react";
@@ -111,10 +110,10 @@ export function ChatRoom(p: Props) {
   // this tab is showing the room: no unread count or notification for it
   useEffect(() => {
     setRoom(id);
-    document.documentElement.classList.add("app-page", "in-room");
+    document.documentElement.classList.add("app-page");
     return () => {
       setRoom(null);
-      document.documentElement.classList.remove("app-page", "in-room");
+      document.documentElement.classList.remove("app-page");
     };
   }, [id, setRoom]);
 
@@ -382,9 +381,10 @@ export function ChatRoom(p: Props) {
     <MentionScope ids={members.map((m) => m.user.id)} label="In the chat">
       <section className="panel chat-room" data-middle>
         <header className="chat-head">
-          <Link href="/chat" className="icon-btn sm chat-back" aria-label={t("All chats")}>
+          {/* (a phone's: the chats are the pane to the left) */}
+          <button type="button" className="icon-btn sm chat-back" aria-label={t("All chats")} onClick={() => ui.showPane("rooms")}>
             <ChevronLeft size={20} />
-          </Link>
+          </button>
           <RoomIcon r={info} size={36} />
           <button type="button" className="chat-title" onClick={() => setPanel(info.kind === "dm" ? "members" : "settings")} {...menuProps(() => roomMenu(info, { active: true, onChanged: () => void reloadInfo() }), look)}>
             <b className="ellipsis">{info.name}</b>
@@ -419,7 +419,7 @@ export function ChatRoom(p: Props) {
               title={wide ? (ui.people ? t("Only the faces") : t("Show the members")) : t("Members")}
               aria-label={t("Members")}
               aria-pressed={wide ? ui.people : undefined}
-              onClick={() => (wide ? ui.setPeople(!ui.people) : setPanel("members"))}
+              onClick={() => (wide ? ui.setPeople(!ui.people) : ui.phone ? ui.showPane("people") : setPanel("members"))}
             >
               <Users size={18} />
             </button>
@@ -704,8 +704,8 @@ export function ChatRoom(p: Props) {
         {reporting ? <ReportDialog type="message" id={reporting} onClose={() => setReporting(null)} /> : null}
         {node}
       </section>
-      {/* (on a narrow screen it's not shown: the members are in a dialog there) */}
-      <ChatPeople info={info} members={members} canManage={p.canManage} onMembers={setMembers} onInvite={() => setPanel("invite")} onClose={() => ui.setPeople(false)} onOpen={() => ui.setPeople(true)} rail={!ui.people} />
+      {/* (a pane to swipe to on a phone; on a tablet not shown: the members are in a dialog there) */}
+      <ChatPeople info={info} members={members} canManage={p.canManage} onMembers={setMembers} onInvite={() => setPanel("invite")} onClose={() => (ui.phone ? ui.showPane("chat") : ui.setPeople(false))} onOpen={() => ui.setPeople(true)} rail={!ui.people && !ui.phone} />
     </MentionScope>
   );
 }

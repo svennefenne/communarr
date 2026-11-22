@@ -443,6 +443,7 @@ const sv: Record<string, string> = {
   "The devices get their names once the browser may use the microphone: test it below, or join a call.": "Enheterna får sina namn när webbläsaren får använda mikrofonen: testa den nedan, eller gå med i ett samtal.",
   "Only the faces": "Bara ansiktena",
   "DM": "DM",
+  "Back to the chat": "Tillbaka till chatten",
 };
 
 export default sv;

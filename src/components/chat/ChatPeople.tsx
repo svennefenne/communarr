@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Ellipsis, HeadphoneOff, Headphones, MicOff, PanelRightClose, PanelRightOpen, UserPlus } from "lucide-react";
+import { ChevronLeft, Ellipsis, HeadphoneOff, Headphones, MicOff, PanelRightClose, PanelRightOpen, UserPlus } from "lucide-react";
 import type { RoomInfo, RoomMember } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
@@ -90,7 +90,7 @@ export function ChatPeople({
   const look = useVoiceLook();
   const personMenu = usePersonMenu();
   const talking = useTalking();
-  const { rooms } = useChatUi();
+  const { rooms, phone } = useChatUi();
   const roles = new Map(members.map((m) => [m.user.id, m]));
   const all = info.kind === "room" && info.visibility === "open" && everyone.size ? [...everyone.values()] : members.map((m) => m.user);
   const here = (u: UserSummary) => u.id === me?.id || presence.has(u.id);
@@ -215,11 +215,19 @@ export function ChatPeople({
   return (
     <aside className="panel chat-people" aria-label={t("Members")}>
       <div className="people-head">
+        {/* (a phone's: back to the room, the pane to the left) */}
+        {phone ? (
+          <button type="button" className="icon-btn sm" onClick={onClose} title={t("Back to the chat")} aria-label={t("Back to the chat")}>
+            <ChevronLeft size={20} />
+          </button>
+        ) : null}
         <h2 className="h3">{t("Members")}</h2>
         <span className="spacer" />
-        <button type="button" className="icon-btn sm" onClick={onClose} title={t("Only the faces")} aria-label={t("Only the faces")}>
-          <PanelRightClose size={18} />
-        </button>
+        {phone ? null : (
+          <button type="button" className="icon-btn sm" onClick={onClose} title={t("Only the faces")} aria-label={t("Only the faces")}>
+            <PanelRightClose size={18} />
+          </button>
+        )}
       </div>
       <div className="people-scroll">
         {(inRoomLook ? voiceGroups : []).map((g) => (
