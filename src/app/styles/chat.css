@@ -758,9 +758,14 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
     grid-template-columns: 46px minmax(0, 1fr);
     padding-right: 10px;
   }
-  .msg .avatar {
+  .msg-gutter .avatar {
     width: 34px !important;
     height: 34px !important;
+  }
+  /* "seen by" (the faces under a room's latest message): left out on a phone, it takes a row of its
+     own. A direct message's "Seen" stays, a word under your own last message. */
+  .msg-readers:not(:has(> .tiny)) {
+    display: none;
   }
   /* two rows in the same frame: the room's whole name, then its buttons */
   .chat-head {
