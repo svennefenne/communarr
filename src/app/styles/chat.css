@@ -689,27 +689,23 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
 /* phones: the list, or the room full screen */
 @media (max-width: 699px) {
   /* the chats, the room and its members: panes a screen wide, side by side, to swipe between
-     (ChatShell); it opens on the room */
+     (ChatShell, paneSwipe: the page moves the row, so the browser doesn't scroll it sideways itself,
+     nor take a sideways swipe for "back"); it opens on the room */
   .chat-shell {
     display: flex;
     width: 100%;
     margin: 0;
     gap: 0;
     height: calc(100dvh - var(--header-h));
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
+    overflow: hidden;
+    touch-action: pan-y;
   }
-  .chat-shell::-webkit-scrollbar {
-    display: none;
+  html:has(.chat-shell) {
+    overscroll-behavior-x: none;
   }
   .chat-shell > * {
     flex: 0 0 100%;
     min-width: 0;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
   }
   .chat-shell > .chat-people {
     display: flex;
@@ -717,12 +713,11 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
     min-height: 0;
     overflow: hidden;
   }
-  /* (the panes' lists keep their up-and-down to themselves, but a sideways swipe on them goes on to
-     the row of panes) */
+  /* (the panes' lists scroll up and down; sideways is the swipe's) */
   .chat-scroll,
   .chat-side-scroll,
   .people-scroll {
-    overscroll-behavior-x: auto;
+    touch-action: pan-y;
   }
   /* (before the page's script runs, the chats are out of the row: it shows the room straight away) */
   .chat-shell.unplaced:has(> .chat-room:not(.chat-empty), > .chat-room.opening) > .chat-side {
@@ -743,8 +738,8 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
   }
   html:has(.chat-shell) .bottom-nav {
     transition:
-      transform 220ms ease,
-      visibility 220ms;
+      transform 160ms ease-out,
+      visibility 160ms;
   }
   html:has(.chat-shell):not([data-chat-pane="rooms"]) .bottom-nav {
     transform: translateY(100%);
