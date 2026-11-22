@@ -1143,7 +1143,9 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
 .dm-waiting {
   display: flex;
   gap: 8px;
-  padding: 2px 12px 10px;
+  /* (room above the faces for their counts: a strip that scrolls sideways cuts off what sticks out) */
+  margin-top: -6px;
+  padding: 10px 12px 10px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -1500,4 +1502,30 @@ button.live-tag:hover,
 }
 .vp-act.teal {
   color: color-mix(in oklab, var(--accent-3) 55%, var(--text));
+}
+
+/* the members folded to their faces (as the list of chats can be) */
+@media (min-width: 1100px) {
+  .chat-shell:has(> .chat-people.rail) {
+    grid-template-columns: var(--side-w) minmax(0, 1fr) 72px;
+  }
+}
+.people-face.off {
+  opacity: 0.5;
+}
+.people-face.off:hover,
+.people-face.off:focus-visible {
+  opacity: 0.85;
+}
+.rail-item .avatar {
+  transition: box-shadow 120ms;
+}
+.rail-item.talking .avatar {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--ok);
+}
+.rail-talk.muted {
+  background: var(--err);
+  color: var(--on-err);
 }

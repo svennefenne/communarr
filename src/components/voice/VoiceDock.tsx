@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, Headphones, HeadphoneOff, Mic, MicOff, MonitorOff, MonitorUp, PhoneOff, Radio, Settings2, Video, VideoOff } from "lucide-react";
 import { useVoice, type VoicePeer } from "./VoiceProvider";
 import { useApp, useT } from "@/components/app/AppProvider";
@@ -232,5 +232,41 @@ export function VoiceButton({ room, name, compact = false }: { room: number; nam
       </button>
       {v.error && !here ? <span className="small err-text">{v.error}</span> : null}
     </div>
+  );
+}
+
+const SETTINGS_EVENT = "voice-settings";
+/** Open the voice settings (on a page with the VoiceSettingsHost: the chat). */
+export const openVoiceSettings = () => window.dispatchEvent(new Event(SETTINGS_EVENT));
+
+/** The voice settings, when something on the page asks for them (a button, a menu). */
+export function VoiceSettingsHost() {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const f = () => setOpen(true);
+    window.addEventListener(SETTINGS_EVENT, f);
+    return () => window.removeEventListener(SETTINGS_EVENT, f);
+  }, []);
+  if (!open) return null;
+  return (
+    <Modal onClose={() => setOpen(false)} label={t("Voice settings")}>
+      <h2 className="h2" style={{ marginTop: 0, marginBottom: 14 }}>
+        {t("Voice settings")}
+      </h2>
+      <VoiceSettings />
+    </Modal>
+  );
+}
+
+/** A button for the voice settings: the microphone, the speakers, push to talk… */
+export function VoiceSettingsButton({ className = "icon-btn sm" }: { className?: string }) {
+  const t = useT();
+  const { site } = useApp();
+  if (!site.features.voice) return null;
+  return (
+    <button type="button" className={className} onClick={openVoiceSettings} title={t("Voice settings")} aria-label={t("Voice settings")}>
+      <Settings2 size={17} />
+    </button>
   );
 }

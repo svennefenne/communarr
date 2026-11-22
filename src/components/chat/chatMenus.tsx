@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Archive, AtSign, Bell, CheckCheck, Copy, DoorOpen, Headphones, HeadphoneOff, Link2, LogOut, MessageCircle, Mic, MicOff, MonitorPlay, PhoneOff, Settings, Shield, ShieldOff, Unplug, User, UserMinus, UserPlus, Users, VolumeX } from "lucide-react";
+import { Archive, AtSign, Bell, CheckCheck, Copy, DoorOpen, Headphones, HeadphoneOff, Link2, LogOut, MessageCircle, Mic, MicOff, MonitorPlay, PhoneOff, Settings, Settings2, Shield, ShieldOff, Unplug, User, UserMinus, UserPlus, Users, VolumeX } from "lucide-react";
 import type { RoomInfo, RoomMember } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { useVoiceNow, type VoicePeer } from "@/components/voice/VoiceProvider";
 import { useStreamNow } from "@/components/voice/StreamProvider";
+import { openVoiceSettings } from "@/components/voice/VoiceDock";
 import type { MenuEntry, MenuLook } from "@/components/ui/ContextMenu";
 import { useChatUi } from "./ChatShell";
 import { archiveRoomAction, dmAction, inviteToRoomAction, joinRoomAction, leaveRoomAction, markReadAction, membersAction, removeMemberAction, setMemberRoleAction, setNotifyAction } from "@/app/actions/chat";
@@ -78,6 +79,7 @@ export function usePersonMenu() {
         const r = where.room;
         out.push("sep", { label: t("Join the voice chat"), icon: Headphones, run: () => void v.join(r.id, r.name) });
       }
+      if (v?.supported) out.push("sep", { label: t("Voice settings"), icon: Settings2, run: openVoiceSettings });
       out.push("sep", { label: t("Copy the username"), icon: Copy, run: () => copy(u.username) });
       return out;
     }

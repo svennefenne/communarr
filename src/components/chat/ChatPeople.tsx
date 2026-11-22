@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Ellipsis, Headphones, PanelRightClose, UserPlus } from "lucide-react";
+import { Ellipsis, HeadphoneOff, Headphones, MicOff, PanelRightClose, PanelRightOpen, UserPlus } from "lucide-react";
 import type { RoomInfo, RoomMember } from "@/lib/chatTypes";
 import type { UserSummary } from "@/lib/types";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
@@ -60,6 +60,9 @@ export function ManageMember({ roomId, m, onChanged }: { roomId: number; m: Room
  *
  * Who's talking: a headphone by them (the voice shown under the rooms in the list), or (in the room)
  * those in this room's voice first, then those in each other room's, with what each one's doing.
+ *
+ * Folded (`rail`), it's only their faces, as the list of chats can be: those in a voice first, then
+ * those here now, then the rest, faded.
  */
 export function ChatPeople({
   info,
@@ -68,6 +71,8 @@ export function ChatPeople({
   onMembers,
   onInvite,
   onClose,
+  onOpen,
+  rail = false,
 }: {
   info: RoomInfo;
   members: RoomMember[];
@@ -75,6 +80,8 @@ export function ChatPeople({
   onMembers: (list: RoomMember[]) => void;
   onInvite: () => void;
   onClose: () => void;
+  onOpen: () => void;
+  rail?: boolean;
 }) {
   const t = useT();
   const { me, presence } = useApp();
@@ -94,7 +101,7 @@ export function ChatPeople({
   // (in the room: those in a voice get their own groups first, this room's then the others', in the order they came)
   const inRoomLook = look === "room";
   const voiceGroups: { room: number; people: { u: UserSummary; p: VoicePeer }[] }[] = [];
-  if (inRoomLook) {
+  if (inRoomLook || rail) {
     const ids = new Set(all.map((u) => u.id));
     const byId = new Map(all.map((u) => [u.id, u]));
     const order = [info.id, ...Object.keys(v.channels).map(Number).filter((r) => r !== info.id)];
@@ -110,8 +117,59 @@ export function ChatPeople({
     }
   }
   const talkingSomewhere = new Set(voiceGroups.flatMap((g) => g.people.map((x) => x.u.id)));
-  const on = all.filter((u) => here(u) && !talkingSomewhere.has(u.id)).sort(byName);
-  const off = all.filter((u) => !here(u) && !talkingSomewhere.has(u.id)).sort(byName);
+
+  if (rail) {
+    const inVoice = voiceGroups.flatMap((g) => g.people.map((x) => ({ ...x, room: g.room })));
+    const onR = all.filter((u) => here(u) && !talkingSomewhere.has(u.id)).sort(byName);
+    const offR = all.filter((u) => !here(u) && !talkingSomewhere.has(u.id)).sort(byName);
+    const face = (u: UserSummary, faded: boolean, voice?: { p: VoicePeer; room: number }) => {
+      const p = voice?.p;
+      const what = p ? `${t("In the voice in {room}", { room: roomName(voice.room) })}${p.live ? ` · ${t("Sharing their screen")}` : p.deaf ? ` · ${t("Hears nothing")}` : p.held ? ` · ${t("Silenced by a room admin")}` : p.muted ? ` · ${t("Microphone off")}` : ""}` : u.statusText ? `${u.statusEmoji} ${u.statusText}`.trim() : "";
+      const label = `${u.name}${u.id === me?.id ? ` (${t("you")})` : ""}${what ? ` · ${what}` : ""}`;
+      return (
+        <Link
+          key={u.id}
+          href={`/u/${encodeURIComponent(u.username)}`}
+          className={`rail-item people-face ${faded ? "off" : ""} ${p && talking(p) ? "talking" : ""}`}
+          title={label}
+          aria-label={label}
+          {...menuProps(() => personMenu(u, { ...where, member: roles.get(u.id) }), look)}
+        >
+          <Avatar user={u} size={38} presence={!p} />
+          {p ? (
+            <span className={`rail-talk ${p.live ? "live" : p.deaf || p.muted || p.held ? "muted" : ""}`}>{p.deaf ? <HeadphoneOff size={10} /> : p.muted || p.held ? <MicOff size={10} /> : <Headphones size={10} />}</span>
+          ) : null}
+        </Link>
+      );
+    };
+    return (
+      <aside className="panel chat-people rail" aria-label={t("Members")}>
+        <div className="rail-head">
+          <button type="button" className="icon-btn framed sm" onClick={onOpen} title={t("Show the names")} aria-label={t("Show the names")}>
+            <PanelRightOpen size={16} />
+          </button>
+        </div>
+        <div className="rail-list">
+          {inVoice.map((x) => face(x.u, false, x))}
+          {inVoice.length && onR.length ? <span className="rail-sep" /> : null}
+          {onR.map((u) => face(u, false))}
+          {offR.length && (onR.length || inVoice.length) ? <span className="rail-sep" /> : null}
+          {offR.map((u) => face(u, true))}
+        </div>
+        {info.kind === "room" && info.myRole ? (
+          <div className="rail-foot">
+            <button type="button" className="icon-btn framed sm" onClick={onInvite} title={t("Invite people")} aria-label={t("Invite people")}>
+              <UserPlus size={16} />
+            </button>
+          </div>
+        ) : null}
+      </aside>
+    );
+  }
+  // (under the rooms: everyone in the plain groups, a headphone by those in a voice)
+  const grouped = inRoomLook ? talkingSomewhere : new Set<number>();
+  const on = all.filter((u) => here(u) && !grouped.has(u.id)).sort(byName);
+  const off = all.filter((u) => !here(u) && !grouped.has(u.id)).sort(byName);
 
   const row = (u: UserSummary, faded: boolean, voice?: VoicePeer) => {
     const m = roles.get(u.id);
@@ -159,12 +217,12 @@ export function ChatPeople({
       <div className="people-head">
         <h2 className="h3">{t("Members")}</h2>
         <span className="spacer" />
-        <button type="button" className="icon-btn sm" onClick={onClose} title={t("Hide the members")} aria-label={t("Hide the members")}>
+        <button type="button" className="icon-btn sm" onClick={onClose} title={t("Only the faces")} aria-label={t("Only the faces")}>
           <PanelRightClose size={18} />
         </button>
       </div>
       <div className="people-scroll">
-        {voiceGroups.map((g) => (
+        {(inRoomLook ? voiceGroups : []).map((g) => (
           <div key={g.room}>
             <div className="menu-label people-voice-head">
               <span className="grow ellipsis">{g.room === info.id ? t("In the voice here · {n}", { n: g.people.length }) : t("In the voice in {room} · {n}", { room: roomName(g.room), n: g.people.length })}</span>

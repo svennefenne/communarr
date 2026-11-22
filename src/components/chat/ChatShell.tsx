@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CHAT_UI_COOKIE, type ChatUi, type RoomInfo } from "@/lib/chatTypes";
 import { ContextMenuHost } from "@/components/ui/ContextMenu";
 import { useConfirm } from "@/components/ui/ui";
+import { VoiceSettingsHost } from "@/components/voice/VoiceDock";
 
 interface ChatCtx extends ChatUi {
   setRail: (on: boolean) => void;
@@ -39,6 +40,7 @@ export function ChatShell({ initial, children }: { initial: ChatUi; children: Re
     <Ctx.Provider value={{ ...ui, setRail, setPeople, rooms, setRooms, confirm }}>
       <div className={`chat-shell ${inRoom ? "has-room" : ""}`}>{children}</div>
       <ContextMenuHost />
+      <VoiceSettingsHost />
       {node}
     </Ctx.Provider>
   );

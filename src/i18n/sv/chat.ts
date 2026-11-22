@@ -436,6 +436,12 @@ const sv: Record<string, string> = {
   "Under the rooms: who's in each room's voice, under it in the list of chats (as on Discord), and your call's buttons at the list's foot.": "Under rummen: vilka som är i varje rums röst, under rummet i chattlistan (som på Discord), och samtalets knappar längst ner i listan.",
   "Under the rooms": "Under rummen",
   "In the room": "I rummet",
+  "Microphone": "Mikrofon",
+  "Speakers": "Högtalare",
+  "Microphone {n}": "Mikrofon {n}",
+  "Speakers {n}": "Högtalare {n}",
+  "The devices get their names once the browser may use the microphone: test it below, or join a call.": "Enheterna får sina namn när webbläsaren får använda mikrofonen: testa den nedan, eller gå med i ett samtal.",
+  "Only the faces": "Bara ansiktena",
 };
 
 export default sv;

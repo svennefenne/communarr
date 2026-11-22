@@ -4,15 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { Keyboard, Mic, Square } from "lucide-react";
 import { useT } from "@/components/app/AppProvider";
 import { CAMERA, useVoice } from "./VoiceProvider";
-import { keyName, openPipeline, type CameraQuality, type MicLevel, type NoiseMode, type Pipeline } from "./pipeline";
+import { canPickSpeaker, keyName, openPipeline, type CameraQuality, type MicLevel, type NoiseMode, type Pipeline } from "./pipeline";
 
 /** dB to a share of the meter (-100 … 0 dB, the useful part stretched) */
 const pct = (db: number) => Math.round(Math.min(1, Math.max(0, (db + 90) / 80)) * 100);
 
 /**
- * Your voice chat settings on this device: push to talk (and its key) or by input sensitivity, the
- * sensitivity with a live meter, noise suppression, and the webcam (which, and how good). In a call
- * they apply straight away; outside one, "Test the microphone" shows the meter.
+ * Your voice chat settings on this device: the microphone and the speakers, push to talk (and its
+ * key) or by input sensitivity, the sensitivity with a live meter, noise suppression, and the webcam
+ * (which, and how good). In a call they apply straight away; outside one, "Test the microphone" shows
+ * the meter.
  */
 export function VoiceSettings() {
   const t = useT();
@@ -24,15 +25,23 @@ export function VoiceSettings() {
   const [testInfo, setTestInfo] = useState<{ processed: boolean; noise: NoiseMode } | null>(null);
   const test = useRef<Pipeline | null>(null);
   const inCall = v.room != null;
-  // the webcams there are (their names once the browser has been allowed a camera)
-  const [cams, setCams] = useState<MediaDeviceInfo[]>([]);
+  // the microphones, speakers and webcams there are (their names once the browser has been allowed a microphone or camera)
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   useEffect(() => {
-    if (!v.camerasAllowed) return;
-    navigator.mediaDevices
-      ?.enumerateDevices()
-      .then((l) => setCams(l.filter((d) => d.kind === "videoinput" && d.deviceId)))
-      .catch(() => {});
-  }, [v.camerasAllowed, v.camera]);
+    const md = navigator.mediaDevices;
+    if (!md) return;
+    const load = () =>
+      void md
+        .enumerateDevices()
+        .then((l) => setDevices(l.filter((d) => d.deviceId && d.deviceId !== "default" && d.deviceId !== "communications")))
+        .catch(() => {});
+    load();
+    md.addEventListener("devicechange", load);
+    return () => md.removeEventListener("devicechange", load);
+  }, [inCall, testing, v.camera]);
+  const mics = devices.filter((d) => d.kind === "audioinput");
+  const speakers = canPickSpeaker() ? devices.filter((d) => d.kind === "audiooutput") : [];
+  const cams = v.camerasAllowed ? devices.filter((d) => d.kind === "videoinput") : [];
 
   // the meter: from the call, or from a test of the microphone
   useEffect(() => {
@@ -61,7 +70,7 @@ export function VoiceSettings() {
     };
     // a new kind of noise suppression starts the test over
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testing, inCall, p.noise]);
+  }, [testing, inCall, p.noise, p.mic]);
   useEffect(() => {
     test.current?.setThreshold(p.threshold);
   }, [p.threshold]);
@@ -82,8 +91,27 @@ export function VoiceSettings() {
   const live = inCall || testing;
   const processed = inCall ? v.processed : (testInfo?.processed ?? true);
   const noise = inCall ? v.noiseInUse : testInfo?.noise;
+  const pick = (id: string, label: string, value: string, list: MediaDeviceInfo[], name: (n: number) => string, set: (id: string) => void) => (
+    <div className="field">
+      <label className="label" htmlFor={id}>
+        {label}
+      </label>
+      <select id={id} className="select" value={list.some((d) => d.deviceId === value) ? value : ""} onChange={(e) => set(e.target.value)} style={{ maxWidth: 360 }}>
+        <option value="">{t("The browser's choice")}</option>
+        {list.map((d, i) => (
+          <option key={d.deviceId} value={d.deviceId}>
+            {d.label || name(i + 1)}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
   return (
     <div className="stack voice-settings">
+      {mics.length ? pick("voice-mic", t("Microphone"), p.mic, mics, (n) => t("Microphone {n}", { n }), (mic) => void v.setPrefs({ ...p, mic })) : null}
+      {speakers.length ? pick("voice-speaker", t("Speakers"), p.speaker, speakers, (n) => t("Speakers {n}", { n }), (speaker) => void v.setPrefs({ ...p, speaker })) : null}
+      {mics.length && !mics.some((d) => d.label) ? <span className="small muted">{t("The devices get their names once the browser may use the microphone: test it below, or join a call.")}</span> : null}
+
       <div className="field">
         <span className="label">{t("How your voice is sent")}</span>
         <div className="pills" role="group" aria-label={t("How your voice is sent")}>

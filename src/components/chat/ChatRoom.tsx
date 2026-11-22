@@ -9,7 +9,7 @@ import type { Reaction, UserSummary } from "@/lib/types";
 import { useApp, useLive, useT, useToast } from "@/components/app/AppProvider";
 import { clientT } from "@/lib/i18n";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
-import { VoiceButton } from "@/components/voice/VoiceDock";
+import { VoiceButton, VoiceSettingsButton } from "@/components/voice/VoiceDock";
 import { Dropdown, Modal, useConfirm } from "@/components/ui/ui";
 import { PeoplePicker } from "@/components/ui/PeoplePicker";
 import { Avatar, UserChip } from "@/components/ui/Avatar";
@@ -397,6 +397,7 @@ export function ChatRoom(p: Props) {
             {isMember || info.visibility === "open" ? (
               <div className="chat-voice">
                 <VoiceButton room={id} name={info.name} compact />
+                <VoiceSettingsButton />
               </div>
             ) : null}
             <button
@@ -415,7 +416,7 @@ export function ChatRoom(p: Props) {
             <button
               type="button"
               className={`icon-btn sm ${wide && ui.people ? "on" : ""}`}
-              title={wide ? (ui.people ? t("Hide the members") : t("Show the members")) : t("Members")}
+              title={wide ? (ui.people ? t("Only the faces") : t("Show the members")) : t("Members")}
               aria-label={t("Members")}
               aria-pressed={wide ? ui.people : undefined}
               onClick={() => (wide ? ui.setPeople(!ui.people) : setPanel("members"))}
@@ -703,9 +704,8 @@ export function ChatRoom(p: Props) {
         {reporting ? <ReportDialog type="message" id={reporting} onClose={() => setReporting(null)} /> : null}
         {node}
       </section>
-      {ui.people ? (
-        <ChatPeople info={info} members={members} canManage={p.canManage} onMembers={setMembers} onInvite={() => setPanel("invite")} onClose={() => ui.setPeople(false)} />
-      ) : null}
+      {/* (on a narrow screen it's not shown: the members are in a dialog there) */}
+      <ChatPeople info={info} members={members} canManage={p.canManage} onMembers={setMembers} onInvite={() => setPanel("invite")} onClose={() => ui.setPeople(false)} onOpen={() => ui.setPeople(true)} rail={!ui.people} />
     </MentionScope>
   );
 }
