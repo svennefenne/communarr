@@ -512,6 +512,23 @@ const sv: Record<string, string> = {
   "{name} would like to borrow it": "{name} vill låna det",
   "you've asked {name}": "du har frågat {name}",
   "borrowed from {name}": "lånat av {name}",
+  // avatars to choose from
+  "Avatars": "Avatarer",
+  "Profile pictures members can choose": "Profilbilder som medlemmar kan välja",
+  "Choose an avatar": "Välj en avatar",
+  "Pick one, then save your profile.": "Välj en och spara sedan din profil.",
+  "That's more than {n} avatars: take some away first.": "Det blir fler än {n} avatarer: ta bort några först.",
+  "{n} added, {m} didn't work (not a picture, or too big).": "{n} lades till, {m} gick inte (ingen bild, eller för stor).",
+  "{n} avatar added.": "{n} avatar lades till.",
+  "{n} avatars added.": "{n} avatarer lades till.",
+  "Pictures members can choose for their profile, besides one of their own (Settings → Profile). Square ones work best: they're shown round, so the corners don't show. Other shapes are cut to a square around what's in them.": "Bilder som medlemmar kan välja till sin profil, utöver en egen (Inställningar → Profil). Fyrkantiga fungerar bäst: de visas runda, så hörnen syns inte. Andra format beskärs till en kvadrat runt motivet.",
+  "Uploading {done} of {total}…": "Laddar upp {done} av {total}…",
+  "Choose pictures, or drop them here": "Välj bilder, eller släpp dem här",
+  "As many as you like at once: JPEG, PNG, WebP, GIF or AVIF.": "Hur många du vill på en gång: JPEG, PNG, WebP, GIF eller AVIF.",
+  "{n} avatar to choose from": "{n} avatar att välja bland",
+  "{n} avatars to choose from": "{n} avatarer att välja bland",
+  "Take it away": "Ta bort",
+  "No avatars yet.": "Inga avatarer än.",
 };
 
 export default sv;

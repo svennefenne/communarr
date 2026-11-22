@@ -21,6 +21,7 @@ export function ImagePick({
   size,
   whole = false,
   place = false,
+  extra,
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
@@ -33,6 +34,8 @@ export function ImagePick({
   whole?: boolean;
   /** place it in its frame first, like a banner (one always is) */
   place?: boolean;
+  /** more ways to get one, beside the link (a profile's avatars to choose from) */
+  extra?: React.ReactNode;
 }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
@@ -77,6 +80,7 @@ export function ImagePick({
         {size ? <span className="tiny muted">{size}</span> : null}
         {value ? null : <span className="tiny muted">{t("Tap to choose a picture")}</span>}
         <span className="row wrap" style={{ gap: 4 }}>
+          {extra}
           {/* (one to place: the whole picture, to place) */}
           <ImageLinkButton kind={placed ? "image" : kind} onImage={(url) => (placed ? setPlacing({ src: url }) : onChange(url))} className="btn btn-ghost btn-xs" />
           {value ? (

@@ -650,6 +650,14 @@ const MIGRATIONS: string[] = [
   create index game_loans_owner on game_loans(owner_id, status);
   create index game_loans_borrower on game_loans(borrower_id, status);
   `,
+  /* 26: avatars to choose from (avatarPresets.ts): pictures an admin put up, for members' profiles */ `
+  create table avatar_presets (
+    id integer primary key,
+    url text not null unique,
+    created_by integer references users(id) on delete set null,
+    created_at integer not null
+  );
+  `,
 ];
 
 function open(): Database.Database {
