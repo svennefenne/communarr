@@ -37,6 +37,8 @@ export interface ThemePrefs {
   navIcons: boolean;
   /** the forum's front: its categories as cards, or as rows with their counts and latest post */
   forumView: "cards" | "list";
+  /** the chat: who's in a room's voice shown under the room in the list (as on Discord), or in the room (a bar at its top, and in its members) */
+  chatVoice: "list" | "room";
   /** the same look on all your devices (else each device keeps its own: lib/look.ts) */
   mirror: boolean;
 }

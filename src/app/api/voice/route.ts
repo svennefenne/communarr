@@ -1,10 +1,10 @@
 import { getUser } from "@/lib/auth";
 import { connById } from "@/lib/hub";
-import { canSee, room } from "@/lib/chat";
+import { canManage, canSee, room } from "@/lib/chat";
 import { getSettings } from "@/lib/settings";
 import { requestT } from "@/lib/t";
 import type { Vars } from "@/lib/i18n";
-import { iceServers, joinVoice, leaveVoice, muteVoice, relayVoice, setCamera, setLive, streamIceServers, voiceSnapshot } from "@/lib/voice";
+import { deafVoice, holdInVoice, iceServers, joinVoice, kickAllFromVoice, kickFromVoice, leaveVoice, muteVoice, relayVoice, setCamera, setLive, streamIceServers, voiceSnapshot } from "@/lib/voice";
 
 export const dynamic = "force-dynamic";
 
@@ -34,16 +34,29 @@ export async function GET() {
  *   mute { muted }
  *   live { live, audio }  sharing your screen or a window (with its sound), or not any more
  *   camera { on }         your webcam on or off
+ *   deafen { deaf }       you hear nothing (or again)
  *   signal { to, data }   a call's (or a stream's) set-up message for another tab in the channel
+ * and for the room's owner and admins (and the site's moderators), no tab needed:
+ *   hold { user, held }   silence someone in the channel, or let them talk again
+ *   kick { user }         disconnect someone from the channel
+ *   kickAll               disconnect everyone
  */
 export async function POST(req: Request) {
   const user = await getUser();
   if (!user) return fail("Log in first.", 401);
   if (!getSettings().features.voice) return fail("Voice chat is switched off.", 403);
-  const b = (await req.json().catch(() => ({}))) as { action?: string; room?: number; conn?: number; muted?: boolean; live?: boolean; audio?: boolean; on?: boolean; to?: number; data?: unknown };
+  const b = (await req.json().catch(() => ({}))) as { action?: string; room?: number; conn?: number; muted?: boolean; deaf?: boolean; live?: boolean; audio?: boolean; on?: boolean; to?: number; data?: unknown; user?: number; held?: boolean };
+  const roomId = Number(b.room);
+  if (b.action === "hold" || b.action === "kick" || b.action === "kickAll") {
+    const r = room(roomId);
+    if (!r || !(canManage(user, r) || user.isMod)) return fail("Only the room's owner and admins can do that.", 403);
+    if (b.action === "kickAll") kickAllFromVoice(roomId);
+    else if (b.action === "kick") kickFromVoice(roomId, Number(b.user));
+    else holdInVoice(roomId, Number(b.user), !!b.held);
+    return Response.json({ ok: true });
+  }
   const conn = connById(Number(b.conn), user.id);
   if (!conn) return fail("Not connected: reload the page.", 409);
-  const roomId = Number(b.room);
   switch (b.action) {
     case "join": {
       const r = room(roomId);
@@ -57,6 +70,9 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     case "mute":
       muteVoice(roomId, conn.id, !!b.muted);
+      return Response.json({ ok: true });
+    case "deafen":
+      deafVoice(roomId, conn.id, !!b.deaf);
       return Response.json({ ok: true });
     case "live":
       if (b.live && !getSettings().voice.streams) return fail("Sharing your screen is switched off.", 403);

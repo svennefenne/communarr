@@ -12,6 +12,10 @@ import { db } from "./db";
  * Someone in a channel can go live: share their screen or a window. Those who choose to watch get it
  * straight from them (a connection of its own per viewer); here it's only who's live. A webcam goes to
  * everyone in the call, over the call's own connections; here it's only whose is on.
+ *
+ * A room's owner and admins (and the site's moderators) keep order in its channel: they can silence
+ * someone in it (their microphone stays off, and the others' tabs don't play them either) and
+ * disconnect people from it.
  */
 
 export interface VoicePeer {
@@ -23,11 +27,17 @@ export interface VoicePeer {
   live: { since: number; audio: boolean } | null;
   /** their webcam is on */
   camera: boolean;
+  /** they hear nothing (deafened) */
+  deaf: boolean;
+  /** silenced by a room admin: their microphone stays off until they're let talk again */
+  held: boolean;
 }
 
 type Channels = Map<number, Map<number, VoicePeer>>;
-const g = globalThis as typeof globalThis & { __hdVoice?: Channels };
+const g = globalThis as typeof globalThis & { __hdVoice?: Channels; __hdVoiceHeld?: Map<number, Set<number>> };
 const channels: Channels = (g.__hdVoice ??= new Map());
+/** who's silenced in which channel (by user: coming back in a new tab doesn't undo it), till the channel empties */
+const heldIn: Map<number, Set<number>> = (g.__hdVoiceHeld ??= new Map());
 
 export function iceServers(): IceServer[] {
   const s = getSettings().voice;
@@ -73,16 +83,22 @@ export function joinVoice(userId: number, roomId: number, conn: number): VoicePe
   if (!ch) channels.set(roomId, (ch = new Map()));
   if (ch.size >= getSettings().voice.max) return "full";
   const others = voicePeers(roomId);
-  ch.set(conn, { conn, userId, muted: false, joinedAt: Date.now(), live: null, camera: false });
+  const held = !!heldIn.get(roomId)?.has(userId);
+  ch.set(conn, { conn, userId, muted: held, joinedAt: Date.now(), live: null, camera: false, deaf: false, held });
   announce(roomId);
   return others;
 }
 
-export function leaveVoice(roomId: number, conn: number) {
+/** Out of a channel (kicked: they're told, so their tab hangs up too). */
+export function leaveVoice(roomId: number, conn: number, kicked = false) {
   const ch = channels.get(roomId);
   if (!ch?.delete(conn)) return;
-  if (!ch.size) channels.delete(roomId);
+  if (!ch.size) {
+    channels.delete(roomId);
+    heldIn.delete(roomId);
+  }
   for (const p of ch.values()) sendToConn(p.conn, "voiceGone", { room: roomId, conn });
+  if (kicked) sendToConn(conn, "voiceKicked", { room: roomId });
   announce(roomId);
 }
 
@@ -93,13 +109,40 @@ export function leaveVoiceConn(conn: number) {
 
 /** Someone left or was removed from a room: out of its voice channel too, every tab of theirs. */
 export function kickFromVoice(roomId: number, userId: number) {
-  for (const p of voicePeers(roomId)) if (p.userId === userId) leaveVoice(roomId, p.conn);
+  for (const p of voicePeers(roomId)) if (p.userId === userId) leaveVoice(roomId, p.conn, true);
+}
+
+/** Everyone out of a room's channel. */
+export function kickAllFromVoice(roomId: number) {
+  for (const p of voicePeers(roomId)) leaveVoice(roomId, p.conn, true);
 }
 
 export function muteVoice(roomId: number, conn: number, muted: boolean) {
   const p = channels.get(roomId)?.get(conn);
-  if (!p) return;
+  // (silenced: the microphone stays off)
+  if (!p || (p.held && !muted)) return;
   p.muted = muted;
+  announce(roomId);
+}
+
+export function deafVoice(roomId: number, conn: number, deaf: boolean) {
+  const p = channels.get(roomId)?.get(conn);
+  if (!p) return;
+  p.deaf = deaf;
+  announce(roomId);
+}
+
+/** Silence someone in a channel, or let them talk again (each tab of theirs is told). */
+export function holdInVoice(roomId: number, userId: number, held: boolean) {
+  let set = heldIn.get(roomId);
+  if (held) heldIn.set(roomId, (set ??= new Set()).add(userId));
+  else set?.delete(userId);
+  for (const p of voicePeers(roomId)) {
+    if (p.userId !== userId) continue;
+    p.held = held;
+    if (held) p.muted = true;
+    sendToConn(p.conn, "voiceHeld", { room: roomId, held });
+  }
   announce(roomId);
 }
 

@@ -94,6 +94,9 @@ interface Ctx {
 }
 
 const StreamCtx = createContext<Ctx | null>(null);
+/** The streams as they are when asked (a menu opening), without drawing again with every change. */
+const StreamNowCtx = createContext<{ current: Ctx | null }>({ current: null });
+export const useStreamNow = () => useContext(StreamNowCtx);
 export const useStream = () => {
   const c = useContext(StreamCtx);
   if (!c) throw new Error("useStream outside StreamProvider");
@@ -468,7 +471,14 @@ export function StreamProvider({ children }: { children: React.ReactNode }) {
   // leaving the page stops it all (the browser ends the capture itself)
   useEffect(() => () => display.current?.getTracks().forEach((tr) => tr.stop()), []);
 
+  const value: Ctx = { canGoLive: device && allowed, canShare: device && allowed && v.room != null, live, liveAudio, viewers, prefs, goLive, stopLive, watching, watch, unwatch, camsHidden, setCamsHidden };
+  const now = useRef<Ctx | null>(null);
+  useEffect(() => {
+    now.current = value;
+  });
   return (
-    <StreamCtx.Provider value={{ canGoLive: device && allowed, canShare: device && allowed && v.room != null, live, liveAudio, viewers, prefs, goLive, stopLive, watching, watch, unwatch, camsHidden, setCamsHidden }}>{children}</StreamCtx.Provider>
+    <StreamNowCtx.Provider value={now}>
+      <StreamCtx.Provider value={value}>{children}</StreamCtx.Provider>
+    </StreamNowCtx.Provider>
   );
 }

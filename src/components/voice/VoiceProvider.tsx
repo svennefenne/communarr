@@ -34,6 +34,25 @@ export interface VoicePeer {
   live: { since: number; audio: boolean } | null;
   /** their webcam is on */
   camera: boolean;
+  /** they hear nothing */
+  deaf: boolean;
+  /** silenced by a room admin */
+  held: boolean;
+}
+
+/** How someone in a call sounds to you (kept on this device): their volume (0–1), or off for you. */
+export interface PersonAudio {
+  vol: number;
+  off: boolean;
+}
+const PEOPLE_KEY = "hd_voice_people";
+function loadPeople(): Record<number, PersonAudio> {
+  try {
+    const v = JSON.parse(localStorage.getItem(PEOPLE_KEY) || "{}");
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    return {};
+  }
 }
 
 interface Ctx {
@@ -74,6 +93,13 @@ interface Ctx {
   /** your webcam on or off, in a call */
   toggleCamera: () => Promise<void>;
   cameraBusy: boolean;
+  /** a room admin has silenced you in the call: the microphone stays off */
+  held: boolean;
+  /** how each one sounds to you, by user (on this device) */
+  people: Record<number, PersonAudio>;
+  setPersonAudio: (userId: number, a: Partial<PersonAudio>) => void;
+  /** a room admin's: silence someone in a room's voice (or let them talk), disconnect them, or everyone */
+  moderate: (room: number, what: { hold: number; held: boolean } | { kick: number } | "kickAll") => Promise<boolean>;
 }
 
 const VoiceCtx = createContext<Ctx | null>(null);
@@ -82,6 +108,9 @@ export const useVoice = () => {
   if (!c) throw new Error("useVoice outside VoiceProvider");
   return c;
 };
+/** The call as it is when asked (a menu opening), without drawing again each time someone starts talking. */
+const VoiceNowCtx = createContext<{ current: Ctx | null }>({ current: null });
+export const useVoiceNow = () => useContext(VoiceNowCtx);
 
 type Signal = { sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit };
 
@@ -131,6 +160,16 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const camRef = useRef<MediaStream | null>(null);
   const [cameras, setCameras] = useState<Record<number, MediaStream>>({});
   const [cameraBusy, setCameraBusy] = useState(false);
+  const [held, setHeld] = useState(false);
+  const heldRef = useRef(false);
+  const [people, setPeople] = useState<Record<number, PersonAudio>>({});
+  const peopleRef = useRef<Record<number, PersonAudio>>({});
+  const channelsRef = useRef<Record<number, VoicePeer[]>>({});
+  useEffect(() => {
+    const p = loadPeople();
+    peopleRef.current = p;
+    setPeople(p);
+  }, []);
   useEffect(() => {
     const p = loadVoicePrefs();
     prefsRef.current = p;
@@ -178,6 +217,39 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       /* no meter, no matter */
     }
   }, []);
+
+  /** Each one's sound as you want it: off while you're deafened, they're off for you, or a room admin silenced them; at their volume. */
+  const applyAudio = useCallback(() => {
+    const peers = roomRef.current == null ? [] : channelsRef.current[roomRef.current] ?? [];
+    for (const [c, a] of audios.current) {
+      const p = peers.find((x) => x.conn === c);
+      const mine = p ? peopleRef.current[p.userId] : undefined;
+      a.muted = deafRef.current || !!mine?.off || !!p?.held;
+      a.volume = Math.max(0, Math.min(1, mine?.vol ?? 1));
+    }
+  }, []);
+  useEffect(() => {
+    channelsRef.current = channels;
+    applyAudio();
+  }, [channels, applyAudio]);
+
+  const setPersonAudio = useCallback(
+    (userId: number, a: Partial<PersonAudio>) => {
+      const had: PersonAudio = peopleRef.current[userId] ?? { vol: 1, off: false };
+      const next = { ...peopleRef.current, [userId]: { ...had, ...a } };
+      // (as it comes: nothing to keep)
+      if (next[userId].vol === 1 && !next[userId].off) delete next[userId];
+      peopleRef.current = next;
+      setPeople(next);
+      try {
+        localStorage.setItem(PEOPLE_KEY, JSON.stringify(next));
+      } catch {
+        /* kept for now only */
+      }
+      applyAudio();
+    },
+    [applyAudio],
+  );
 
   // who's talking: the loudness of each stream, ten times a second
   useEffect(() => {
@@ -261,7 +333,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           audios.current.set(c, a);
         }
         a.srcObject = stream;
-        a.muted = deafRef.current;
+        applyAudio();
         void a.play().catch(() => {});
         meter(c, stream);
       };
@@ -287,7 +359,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       }
       return pc;
     },
-    [closePeer, signal, meter, sendCamera],
+    [closePeer, signal, meter, sendCamera, applyAudio],
   );
 
   useLive("voiceSignal", async (d) => {
@@ -359,6 +431,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       // the newcomer calls everyone already there
       for (const p of data.others) makePeer(p.conn, true);
       if (local.current && !local.current.getAudioTracks()[0]?.enabled) void voicePost({ action: "mute", room: r, conn: connRef.current, muted: true }).catch(() => {});
+      if (deafRef.current) void voicePost({ action: "deafen", room: r, conn: connRef.current, deaf: true }).catch(() => {});
       // (moving to another room, or back after a reconnect: the webcam stays on)
       if (camRef.current) void voicePost({ action: "camera", room: r, conn: connRef.current, on: true }).catch(() => {});
     },
@@ -401,14 +474,29 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     [enter, closePeer, openMic, stopAll, t],
   );
 
-  const leave = useCallback(() => {
-    if (roomRef.current != null) void voicePost({ action: "leave", room: roomRef.current, conn: connRef.current }).catch(() => {});
+  /** Out of the call here (told: the server has you out already). */
+  const hangUp = useCallback(() => {
     roomRef.current = null;
     setRoom(null);
     setDeafened(false);
     deafRef.current = false;
+    heldRef.current = false;
+    setHeld(false);
     stopAll();
   }, [stopAll]);
+
+  const leave = useCallback(() => {
+    if (roomRef.current != null) void voicePost({ action: "leave", room: roomRef.current, conn: connRef.current }).catch(() => {});
+    hangUp();
+  }, [hangUp]);
+
+  // a room admin disconnected you (or you were taken out of the room)
+  useLive("voiceKicked", (d) => {
+    const { room: r } = d as { room: number };
+    if (r !== roomRef.current) return;
+    hangUp();
+    toast(t("You were disconnected from the voice chat."));
+  });
 
   // the live stream reconnected (a new conn): back into the channel
   const lastConn = useRef<number | null>(null);
@@ -431,17 +519,55 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   const setMic = useCallback((on: boolean) => {
     const t = local.current?.getAudioTracks()[0];
-    if (!t || t.enabled === on) return;
+    // (silenced by a room admin: it stays off)
+    if (!t || t.enabled === on || (on && heldRef.current)) return;
     t.enabled = on;
     setMuted(!on);
     if (roomRef.current != null) void voicePost({ action: "mute", room: roomRef.current, conn: connRef.current, muted: !on }).catch(() => {});
   }, []);
 
-  const setDeaf = useCallback((deaf: boolean) => {
-    deafRef.current = deaf;
-    setDeafened(deaf);
-    for (const a of audios.current.values()) a.muted = deaf;
-  }, []);
+  const setDeaf = useCallback(
+    (deaf: boolean) => {
+      deafRef.current = deaf;
+      setDeafened(deaf);
+      applyAudio();
+      if (roomRef.current != null) void voicePost({ action: "deafen", room: roomRef.current, conn: connRef.current, deaf }).catch(() => {});
+    },
+    [applyAudio],
+  );
+
+  // silenced by a room admin (or let talk again): from your own place in the channel, so coming back keeps it
+  useEffect(() => {
+    const mine = room == null ? undefined : channels[room]?.find((p) => p.conn === conn);
+    const now = !!mine?.held;
+    if (now === heldRef.current) return;
+    heldRef.current = now;
+    setHeld(now);
+    const tr = local.current?.getAudioTracks()[0];
+    if (now && tr?.enabled) {
+      tr.enabled = false;
+      setMuted(true);
+    }
+  }, [channels, room, conn]);
+  useLive("voiceHeld", (d) => {
+    const { room: r, held: on } = d as { room: number; held: boolean };
+    if (r === roomRef.current) toast(on ? t("A room admin has silenced you in the voice chat.") : t("You may talk again."));
+  });
+
+  const moderate = useCallback(
+    async (r: number, what: { hold: number; held: boolean } | { kick: number } | "kickAll") => {
+      try {
+        if (what === "kickAll") await voicePost({ action: "kickAll", room: r });
+        else if ("kick" in what) await voicePost({ action: "kick", room: r, user: what.kick });
+        else await voicePost({ action: "hold", room: r, user: what.hold, held: what.held });
+        return true;
+      } catch (e) {
+        toast(e instanceof Error ? e.message : String(e), { kind: "err" });
+        return false;
+      }
+    },
+    [toast],
+  );
 
   // like Discord: deafened means muted too, hearing again puts the microphone back as it was, and
   // unmuting while deafened hears again as well
@@ -450,9 +576,13 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const toggleMute = useCallback(() => {
     const t = local.current?.getAudioTracks()[0];
     if (!t) return;
+    if (!t.enabled && heldRef.current) {
+      toast(clientT()("A room admin has silenced you in the voice chat."));
+      return;
+    }
     if (!t.enabled && deafRef.current) setDeaf(false);
     setMic(!t.enabled);
-  }, [setMic, setDeaf]);
+  }, [setMic, setDeaf, toast]);
 
   const toggleDeafen = useCallback(() => {
     if (!deafRef.current) {
@@ -589,11 +719,14 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   const onMicLevel = useCallback((fn: (l: MicLevel) => void) => pipe.current?.onLevel(fn) ?? (() => {}), []);
 
+  const value: Ctx = { supported, room, roomName, joining, muted, deafened, error, channels, speaking, links, join, leave, toggleMute, toggleDeafen, prefs, setPrefs, talkKey, processed, noiseInUse, onMicLevel, camerasAllowed, camera, cameras, toggleCamera, cameraBusy, held, people, setPersonAudio, moderate };
+  const now = useRef<Ctx | null>(null);
+  useEffect(() => {
+    now.current = value;
+  });
   return (
-    <VoiceCtx.Provider
-      value={{ supported, room, roomName, joining, muted, deafened, error, channels, speaking, links, join, leave, toggleMute, toggleDeafen, prefs, setPrefs, talkKey, processed, noiseInUse, onMicLevel, camerasAllowed, camera, cameras, toggleCamera, cameraBusy }}
-    >
-      {children}
-    </VoiceCtx.Provider>
+    <VoiceNowCtx.Provider value={now}>
+      <VoiceCtx.Provider value={value}>{children}</VoiceCtx.Provider>
+    </VoiceNowCtx.Provider>
   );
 }

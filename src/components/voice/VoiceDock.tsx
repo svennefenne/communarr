@@ -13,6 +13,7 @@ import { keyName } from "./pipeline";
 import { VoiceSettings } from "./VoiceSettings";
 import { useStream } from "./StreamProvider";
 import { GoLiveDialog } from "./StreamPlayer";
+import { useCallControlsElsewhere, useCallControlsHere } from "./dockSlot";
 
 /**
  * Someone in the call (glowing while they talk); sharing their screen: LIVE, and a press watches it;
@@ -62,11 +63,20 @@ function Face({ p, user, talking, me }: { p: VoicePeer; user?: UserSummary; talk
 /** While you're in a call: who's in it (talking ones glow), mute, deafen and hang up. */
 export function VoiceDock() {
   const v = useVoice();
+  // (the call's controls on the page already: the chat list's voice panel, the room's voice bar)
+  const elsewhere = useCallControlsElsewhere();
   // (the member list is only fetched while there's a call)
-  return v.room == null ? null : <Dock />;
+  return v.room == null || elsewhere ? null : <Dock />;
 }
 
-function Dock() {
+/** The call's controls at the foot of the chat list (who's in it is under the room, above). */
+export function VoicePanel() {
+  const v = useVoice();
+  useCallControlsHere(v.room != null);
+  return v.room == null ? null : <Dock inline />;
+}
+
+function Dock({ inline = false }: { inline?: boolean }) {
   const v = useVoice();
   const s = useStream();
   const t = useT();
@@ -77,16 +87,28 @@ function Dock() {
   if (v.room == null) return null;
   const peers = v.channels[v.room] ?? [];
   return (
-    <div className="panel voice-dock" role="region" aria-label={t("Voice chat")}>
-      <Link href={`/chat/${v.room}`} className="vc-room" title={t("Go to the room")}>
-        <Radio size={16} className="vc-live" />
-        <span className="ellipsis">{v.roomName}</span>
-      </Link>
-      <div className="vc-faces">
-        {peers.map((p) => (
-          <Face key={p.conn} p={p} user={people.get(p.userId)} talking={v.speaking.has(p.conn === conn ? "me" : p.conn)} me={p.conn === conn} />
-        ))}
-      </div>
+    <div className={inline ? "voice-panel" : "panel voice-dock"} role="region" aria-label={t("Voice chat")}>
+      {inline ? (
+        <Link href={`/chat/${v.room}`} className="vp-status" title={t("Go to the room")}>
+          <Radio size={16} className="vc-live" />
+          <span className="stack" style={{ gap: 0, minWidth: 0 }}>
+            <b>{v.held ? t("Silenced by a room admin") : t("Voice connected")}</b>
+            <span className="tiny muted ellipsis">{v.roomName}</span>
+          </span>
+        </Link>
+      ) : (
+        <>
+          <Link href={`/chat/${v.room}`} className="vc-room" title={t("Go to the room")}>
+            <Radio size={16} className="vc-live" />
+            <span className="ellipsis">{v.roomName}</span>
+          </Link>
+          <div className="vc-faces">
+            {peers.map((p) => (
+              <Face key={p.conn} p={p} user={people.get(p.userId)} talking={v.speaking.has(p.conn === conn ? "me" : p.conn)} me={p.conn === conn} />
+            ))}
+          </div>
+        </>
+      )}
       <div className="vc-btns">
         {s.live ? (
           <span className="vc-viewers" title={s.viewers.length ? s.viewers.map((c) => people.get(peers.find((p) => p.conn === c)?.userId ?? 0)?.name ?? t("Someone")).join(", ") : t("No one is watching yet")}>

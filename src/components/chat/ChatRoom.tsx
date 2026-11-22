@@ -21,6 +21,9 @@ import { RoomSettings } from "./RoomSettings";
 import { useChatUi } from "./ChatShell";
 import { TypingDots, TypingLine, useTyping } from "./useTyping";
 import { ChatPeople, ManageMember } from "./ChatPeople";
+import { MENTION_EVENT, usePersonMenu, useRoomMenu, useVoiceLook } from "./chatMenus";
+import { VoiceBar } from "./VoicePresence";
+import { menuProps } from "@/components/ui/ContextMenu";
 import {
   declineInviteAction,
   deleteMessageAction,
@@ -287,6 +290,39 @@ export function ChatRoom(p: Props) {
     }
   };
 
+  // menus: on the people (in the messages, the voice bar) and on the room's name
+  const look = useVoiceLook();
+  const personMenu = usePersonMenu();
+  const roomMenu = useRoomMenu();
+  const reloadInfo = async () => {
+    const r = await roomInfoAction(id);
+    if (r.ok) setInfo(r.data);
+  };
+  // a menu elsewhere asked for the room's invitations or settings (…?panel=invite)
+  const wantPanel = search.get("panel");
+  useEffect(() => {
+    if (wantPanel !== "invite" && wantPanel !== "settings") return;
+    setPanel(wantPanel);
+    router.replace(`/chat/${id}`, { scroll: false });
+  }, [wantPanel, id, router]);
+  // "Mention" in someone's menu: an @mention of them in what you're writing
+  useEffect(() => {
+    const f = (e: Event) => {
+      const d = (e as CustomEvent<{ username: string; name: string }>).detail;
+      const ed = editor.current?.editor;
+      if (!ed || !d) return;
+      ed.chain()
+        .focus()
+        .insertContent([
+          { type: "mention", attrs: { id: d.username, label: d.name } },
+          { type: "text", text: " " },
+        ])
+        .run();
+    };
+    window.addEventListener(MENTION_EVENT, f);
+    return () => window.removeEventListener(MENTION_EVENT, f);
+  }, []);
+
   const h: MessageHandlers = {
     onReply: (m) => {
       setReplyTo(m);
@@ -318,6 +354,8 @@ export function ChatRoom(p: Props) {
     },
     onReport: (m) => setReporting(m.id),
     onJump: jump,
+    personMenu: (u) => personMenu(u, { room: info, canManage: p.canManage, member: members.find((m) => m.user.id === u.id), onMembers: setMembers }),
+    look,
   };
 
   // "seen by": under the latest message, who has read all the way down (not you, not its writer)
@@ -348,7 +386,7 @@ export function ChatRoom(p: Props) {
             <ChevronLeft size={20} />
           </Link>
           <RoomIcon r={info} size={36} />
-          <button type="button" className="chat-title" onClick={() => setPanel(info.kind === "dm" ? "members" : "settings")}>
+          <button type="button" className="chat-title" onClick={() => setPanel(info.kind === "dm" ? "members" : "settings")} {...menuProps(() => roomMenu(info, { active: true, onChanged: () => void reloadInfo() }), look)}>
             <b className="ellipsis">{info.name}</b>
             <span className="tiny muted ellipsis">
               {info.kind === "dm" ? (info.other?.statusText ? `${info.other.statusEmoji} ${info.other.statusText}` : t("Direct message")) : info.topic || t.n(info.memberCount, "{n} member", "{n} members")}
@@ -473,6 +511,8 @@ export function ChatRoom(p: Props) {
             ) : null}
           </div>
         </header>
+
+        {look === "room" && (isMember || info.visibility === "open") && info.kind !== "dm" ? <VoiceBar info={info} look={look} where={{ room: info, canManage: p.canManage, onMembers: setMembers }} /> : null}
 
         <div className="chat-scroll" ref={scroller} onScroll={onScroll}>
           {more ? <div className="chat-more tiny faint">{t("Loading older messages…")}</div> : <div className="chat-start">
