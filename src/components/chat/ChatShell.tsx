@@ -6,6 +6,7 @@ import { CHAT_UI_COOKIE, type ChatUi, type RoomInfo } from "@/lib/chatTypes";
 import { ContextMenuHost } from "@/components/ui/ContextMenu";
 import { useConfirm } from "@/components/ui/ui";
 import { VoiceSettingsHost } from "@/components/voice/VoiceDock";
+import { glideMs, slide, usePaneSwipe } from "./paneSwipe";
 
 /** a phone's three panes, side by side: swipe between them */
 export type ChatPane = "rooms" | "chat" | "people";
@@ -30,8 +31,8 @@ export const useChatUi = () => useContext(Ctx);
 
 /**
  * Chats side by side with the open room (and the room's members beside it on a wide screen). On a
- * phone the three are panes in a row, a screen wide each, to swipe between: the chats, the room (where
- * it opens), the members. How it's laid out on a computer is kept on this device, in a cookie, so the
+ * phone the three are panes in a row, a screen wide each, to swipe between (paneSwipe): the chats, the
+ * room (where it opens), the members. How it's laid out on a computer is kept on this device, in a cookie, so the
  * server draws it that way from the start.
  */
 export function ChatShell({ initial, children }: { initial: ChatUi; children: React.ReactNode }) {
@@ -70,7 +71,7 @@ export function ChatShell({ initial, children }: { initial: ChatUi; children: Re
       const target = paneEl(p);
       if (!el || !target) return;
       const left = target.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft;
-      el.scrollTo({ left, behavior: smooth && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "instant" });
+      slide(el, left, smooth ? glideMs(Math.abs(left - el.scrollLeft), el.clientWidth) : 0);
     },
     [paneEl],
   );
@@ -83,6 +84,9 @@ export function ChatShell({ initial, children }: { initial: ChatUi; children: Re
     showPane(hasRoom ? "chat" : "rooms", !first.current);
     first.current = false;
   }, [placed, phone, pathname, showPane]);
+
+  // a swipe moves the row (paneSwipe: quicker than the browser's own snapping)
+  usePaneSwipe(shell, phone);
 
   // which pane is showing (the one past halfway): the bar at the bottom comes with the chats
   useEffect(() => {
