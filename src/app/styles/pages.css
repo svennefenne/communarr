@@ -2681,6 +2681,34 @@ button.avatar-tile.on {
     0 0 0 2px var(--surface),
     0 0 0 4px var(--accent);
 }
+/* someone's picture already (each avatar is one member's at a time): faded, with their name */
+.avatar-tile.held img,
+.avatar.held img {
+  opacity: 0.4;
+  filter: grayscale(0.7);
+}
+button.avatar-tile.held {
+  cursor: not-allowed;
+}
+.avatar-holder {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  max-width: calc(100% + 8px);
+  transform: translateX(-50%);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-3, var(--surface-2));
+  box-shadow: 0 0 0 2px var(--surface);
+  color: var(--text);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
 .avatar-on {
   position: absolute;
   right: -2px;

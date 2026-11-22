@@ -32,7 +32,7 @@ import { getMailSettings, lastMailFailure, mailReady } from "@/lib/mail";
 import { firstOpenRoom } from "@/lib/chat";
 import { mailOrigin, rememberOrigin } from "@/lib/accountMail";
 import { fcmStatus } from "@/lib/fcm";
-import { avatarPresets } from "@/lib/avatarPresets";
+import { AVATAR_PRESET_MAX, avatarPresets } from "@/lib/avatarPresets";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
 
 export async function generateMetadata() {
@@ -185,7 +185,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <LookSettings s={s} />
               </Section>
               <Section id="avatars" title={t("Avatars")} icon={<CircleUserRound size={18} />} hint={t("Profile pictures members can choose")}>
-                <AvatarsAdmin initial={avatarPresets()} />
+                <AvatarsAdmin initial={avatarPresets()} max={AVATAR_PRESET_MAX} />
               </Section>
               <Section id="front" title={t("Front page")} icon={<Columns3 size={18} />} hint={t("What's beside the feed, and where")}>
                 <HomeLayoutSettings s={s} />

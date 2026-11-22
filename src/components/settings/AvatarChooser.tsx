@@ -15,7 +15,8 @@ const GAP = 14;
  * "Choose an avatar": the site's avatars (Admin → Avatars), round as they'll show, a page at a time
  * (as many as fit the window, so there's never a long scroll), with the one you're looking at big
  * at the top, wearing your ring. Pages turn with the arrows, a page's number, a swipe on a phone, or
- * Page Up/Down; Shuffle lands on any of them.
+ * Page Up/Down; Shuffle lands on any free one. One that's someone else's picture is faded, with their
+ * name: it can be looked at, not taken (each avatar is one member's at a time).
  */
 export function AvatarChooser({ presets, value, onPick, me }: { presets: AvatarPreset[]; value: string | null; onPick: (url: string) => void; me: Pick<UserSummary, "id" | "name" | "accent" | "ring"> }) {
   const t = useT();
@@ -84,8 +85,12 @@ function Browser({ presets, value, me, onClose, onPick }: { presets: AvatarPrese
   const go = (p: number) => setFirst(Math.max(0, Math.min(pages - 1, p)) * per);
   const shown = presets.slice(page * per, page * per + per);
 
+  const held = new Map(presets.filter((a) => a.holder).map((a) => [a.url, a.holder!.name]));
+  const free = presets.length - held.size;
+  const selHolder = sel ? held.get(sel) : undefined;
+
   const shuffle = () => {
-    const pool = presets.filter((a) => a.url !== sel);
+    const pool = presets.filter((a) => a.url !== sel && !a.holder);
     if (!pool.length) return;
     const a = pool[Math.floor(Math.random() * pool.length)];
     setSel(a.url);
@@ -109,7 +114,7 @@ function Browser({ presets, value, me, onClose, onPick }: { presets: AvatarPrese
           <button type="button" className="btn" onClick={onClose}>
             {t("Cancel")}
           </button>
-          <button type="button" className="btn btn-primary" disabled={!sel || sel === value} onClick={() => sel && onPick(sel)}>
+          <button type="button" className="btn btn-primary" disabled={!sel || sel === value || !!selHolder} onClick={() => sel && !selHolder && onPick(sel)}>
             <Check size={16} /> {t("Use this one")}
           </button>
         </>
@@ -117,11 +122,14 @@ function Browser({ presets, value, me, onClose, onPick }: { presets: AvatarPrese
     >
       <div className="avatar-browse">
         <div className="avatar-preview">
-          <Avatar user={{ ...me, avatar: sel ?? value }} size={84} />
+          <Avatar user={{ ...me, avatar: sel ?? value }} size={84} className={selHolder ? "held" : ""} />
           <div className="stack tight" style={{ minWidth: 0 }}>
-            <b>{sel ? (sel === value ? t("The one you have") : t("How it will look")) : t("Pick one below")}</b>
-            <span className="small muted">{t.n(presets.length, "{n} avatar to choose from", "{n} avatars to choose from")}</span>
-            <span className="tiny muted">{t("Then save your profile.")}</span>
+            <b>{selHolder ? t("{name} has this one", { name: selHolder }) : sel ? (sel === value ? t("The one you have") : t("How it will look")) : t("Pick one below")}</b>
+            <span className="small muted">
+              {t.n(free, "{n} avatar to choose from", "{n} avatars to choose from")}
+              {held.size ? ` · ${t.n(held.size, "{n} is someone else's", "{n} are someone else's")}` : ""}
+            </span>
+            <span className="tiny muted">{selHolder ? t("Each avatar is one member's at a time.") : t("Then save your profile.")}</span>
           </div>
         </div>
         <div
@@ -151,9 +159,22 @@ function Browser({ presets, value, me, onClose, onPick }: { presets: AvatarPrese
         >
           {shown.map((a) => {
             const on = a.url === sel;
+            const label = a.holder ? t("{name}'s picture", { name: a.holder.name }) : undefined;
             return (
-              <button key={a.id} type="button" role="radio" aria-checked={on} className={`avatar-tile ${on ? "on" : ""}`} onClick={() => setSel(a.url)} onDoubleClick={() => onPick(a.url)}>
+              <button
+                key={a.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                aria-disabled={a.holder ? true : undefined}
+                aria-label={label}
+                title={label}
+                className={`avatar-tile ${on ? "on" : ""} ${a.holder ? "held" : ""}`}
+                onClick={() => setSel(a.url)}
+                onDoubleClick={() => !a.holder && onPick(a.url)}
+              >
                 <img src={a.url} alt="" loading="lazy" decoding="async" />
+                {a.holder ? <span className="avatar-holder">{a.holder.name}</span> : null}
                 {on ? (
                   <span className="avatar-on">
                     <Check size={14} />

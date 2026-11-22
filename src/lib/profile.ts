@@ -32,6 +32,12 @@ export function updateProfile(u: User, o: ProfileInput) {
   let website = o.website !== undefined ? cleanLine(o.website, 200) : u.website;
   if (website && !/^https?:\/\//i.test(website)) website = `https://${website}`;
   const birthday = o.birthday === undefined ? u.birthday : o.birthday && /^\d{2}-\d{2}$/.test(o.birthday) ? o.birthday : null;
+  const avatar = o.avatar !== undefined ? media(o.avatar) : u.avatar;
+  // a picture is one member's: an avatar from the site's own (Admin → Avatars) can't be taken twice
+  if (avatar && avatar !== u.avatar) {
+    const has = db().prepare("select display_name n from users where avatar = ? and id != ? limit 1").get(avatar, u.id) as { n: string } | undefined;
+    if (has) throw new UserError("{name} already has that picture: choose another one.", { name: has.n });
+  }
   db()
     .prepare("update users set pronouns = ?, bio_html = ?, location = ?, website = ?, birthday = ?, accent = ?, avatar_ring = ?, avatar = ?, banner = ? where id = ?")
     .run(
@@ -42,7 +48,7 @@ export function updateProfile(u: User, o: ProfileInput) {
       birthday,
       o.accent !== undefined ? (o.accent && /^#[0-9a-f]{6}$/i.test(o.accent) ? o.accent : null) : u.accent,
       o.ring !== undefined ? (isRing(o.ring) ? o.ring : null) : u.ring,
-      o.avatar !== undefined ? media(o.avatar) : u.avatar,
+      avatar,
       o.banner !== undefined ? media(o.banner) : u.banner,
       u.id,
     );

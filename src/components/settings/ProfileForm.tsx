@@ -50,8 +50,11 @@ export function ProfileForm({ p, presets = [] }: { p: ProfileData; presets?: Ava
   const save = () =>
     start(async () => {
       const r = await updateProfileAction({ pronouns, location, website, birthday: bday || null, accent, ring, avatar, banner, bioHtml: ed.current?.getHTML() ?? "" });
-      if (!r.ok) toast(r.error, { kind: "err" });
-      else {
+      if (!r.ok) {
+        toast(r.error, { kind: "err" });
+        // (someone may have taken the avatar first: the chooser learns who)
+        router.refresh();
+      } else {
         toast(t("Profile saved."));
         router.refresh();
       }
