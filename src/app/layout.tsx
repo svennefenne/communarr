@@ -7,6 +7,7 @@ import "./styles/feed.css";
 import "./styles/pages.css";
 import "./styles/chat.css";
 import "./styles/admin.css";
+import { FEED_WIDTH } from "@/lib/look";
 import { fontVariables } from "@/lib/fonts";
 import { getUser } from "@/lib/auth";
 import { boot } from "@/lib/boot";
@@ -79,8 +80,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-density={user?.theme.density === "compact" ? "compact" : undefined}
       data-width={user?.theme.wide ? "wide" : undefined}
       data-nav={user?.theme.navIcons ? "icons" : undefined}
-      data-feed={user?.theme.feedWidth ? "set" : undefined}
-      style={user?.theme.feedWidth ? ({ "--feed-w": `${user.theme.feedWidth}px` } as React.CSSProperties) : undefined}
+      // (the middle's width: theirs, or the standard)
+      data-feed="set"
+      style={{ "--feed-w": `${user?.theme.feedWidth || FEED_WIDTH.standard}px` } as React.CSSProperties}
       suppressHydrationWarning
     >
       <head>

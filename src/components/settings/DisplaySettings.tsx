@@ -118,7 +118,7 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
             <b>{t("Middle's width")}</b>
             <span className="small muted">
               {p.wide ? t("The middle of the front page, the chat, a forum, polls and lists, when wide mode is off (now they fill the screen).") : t("The middle of the front page, the chat, a forum, polls and lists, on a screen with room for it.")}{" "}
-              {p.feedWidth ? `${p.feedWidth} px` : t("Standard")}
+              {p.feedWidth ? `${p.feedWidth} px` : `${t("Standard")} (${FEED_WIDTH.standard} px)`}
             </span>
           </div>
           <div className="row" style={{ gap: 8 }}>
@@ -127,7 +127,7 @@ export function DisplaySettings({ prefs, language }: { prefs: ThemePrefs; langua
               min={FEED_WIDTH.min}
               max={FEED_WIDTH.max}
               step={FEED_WIDTH.step}
-              value={p.feedWidth || 640}
+              value={p.feedWidth || FEED_WIDTH.standard}
               style={{ maxWidth: 220 }}
               onChange={(e) => {
                 const v = Number(e.target.value);

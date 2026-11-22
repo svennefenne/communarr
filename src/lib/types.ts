@@ -33,7 +33,7 @@ export interface ThemePrefs {
   density: "comfy" | "compact";
   /** wide: the pages fill the screen, their side columns at its edges (else they stop at 1320px, the chat at 1480px) */
   wide: boolean;
-  /** the middle in px (the front page's feed, the chat's room, a forum, polls, lists), when not wide (0: as it comes; FEED_WIDTH's range) */
+  /** the middle in px (the front page's feed, the chat's room, a forum, polls, lists), when not wide (0: the standard, FEED_WIDTH.standard; FEED_WIDTH's range) */
   feedWidth: number;
   /** the header's sections as their icons, not their names (Home is always its house) */
   navIcons: boolean;
