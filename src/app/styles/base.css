@@ -1166,10 +1166,10 @@ input[type="radio"] {
   object-fit: cover;
   display: block;
 }
-/* a ring they chose (Avatar): inside the edge, a hair of space, then the picture; the edge's outside
-   is kept for the green ring of someone talking */
+/* a ring they chose (Avatar): inside the edge, the picture filling it (reaching a pixel under the
+   ring, so no seam shows what's behind); the edge's outside is kept for the green ring of someone talking */
 .avatar.ringed {
-  padding: calc(var(--rw) + var(--rg));
+  padding: max(0px, calc(var(--rw) - 1px));
   background-clip: content-box;
 }
 .avatar.ringed::before {
