@@ -125,7 +125,7 @@ function RailItem({ r, active, unread, join = false, look, roomMenu, onChanged }
 }
 
 /**
- * The list of chats: invitations, your rooms, and open rooms you could join; your direct messages are
+ * The list of chats: invitations, your rooms, your groups' own chats, and open rooms you could join; your direct messages are
  * behind their own button at the top (as on Discord), and the ones with something new wait beside it.
  * On a computer it can be made narrow, only the chats' icons, and back.
  */
@@ -187,8 +187,10 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
   }, [data, setRooms]);
 
   const match = (r: RoomInfo) => !q || r.name.toLowerCase().includes(q.toLowerCase()) || r.topic.toLowerCase().includes(q.toLowerCase());
-  // rooms in the order an admin gave them (a new message doesn't move them); DMs newest first
-  const rooms = data.mine.filter((r) => r.kind !== "dm" && match(r)).sort(byPlace);
+  // rooms in the order an admin gave them (a new message doesn't move them), the groups' own chats
+  // under them; DMs newest first
+  const rooms = data.mine.filter((r) => r.kind === "room" && match(r)).sort(byPlace);
+  const groups = data.mine.filter((r) => r.kind === "group" && match(r)).sort(byPlace);
   const allDms = data.mine.filter((r) => r.kind === "dm");
   const dms = allDms.filter(match);
   const open = data.open.filter(match).sort(byPlace);
@@ -221,7 +223,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
     return (
       <aside className="panel chat-side">
         <ArrangeRooms
-          rooms={[...data.mine.filter((r) => r.kind !== "dm"), ...data.open].sort(byPlace)}
+          rooms={[...data.mine.filter((r) => r.kind !== "dm"), ...data.open]}
           onDone={async (saved) => {
             setArranging(false);
             if (saved) await refresh();
@@ -254,6 +256,8 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
               ))}
               {data.invites.length ? <span className="rail-sep" /> : null}
               {rooms.map((r) => railItem(r))}
+              {groups.length ? <span className="rail-sep" /> : null}
+              {groups.map((r) => railItem(r))}
               {open.length ? <span className="rail-sep" /> : null}
               {open.map((r) => railItem(r, true))}
             </>
@@ -324,7 +328,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
       <div className="chat-side-scroll">
         {dmView ? (
           <>
-            <div className="menu-label">{t("Direct messages")}</div>
+            <div className="menu-label chat-section">{t("Direct messages")}</div>
             {dms.map((r) => row(r))}
             {!dms.length ? (
               q ? (
@@ -342,7 +346,7 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
           <>
             {data.invites.length ? (
               <>
-                <div className="menu-label">{t("Invitations")}</div>
+                <div className="menu-label chat-section">{t("Invitations")}</div>
                 {data.invites.map((r) => (
                   <div key={r.id} className="chat-row invite">
                     <RoomIcon r={r} />
@@ -380,12 +384,23 @@ export function ChatSidebar({ initial }: { initial: { mine: RoomInfo[]; open: Ro
                 ))}
               </>
             ) : null}
-            <div className="menu-label">{t("Rooms")}</div>
-            {rooms.map((r) => row(r))}
-            {!rooms.length ? <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>{q ? t("No rooms found.") : t("No rooms yet.")}</div> : null}
+            {/* (a search that finds only groups: no empty "Rooms" above them) */}
+            {rooms.length || !q || !groups.length ? (
+              <>
+                <div className="menu-label chat-section">{t("Rooms")}</div>
+                {rooms.map((r) => row(r))}
+                {!rooms.length ? <div className="tiny muted" style={{ padding: "4px 14px 10px" }}>{q ? t("No rooms found.") : t("No rooms yet.")}</div> : null}
+              </>
+            ) : null}
+            {groups.length ? (
+              <>
+                <div className="menu-label chat-section">{t("Groups")}</div>
+                {groups.map((r) => row(r))}
+              </>
+            ) : null}
             {open.length ? (
               <>
-                <div className="menu-label">{t("Open rooms to join")}</div>
+                <div className="menu-label chat-section">{t("Open rooms to join")}</div>
                 {open.map((r) => row(r, 0))}
               </>
             ) : null}
