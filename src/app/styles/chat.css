@@ -491,6 +491,12 @@ html[data-width="wide"] .chat-shell {
   cursor: pointer;
   text-align: left;
 }
+/* (the name and the arrow keep their size: what's quoted is cut short instead) */
+.msg-reply > b,
+.msg-reply > svg {
+  flex: none;
+  white-space: nowrap;
+}
 .msg-reacts {
   margin-top: 4px;
 }
@@ -771,13 +777,50 @@ html[data-motion="off"] :is(.typing-dots, .typing-bubble) i {
   .chat-foot {
     padding: 0 8px max(8px, env(safe-area-inset-bottom));
   }
+  /* a message: the face, and beside it the name with the role and the time under it (the two rows
+     as tall as the face); what's written goes under them, from the face's edge: the screen's width */
   .msg {
-    grid-template-columns: 46px minmax(0, 1fr);
-    padding-right: 10px;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 10px;
+    padding: 5px 12px;
   }
-  .msg-gutter .avatar {
-    width: 34px !important;
-    height: 34px !important;
+  .msg-gutter {
+    padding-top: 0;
+  }
+  .msg.compact .msg-gutter,
+  .msg-gutter:empty {
+    display: none;
+  }
+  .msg-main {
+    display: contents;
+  }
+  .msg-main > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .msg-main > .msg-head {
+    grid-column: 2;
+    align-self: center;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 6px;
+    row-gap: 4px;
+  }
+  .msg-name {
+    flex: 0 0 100%;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .msg-head .tiny {
+    line-height: 16px;
+  }
+  .msg-head .role-tag {
+    line-height: 14px;
+  }
+  .msg-main > .msg-head + * {
+    margin-top: 4px;
   }
   /* "seen by" (the faces under a room's latest message): left out on a phone, it takes a row of its
      own. A direct message's "Seen" stays, a word under your own last message. */
