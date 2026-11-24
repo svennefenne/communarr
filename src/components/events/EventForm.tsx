@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { ImagePlus, Send, Timer, X } from "lucide-react";
+import { EyeOff, ImagePlus, Lock, Send, Timer, X } from "lucide-react";
 import { useApp, useT, useToast } from "@/components/app/AppProvider";
 import { RichEditor, type EditorHandle } from "@/components/editor/Editor";
 import { uploadFile } from "@/components/ui/ui";
 import { ImageLinkButton } from "@/components/ui/ImageLink";
-import type { EventView } from "@/lib/contentTypes";
+import type { EventMoves, EventView } from "@/lib/contentTypes";
+import { Avatar } from "@/components/ui/Avatar";
 import { createEventAction, updateEventAction } from "@/app/actions/content";
 import type { RepeatRule } from "@/lib/repeat";
 import { CustomRepeat, type RepeatEnds } from "./CustomRepeat";
@@ -28,7 +29,12 @@ function initialStart(date?: string): Date {
   return d;
 }
 
-export function EventForm({ groups, event, date, groupId }: { groups: { id: number; name: string }[]; event?: EventView; date?: string; groupId?: number }) {
+/**
+ * Planning an event, or changing one. Who it's for: everyone, only you, or a group you're in; one that's
+ * planned can be moved too (`moves`): those who've answered and wouldn't see it in a closed or secret
+ * group are shown, to be invited to the group (if you're one of its admins) or taken off the list.
+ */
+export function EventForm({ groups, event, date, groupId, moves }: { groups: { id: number; name: string }[]; event?: EventView; date?: string; groupId?: number; moves?: EventMoves }) {
   const router = useRouter();
   const toast = useToast();
   const t = useT();
@@ -52,7 +58,14 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
   const [ends, setEnds] = useState<RepeatEnds>(event?.repeatRule?.count ? "after" : event?.repeatUntil ? "on" : "never");
   const [capacity, setCapacity] = useState(event?.capacity ? String(event.capacity) : "");
   // who it's for: everyone (""), only me ("me") or a group
-  const [group, setGroup] = useState<number | "" | "me">(event ? (event.private ? "me" : event.group?.id ?? "") : groupId ?? "");
+  const was: number | "" | "me" = event ? (event.private ? "me" : event.group?.id ?? "") : "";
+  const [group, setGroup] = useState<number | "" | "me">(event ? was : groupId ?? "");
+  // moving it: who'd lose sight of it there, and whether they're invited to the group
+  const choices = moves ? moves.groups : groups.map((g) => ({ ...g, privacy: "open" as const, canInvite: true }));
+  const target = typeof group === "number" ? choices.find((g) => g.id === group) : undefined;
+  const from = event?.group ? moves?.groups.find((g) => g.id === event.group!.id) : undefined;
+  const lost = event && group !== was && group !== "" ? (moves?.lost[String(group)] ?? []) : [];
+  const [invite, setInvite] = useState(true);
   // a countdown on the front page: from how many days before (0 right away), and pinned before the others
   const [countdown, setCountdown] = useState<number | null>(event?.countdown ?? null);
   const [pin, setPin] = useState(event?.countdownPinned ?? false);
@@ -106,6 +119,7 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         capacity: capacity ? Number(capacity) : null,
         groupId: typeof group === "number" ? group : null,
         private: group === "me",
+        inviteLost: !!target?.canInvite && invite,
         countdown,
         countdownPin: me?.isMod ? pin && countdown !== null : undefined,
       };
@@ -222,22 +236,62 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         <span className="label">{t("Details")}</span>
         <RichEditor ref={ed} initial={event?.html} placeholder={t("What to bring, what's the plan… @mention people to invite them.")} minHeight={150} draftKey={event ? undefined : "event"} previews />
       </div>
-      {/* a group's event stays the group's; otherwise everyone or only you, or a group when it's new */}
-      {!event?.group ? (
+      {/* everyone, only you, or a group; a group's event that isn't open moves out only by its admins */}
+      {!event || moves?.canMove ? (
         <div className="field">
           <label htmlFor="ef-group">{t("For")}</label>
           <select id="ef-group" className="select" value={group} onChange={(e) => setGroup(e.target.value === "me" ? "me" : e.target.value ? Number(e.target.value) : "")}>
             <option value="">{t("Everyone")}</option>
-            <option value="me">{t("Only me")}</option>
-            {!event
-              ? groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))
-              : null}
+            {/* ("Only me" is the one who planned it: not for a moderator changing someone else's) */}
+            {!event || event.private || event.author.id === me?.id ? <option value="me">{t("Only me")}</option> : null}
+            {choices.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.privacy === "open" ? g.name : `${g.name} · ${g.privacy === "secret" ? t("secret group") : t("closed group")}`}
+              </option>
+            ))}
           </select>
-          {group === "me" ? <span className="small muted">{t("Only you see it, in your calendar. Nobody is invited or told.")}</span> : null}
+          {group === "me" && !lost.length ? <span className="small muted">{t("Only you see it, in your calendar. Nobody is invited or told.")}</span> : null}
+          {event && group === "" && from && from.privacy !== "open" ? <span className="small muted">{t("Everyone on the site will see it then, its comments too.")}</span> : null}
+          {lost.length ? (
+            <div className="move-lost panel-pad-sm inset stack">
+              <span className="row" style={{ gap: 8, alignItems: "flex-start" }}>
+                {target?.privacy === "secret" ? <EyeOff size={16} className="move-lost-icon" aria-hidden /> : <Lock size={16} className="move-lost-icon" aria-hidden />}
+                <span className="stack tight">
+                  <b>
+                    {target
+                      ? t.n(lost.length, "{n} who answered isn't in {group}", "{n} who answered aren't in {group}", { group: target.name })
+                      : t("{n} who answered won't see it any more", { n: lost.length })}
+                  </b>
+                  <span className="small muted">
+                    {!target
+                      ? t("Only you see it then: they're taken off the list and told.")
+                      : target.privacy === "secret"
+                        ? t("It's a secret group: only its members see the event, and know the group is there.")
+                        : t("It's a closed group: only its members see the event.")}
+                  </span>
+                </span>
+              </span>
+              <span className="move-lost-people">
+                {lost.map((p) => (
+                  <span key={p.id} className="move-lost-person">
+                    <Avatar user={p} size={22} /> {p.name}
+                  </span>
+                ))}
+              </span>
+              {target ? (
+                target.canInvite ? (
+                  <>
+                    <label className="check">
+                      <input type="checkbox" checked={invite} onChange={(e) => setInvite(e.target.checked)} /> {t("Invite them to the group")}
+                    </label>
+                    <span className="small muted">{invite ? t("Their answers stay, and they see the event again once they're in.") : t("They're taken off the list and told.")}</span>
+                  </>
+                ) : (
+                  <span className="small muted">{t("Only the group's admins can invite people: they're taken off the list and told.")}</span>
+                )
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
       <div className="panel-pad-sm inset stack">
@@ -247,7 +301,7 @@ export function EventForm({ groups, event, date, groupId }: { groups: { id: numb
         <span className="small muted">
           {group === "me"
             ? t("The front page's heading counts down to it until it starts, only for you.")
-            : group || event?.group
+            : typeof group === "number"
               ? t("The front page's heading counts down to it until it starts, for the group's members.")
               : t("The front page's heading counts down to it until it starts, for everyone.")}
         </span>

@@ -344,6 +344,28 @@ const sv: Record<string, string> = {
   "Let them in on the group's Members tab.": "Släpp in dem under fliken Medlemmar i gruppen.",
   "You're in {group}!": "Du är med i {group}!",
   "{name} invited you to the group {group}": "{name} bjöd in dig till gruppen {group}",
+
+  // an event moved into a group, out of one, or to "Only me" (lib/events.ts, EventForm)
+  "Only the group's admins can move its events out of it.": "Bara gruppens admins kan flytta ut dess evenemang ur den.",
+  "You can only move an event into a group you're in.": "Du kan bara flytta ett evenemang till en grupp du är med i.",
+  "{title} is the group's now: join to see it again.": "{title} hör till gruppen nu. Gå med för att se det igen.",
+  "{title} is now for the group {group}": "{title} hör nu till gruppen {group}",
+  "Only its members see it: ask to join the group to see it again.": "Bara gruppens medlemmar ser det. Be om att få gå med i gruppen för att se det igen.",
+  "{title} isn't open to you any more": "{title} är inte längre öppet för dig",
+  "You're no longer on its list.": "Du står inte längre på listan.",
+  "secret group": "hemlig grupp",
+  "closed group": "stängd grupp",
+  "Everyone on the site will see it then, its comments too.": "Då ser alla på sajten det, kommentarerna också.",
+  "{n} who answered isn't in {group}": "{n} som har svarat är inte med i {group}",
+  "{n} who answered aren't in {group}": "{n} som har svarat är inte med i {group}",
+  "{n} who answered won't see it any more": "{n} som har svarat ser det inte längre",
+  "Only you see it then: they're taken off the list and told.": "Då ser bara du det: de tas bort från listan och får veta det.",
+  "It's a secret group: only its members see the event, and know the group is there.": "Det är en hemlig grupp: bara medlemmarna ser evenemanget och vet att gruppen finns.",
+  "It's a closed group: only its members see the event.": "Det är en stängd grupp: bara medlemmarna ser evenemanget.",
+  "Invite them to the group": "Bjud in dem till gruppen",
+  "Their answers stay, and they see the event again once they're in.": "Deras svar står kvar, och de ser evenemanget igen när de har gått med.",
+  "They're taken off the list and told.": "De tas bort från listan och får veta det.",
+  "Only the group's admins can invite people: they're taken off the list and told.": "Bara gruppens admins kan bjuda in folk: de tas bort från listan och får veta det.",
 };
 
 export default sv;
