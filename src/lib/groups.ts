@@ -323,7 +323,7 @@ export function leaveGroup(u: User, id: number) {
   syncGroupMember(g.room_id, u.id, false);
 }
 
-export function inviteToGroup(u: User, id: number, userIds: number[]) {
+export function inviteToGroup(u: User, id: number, userIds: number[], why?: { body: string; vars: Record<string, string> }) {
   const g = groupRow(id);
   if (!g || (!groupRole(id, u.id) && !u.isAdmin)) throw new GroupError("Join the group first.");
   if (g.privacy !== "open" && !canManageGroup(u, g)) throw new GroupError("Only the group's admins can invite people.");
@@ -341,7 +341,7 @@ export function inviteToGroup(u: User, id: number, userIds: number[]) {
     db().prepare("insert or replace into group_requests (group_id, user_id, kind, by_id, created_at) values (?, ?, 'invite', ?, ?)").run(id, uid, u.id, t);
     fresh.push(uid);
   }
-  notify(fresh, { kind: "invite", actorId: u.id, title: "{name} invited you to the group {group}", body: "{tagline}", vars: { name: u.name, group: g.name, tagline: g.tagline }, url: `/groups/${g.slug}` });
+  notify(fresh, { kind: "invite", actorId: u.id, title: "{name} invited you to the group {group}", body: why?.body ?? "{tagline}", vars: { name: u.name, group: g.name, tagline: g.tagline, ...why?.vars }, url: `/groups/${g.slug}` });
   return fresh.length;
 }
 

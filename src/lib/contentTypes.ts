@@ -145,6 +145,17 @@ export interface EventView {
   occurrence?: number;
 }
 
+/**
+ * Where an event can be moved (its form's "For"): the groups the one changing it is in, and for each
+ * place ("me" for "Only me", a group's id), who has answered but wouldn't see it there.
+ */
+export interface EventMoves {
+  /** not when it's in a group that isn't open and they aren't one of its admins */
+  canMove: boolean;
+  groups: { id: number; name: string; privacy: "open" | "closed" | "secret"; canInvite: boolean }[];
+  lost: Record<string, UserSummary[]>;
+}
+
 /** A list's column: what it holds decides how it's filled in. */
 export type ListColumnType = "text" | "number" | "check" | "member" | "date" | "time" | "choice";
 export interface ListColumn {

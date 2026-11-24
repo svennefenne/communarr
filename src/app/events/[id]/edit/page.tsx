@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getEvent } from "@/lib/events";
+import { eventMoves, getEvent } from "@/lib/events";
 import { EventForm } from "@/components/events/EventForm";
 import { BackPill } from "@/components/ui/BackPill";
 import { requestT } from "@/lib/t";
@@ -26,7 +26,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
       <div className="panel panel-pad">
-        <EventForm groups={[]} event={e} />
+        <EventForm groups={[]} event={e} moves={eventMoves(u, id)} />
       </div>
     </div>
   );

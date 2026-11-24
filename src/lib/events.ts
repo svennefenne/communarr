@@ -9,13 +9,13 @@ import { tellMentioned } from "./mentions";
 import { reactionsFor, clearReactions } from "./reactions";
 import { cleanHtml, cleanLine } from "./sanitize";
 import { indexItem, unindex } from "./search";
-import { canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, memberIdsOf, newInFeed } from "./groups";
-import { GHOST, summaries, userByName, usersWho, type User } from "./users";
+import { canManageGroup, canPostInGroup, canReadGroup, groupFilter, groupRow, groupScope, inviteToGroup, memberIdsOf, newInFeed, type GroupRow } from "./groups";
+import { GHOST, summaries, userById, userByName, usersWho, type User } from "./users";
 import { commentCounts, groupRefs } from "./posts";
 import { getMeta, getSettings, setMeta } from "./settings";
 import { serverT } from "./t";
 import type { T } from "./i18n";
-import type { EventView, RsvpStatus } from "./contentTypes";
+import type { EventMoves, EventView, RsvpStatus } from "./contentTypes";
 
 export interface EventRow {
   id: number;
@@ -228,6 +228,9 @@ export interface EventInput {
   countdown?: number | null;
   /** its countdown goes before the others' (admins and moderators) */
   countdownPin?: boolean;
+  /** moved into a group that isn't open: invite those who've answered and aren't in it (their
+      answers stay); otherwise they're taken off its list */
+  inviteLost?: boolean;
 }
 
 function validate(o: EventInput) {
@@ -328,20 +331,74 @@ function attendees(id: number): number[] {
   return (db().prepare("select user_id from event_rsvps where event_id = ? and status in ('going','maybe')").all(id) as { user_id: number }[]).map((r) => r.user_id);
 }
 
+/** Those going (or maybe) who can see it: someone invited to its group, not in yet, isn't told of it. */
+function attendeesWhoSee(e: EventRow): number[] {
+  return usersWho(attendees(e.id), (x) => canSeeEvent(x, e));
+}
+
+/** Everyone who has answered (going, maybe or not). */
+function answered(id: number): number[] {
+  return (db().prepare("select user_id from event_rsvps where event_id = ?").all(id) as { user_id: number }[]).map((r) => r.user_id);
+}
+
+/** Who has answered but wouldn't see it in this group (one that isn't open, they aren't in), or "Only me". */
+function wouldLose(e: EventRow, to: { groupId: number | null; private: boolean }): User[] {
+  const after = { ...e, group_id: to.groupId, private: to.private ? 1 : 0 };
+  return answered(e.id)
+    .map((id) => userById(id))
+    .filter((x): x is User => !!x && !canSeeEvent(x, after));
+}
+
+/**
+ * Where the event can be moved, for its form: the groups the one changing it is in (and the one it's
+ * in), and who'd lose sight of it in each. One in a group that isn't open is moved out of it only by
+ * the group's admins (what's been said in it would get out).
+ */
+export function eventMoves(u: User, id: number): EventMoves {
+  const e = eventRow(id);
+  if (!e) return { canMove: false, groups: [], lost: {} };
+  const cur = e.group_id ? groupRow(e.group_id) : null;
+  const rows = db().prepare("select g.* from groups g join group_members m on m.group_id = g.id where m.user_id = ? order by g.name collate nocase").all(u.id) as GroupRow[];
+  if (cur && !rows.some((g) => g.id === cur.id)) rows.unshift(cur);
+  const lost: Record<string, number[]> = { me: wouldLose(e, { groupId: null, private: true }).map((x) => x.id) };
+  for (const g of rows) lost[g.id] = wouldLose(e, { groupId: g.id, private: false }).map((x) => x.id);
+  const people = summaries(Object.values(lost).flat());
+  return {
+    canMove: !cur || cur.privacy === "open" || canManageGroup(u, cur),
+    groups: rows.map((g) => ({ id: g.id, name: g.name, privacy: g.privacy, canInvite: g.privacy === "open" || canManageGroup(u, g) })),
+    lost: Object.fromEntries(Object.entries(lost).map(([k, ids]) => [k, ids.map((x) => people.get(x)!).filter(Boolean)])),
+  };
+}
+
 export function updateEvent(u: User, id: number, o: EventInput) {
   const e = eventRow(id);
   if (!e) throw new EventError("That event is gone.");
   if (e.author_id !== u.id && !u.isMod) throw new EventError("Only the one who planned it can change the event.");
   const v = validate(o);
-  // "Only me" or everyone can change (a group's event stays the group's)
-  const priv = e.group_id ? false : o.private === undefined ? !!e.private : !!o.private;
+  // where it is (its form's "For"): moved into a group they're in, or out of one (one that isn't open,
+  // only by its admins: what's been said in it would get out). A group's event isn't "Only me".
+  const from = e.group_id ? groupRow(e.group_id) : null;
+  let group = from;
+  const to = o.groupId === undefined ? e.group_id : o.groupId || null;
+  if (to !== e.group_id) {
+    if (from && from.privacy !== "open" && !canManageGroup(u, from)) throw new EventError("Only the group's admins can move its events out of it.");
+    group = to ? groupRow(to) : null;
+    if (to && (!group || !canPostInGroup(u, group))) throw new EventError("You can only move an event into a group you're in.");
+  }
+  const groupId = group?.id ?? null;
+  const priv = groupId ? false : o.private === undefined ? !!e.private : !!o.private;
+  // those who've answered and wouldn't see it there: invited to the group (if they can be), or off its list
+  const lost = groupId !== e.group_id || priv !== !!e.private ? wouldLose(e, { groupId, private: priv }) : [];
+  const invite = lost.length > 0 && !!o.inviteLost && !!group && !priv;
+  if (invite && group!.privacy !== "open" && !canManageGroup(u, group!)) throw new EventError("Only the group's admins can invite people.");
   db()
-    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, repeat = ?, repeat_rule = ?, repeat_until = ?, capacity = ?, private = ?, countdown = ?, edited_at = ? where id = ?")
-    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, v.countdown, now(), id);
+    .prepare("update events set title = ?, description_html = ?, description_text = ?, location = ?, start_at = ?, end_at = ?, all_day = ?, color = ?, cover = ?, group_id = ?, repeat = ?, repeat_rule = ?, repeat_until = ?, capacity = ?, private = ?, countdown = ?, edited_at = ? where id = ?")
+    .run(v.title, v.c.html, v.c.text, v.location, v.start, v.end, v.allDay, v.color, v.cover, groupId, v.repeat, v.repeatRule, v.repeatUntil, v.capacity, priv ? 1 : 0, v.countdown, now(), id);
   pinCountdown(u, id, v.countdown, o.countdownPin);
-  indexItem("event", id, eventScope(e.group_id, priv, e.author_id), e.author_id, e.created_at, v.title, `${v.location} ${v.c.text}`);
+  indexItem("event", id, eventScope(groupId, priv, e.author_id), e.author_id, e.created_at, v.title, `${v.location} ${v.c.text}`);
   // comments follow the event (private: only its author finds them in search)
-  db().prepare("update search_index set scope = ? where kind = 'comment' and ref in (select id from comments where target_type = 'event' and target_id = ?)").run(eventScope(e.group_id, priv, e.author_id), id);
+  db().prepare("update search_index set scope = ? where kind = 'comment' and ref in (select id from comments where target_type = 'event' and target_id = ?)").run(eventScope(groupId, priv, e.author_id), id);
+  if (groupId !== e.group_id || priv !== !!e.private) regrouped(u, e, eventRow(id)!, lost, invite);
   // someone mentioned in the edit, who wasn't before, is invited (as when it was planned)
   if (!priv) {
     const after = eventRow(id)!;
@@ -354,7 +411,7 @@ export function updateEvent(u: User, id: number, o: EventInput) {
     // the body is one whole text, so it can be translated for each person
     const place = v.location !== e.location ? (v.location ? "at {place}" : "at a place to be decided") : "";
     const body = moved ? (place ? `Now {when}, ${place}` : "Now {when}") : place;
-    notify(attendees(id), {
+    notify(attendeesWhoSee(eventRow(id)!), {
       kind: "event",
       actorId: u.id,
       title: "{title} changed",
@@ -365,13 +422,42 @@ export function updateEvent(u: User, id: number, o: EventInput) {
   }
 }
 
+/**
+ * An event moved to another group, out of one, or to "Only me". Those who'd answered and don't see it
+ * now: invited to its group (their answers stay, for when they're in), or taken off its list and told
+ * (a secret group's name stays with its members). A group it moved into: its members hear of it, as
+ * of a new one (not those who've answered already).
+ */
+function regrouped(u: User, before: EventRow, e: EventRow, lost: User[], invite: boolean) {
+  const g = e.group_id ? groupRow(e.group_id) : null;
+  const vars = { title: e.title, group: g?.name ?? "" };
+  if (lost.length && invite && g) {
+    inviteToGroup(u, g.id, lost.map((x) => x.id), { body: "{title} is the group's now: join to see it again.", vars: { title: e.title } });
+  } else if (lost.length) {
+    const ids = lost.map((x) => x.id);
+    const list = ids.map(() => "?").join(",");
+    db().prepare(`delete from event_rsvps where event_id = ? and user_id in (${list})`).run(e.id, ...ids);
+    db().prepare(`delete from event_games where event_id = ? and user_id in (${list})`).run(e.id, ...ids);
+    if (g && g.privacy === "closed") notify(ids, { kind: "event", actorId: u.id, title: "{title} is now for the group {group}", body: "Only its members see it: ask to join the group to see it again.", vars, url: `/groups/${g.slug}` });
+    else notify(ids, { kind: "event", actorId: u.id, title: "{title} isn't open to you any more", body: "You're no longer on its list.", vars, url: "/calendar" });
+  }
+  if (g && g.id !== before.group_id) {
+    const told = new Set(answered(e.id));
+    const url = `/events/${e.id}`;
+    notify(
+      memberIdsOf(g.id).filter((x) => !told.has(x)),
+      { kind: "group", actorId: u.id, title: "New event in {group}: {title}", body: "{when}", vars: { ...vars, when: when(e.start_at, !!e.all_day, serverT().locale) }, url },
+    );
+  }
+}
+
 export function cancelEvent(u: User, id: number, cancelled: boolean) {
   const e = eventRow(id);
   if (!e) return;
   if (e.author_id !== u.id && !u.isMod) throw new EventError("Only the one who planned it can cancel the event.");
   db().prepare("update events set cancelled = ? where id = ?").run(cancelled ? 1 : 0, id);
   if (e.private) return;
-  notify(attendees(id), { kind: "event", actorId: u.id, title: cancelled ? "Cancelled: {title}" : "Back on: {title}", body: "{when}", vars: { title: e.title, when: when(e.start_at, !!e.all_day, serverT().locale) }, url: `/events/${id}` });
+  notify(attendeesWhoSee(e), { kind: "event", actorId: u.id, title: cancelled ? "Cancelled: {title}" : "Back on: {title}", body: "{when}", vars: { title: e.title, when: when(e.start_at, !!e.all_day, serverT().locale) }, url: `/events/${id}` });
 }
 
 export function deleteEvent(u: User, id: number) {
@@ -420,7 +506,7 @@ export function sendReminders() {
         if (!due) continue;
         const r = db().prepare("insert or ignore into event_reminders (event_id, occurrence, kind) values (?, ?, ?)").run(e.id, occ, kind);
         if (!r.changes) continue;
-        const who = e.private ? [e.author_id] : [...new Set([...attendees(e.id), e.author_id])];
+        const who = e.private ? [e.author_id] : [...new Set([...attendeesWhoSee(e), e.author_id])];
         notify(who, {
           kind: "event",
           title: kind === "1h" ? "Soon: {title}" : "Tomorrow: {title}",
